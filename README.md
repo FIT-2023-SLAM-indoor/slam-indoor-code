@@ -15,4 +15,6 @@ Repository with source code of SLAM door project
    2. Install extension [CMake](https://marketplace.visualstudio.com/items?itemName=twxs.cmake)
    3. Press `F1` then type `CMake: configure`
 5. *For MS VS*:
-   1. Press `Project -> Configure project with CMake debugging` 
+   1. Press `Project -> Configure project with CMake debugging`
+   2. Right-click on `CMakeLists.txt` then press "Open debug and launch settings" and add to json `"currentDir": "${workspaceRoot}"`
+   3. Launch code using startup item `CMakeLists.txt`
