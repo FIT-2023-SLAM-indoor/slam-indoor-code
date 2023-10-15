@@ -4,26 +4,14 @@
 #include <iostream>
 #include <stdio.h>
 
+#include "poseEstimation.h"
+
 using namespace cv;
 
 int main(int argc, char** argv )
 {
-    VideoCapture cap("data/example.mp4");
-    Mat image;
-    if (!cap.isOpened()) {
-        std::cerr << "Camera wasn't opened" << std::endl;
-        return -1;
-    }
-    while (true) {
-        cap.read(image);
-        if (image.empty()) {
-            std::cerr << "Empty frame" << std::endl;
-            return -1;
-        }
-        imshow("Live", image);
-        char c = (char)waitKey(33);
-        if (c == 27)
-            break;
-    }
+    cv::Mat q = (cv::Mat_<double>(2, 2) << 1, 2, 1, 3);
+    cv::Mat g = (cv::Mat_<double>(2, 2) << 2, 3, 2, 4);
+    countMatricies(q, g);
     return 0;
 }
