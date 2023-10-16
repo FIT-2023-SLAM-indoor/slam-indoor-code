@@ -1,35 +1,50 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
-#include <opencv2/imgcodecs.hpp>
 
 using namespace cv;
 
-int main(int argc, char** argv) {
+/* Gaussian filter */
 
+/*
+ *
+ */
+void fast_extractor(Mat* src_image, Mat* result, int threshold = 10, bool suppression = true,
+    FastFeatureDetector::DetectorType type = FastFeatureDetector::TYPE_9_16)
+{
+    //
+    Ptr<FastFeatureDetector> detector =
+        FastFeatureDetector::create(threshold, suppression, type);
+
+    //
+    std::vector<KeyPoint> keypoints;
+
+    //
+    detector->detect(*src_image, keypoints);
+
+    //
+    drawKeypoints(*src_image, keypoints, *result);
+}
+
+int main(int argc, char** argv)
+{
     Mat image, result;
-    for (int i = 0; i < 4; i++) {
-        // Читаем изображение, сводя его к оттенкам серого.
-        image = imread(format("data/%d.jpg", i), ImreadModes::IMREAD_GRAYSCALE);
+    // Let's do a little slide show. Let's see how the algorithm processes 4 different images
+    for (int i = 0; i < 4; i++)
+    {
+        // Saved the i-th image into an N-dimensional array
+        image = imread(format("data/%d.jpg", i), ImreadModes::IMREAD_GRAYSCALE);  // ImreadModes::IMREAD_GRAYSCALE
         if (!image.data) {
             printf("No image data \n");
             return -1;
         }
 
-        // Создаём детектор.
-        Ptr<FastFeatureDetector> detector = 
-            FastFeatureDetector::create(14, true, FastFeatureDetector::TYPE_9_16);
-        std::vector<KeyPoint> keypoints;
-
-        // Находим фичи.
-        detector->detect(image, keypoints);
-
-        // Выделяем фичи.
-        drawKeypoints(image, keypoints, result);
+        // Applied the FAST algorithm to the image and saved the image
+        // with the highlighted features in @result
+        fast_extractor(&image, &result, 13);
 
         namedWindow("Display Image", WINDOW_AUTOSIZE);
-        // Выводим результат.
         imshow("Display Image", result);
-        // Каждое изображение показывается 6 секунд.
+        // Each image displays for 6 seconds
         waitKey(6000);
     }
     return 0;
