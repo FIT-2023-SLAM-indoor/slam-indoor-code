@@ -8,8 +8,9 @@ using namespace cv;
 int main(int argc, char** argv)
 {
     Mat image, result;
-    // Let's do a little slide show. Let's see how the algorithm processes 4 different images
-    for (int i = 0; i < 9; i++)
+    std::vector<KeyPoint> features;
+    // Let's do a little slide show. Let's see how the algorithm processes 7 different images
+    for (int i = 0; i < 7; i++)
     {
         // Saved the i-th image into an N-dimensional array
         image = imread(format("data/%d.jpg", i));  // ImreadModes::IMREAD_GRAYSCALE
@@ -18,18 +19,16 @@ int main(int argc, char** argv)
             return -1;
         }
 
-        std::vector<KeyPoint> keypoints;
-
         // Applied the FAST algorithm to the image and saved the image
         // with the highlighted features in @result
-        fastExtractor(&image, &keypoints, 13);
+        fastExtractor(&image, &features);
 
-        drawKeypoints(image, keypoints, result);
+        drawKeypoints(image, features, result);
 
         namedWindow("Display Image", WINDOW_AUTOSIZE);
         imshow("Display Image", result);
-        // Each image displays for 6 seconds
-        waitKey(6000);
+        // Each image displays for 3 seconds
+        waitKey(3000);
     }
     return 0;
 }
