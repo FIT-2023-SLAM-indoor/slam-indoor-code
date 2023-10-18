@@ -12,13 +12,21 @@ using namespace std;
 
 int HEIGHT;
 int WIDTH;
-
+/*
+* Takes keypoints vector and return points vector.
+* The main purpose is to get the spatial coordinates of keypoints and make vector of them.
+* 
+*/
 void convertKeyPointIntoPoints(vector<KeyPoint>* keypoints, vector<Point2f>* points)
 {
 
     for (int i = 0;i <(*keypoints).size();i++)
         (*points).push_back((*keypoints)[i].pt);
 }
+/*
+* Gets the feature and returns a vector of batch with given radius consists of points around this feature.
+* Barrier is used to choose the density of resulting circle;
+*/
 void getPointsAroundFeature(Point2f feature, int radius, double barier, vector<Point2f>* pointsAround)
 {
     (*pointsAround).push_back(feature);
@@ -38,6 +46,9 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, vector<P
     }
     
 }
+/*
+* Gets two circle batches from two different pictures and returs sum of squared difference of pixels colors of given batches.
+*/
 double sumSquaredDifferences(vector<Point2f>* batch1, vector<Point2f>* batch2,Mat* image1,Mat* image2,double min)
 {
     double sum = 0;
@@ -69,6 +80,9 @@ double sumSquaredDifferences(vector<Point2f>* batch1, vector<Point2f>* batch2,Ma
 
     return sum;
 }
+/*
+* Main func to track features.Gets feature,two images and address of feature in the second image.
+*/
 int trackFeature(Point2f feature, Mat* image1, Mat* image2,Point2f* res,double barier)
 {
     double sigma = (WIDTH + HEIGHT) / (4 * sqrt(HEIGHT + WIDTH));
@@ -100,7 +114,6 @@ int trackFeature(Point2f feature, Mat* image1, Mat* image2,Point2f* res,double b
 int main(int argc, char** argv)
 {
     Mat image, image2, original;
-    // Let's do a little slide show. Let's see how the algorithm processes 4 different images
     VideoCapture cap("data/example.mp4");
     if (!cap.isOpened()) {
         std::cerr << "Camera wasn't opened" << std::endl;
@@ -111,8 +124,6 @@ int main(int argc, char** argv)
     WIDTH = image.size().width;
     vector<KeyPoint> keypoints;
     vector<Point2f> points;
-    // Applied the FAST algorithm to the image and saved the image
-    // with the highlighted features in @result
     fastExtractor(&image, &keypoints, 20);
     original = image.clone();
     convertKeyPointIntoPoints(&keypoints, &points);
