@@ -17,7 +17,7 @@
  *
  * @param type one of the three neighborhoods as defined in the paper.
  */
-void fastExtractor(cv::Mat* srcImage, std::vector<cv::KeyPoint>* points,
+void fastExtractor(cv::Mat& srcImage, std::vector<cv::KeyPoint>& points,
     int threshold, bool suppression, cv::FastFeatureDetector::DetectorType type)
 {
     //
@@ -25,5 +25,5 @@ void fastExtractor(cv::Mat* srcImage, std::vector<cv::KeyPoint>* points,
         cv::FastFeatureDetector::create(threshold, suppression, type);
 
     //
-    detector->detect(*srcImage, *points);
+    detector->detect(srcImage, points);
 }
