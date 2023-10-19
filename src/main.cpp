@@ -21,7 +21,7 @@ int main(int argc, char** argv)
 
         // Applied the FAST algorithm to the image and saved the image
         // with the highlighted features in @result
-        fastExtractor(&image, &features);
+        fastExtractor(image, features);
 
         drawKeypoints(image, features, result);
 
