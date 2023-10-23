@@ -2,16 +2,18 @@
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
 
-#include "poseEstimation.h"
+#include "cameraCalibration.h"
 
 using namespace cv;
 
+
 int main(int argc, char** argv )
 {
-    cv::Mat q = (cv::Mat_<double>(2, 2) << 1, 2, 1, 3);
-    cv::Mat g = (cv::Mat_<double>(2, 2) << 2, 3, 2, 4);
-    countMatricies(q, g);
+    Mat cameraMatrix;
+    // Choose method for calibration using CalibrationOption enum
+    calibration(cameraMatrix, CalibrationOption::configureFromFiles);
+    std::cout << cameraMatrix;
     return 0;
 }
