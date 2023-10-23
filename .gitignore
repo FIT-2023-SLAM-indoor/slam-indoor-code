@@ -1,5 +1,7 @@
 out/*
 
+.idea/
+
 cmake-build-debug
 
 # Created by https://www.toptal.com/developers/gitignore/api/clion
