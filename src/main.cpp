@@ -13,7 +13,7 @@ int main(int argc, char** argv )
 {
     Mat cameraMatrix;
     // Choose method for calibration using CalibrationOption enum
-    calibration(cameraMatrix, CalibrationOption::configureFromFiles);
+    calibration(cameraMatrix, CalibrationOption::configureFromVideo);
     std::cout << cameraMatrix;
     return 0;
 }
