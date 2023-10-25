@@ -5,7 +5,7 @@
 /*
  * Detects corners using the FAST algorithm and writes info about them into vector.
  * 
- * @param image where keypoints (corners) are detected.
+ * @param srcImage where keypoints (corners) are detected.
  * 
  * @param points keypoints detected on the image.
  * 

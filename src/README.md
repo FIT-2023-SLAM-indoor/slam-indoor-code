@@ -1,26 +1,26 @@
-# Как работает функция `fastExtractor`
-Она ничего не возвращает! В неё в качестве обязательных аргументов нужно положить:
+# How the `fastExtractor` function works
+It detects corners using the FAST algorithm and writes info about them into vector.
+In it , as mandatory arguments , you need to put:
 
-1. Ссылку на матрицу (`cv::Mat *`), которая хранит изображение.
-2. Ссылку на вектор, который будет хранить мета-инфу о фичах данного изображение (`std::vector<cv::KeyPoint> *`).
+1. A reference to the matrix (`cv::Mat&`) that stores the image.
+2. A link to a vector that will store meta information about the features of this image (`std::vector<cv::KeyPoint>&`).
 
-Остальные параметры уже имеют дефолтные значения, их можно не задавать. Но можно попытаться улучшить работу экстрактора и для этого уже придется менять остальные параметры:
+The other parameters already have default values, they can be omitted. But you can try to improve the operation of the extractor and for this you will already have to change the other parameters:
 
-3. Число (`int`). Это минимальное значение, на которое цветовая интенсивность всех пикселей-соседей должная быть выше или ниже пикселя-кандидата.
-4. Булевое значение (`bool`). Когда я игрался с параметрами в первый день мне казалось, что он отвечает за подавление не ключевых точек. Сейчас этот параметр вроде вообще ни на что не влияет. Мне с этим ещё стоит разобраться. Вот что написано в документации: <b>if true, non-maximum suppression is applied to detected corners
+3. Number (`int`). This is the minimum value by which the color intensity of all neighboring pixels should be higher or lower than the candidate pixel.
+4. Boolean value (`bool`). Suppression of non-key points. It works with questionable efficiency. Here is what is written in the documentation: <b>if true, non-maximum suppression is applied to detected corners
 (keypoints).</b>
-5. Тип детектора (`FastFeatureDetector::DetectorType`). Это влияет на то с каким количеством пикселей-соседей (и с какими конкретно соседями) мы сравниваем наш пиксель-кандидат. Про то чем отличаются типы: (https://stackoverflow.com/questions/41809634/opencv-fast-type-5-8). Возможные значения типа:
+5. Detector type (`FastFeatureDetector::DetectorType`). This affects how many pixel neighbors (and with which specific neighbors) we are comparing our candidate pixel. About how the types differ: (https://stackoverflow.com/questions/41809634/opencv-fast-type-5-8 ). Possible values of the type:
    - FastFeatureDetector::TYPE_9_16 
    - FastFeatureDetector::TYPE_7_12
    - FastFeatureDetector::TYPE_5_8
 
-После завершения работы функции в вектор (`std::vector<cv::KeyPoint>`), ссылку на который мы передавли, запишется мета-инфа о фичах на изображении.
-Какая конкретно информация, и в каком виде она будет представлена мне ещё предстоит разобраться.
+After the completion of the function in the vector (`std::vector<cv::KeyPoint>`), the link to which we passed, will record meta information about the features in the image.
 
 
-# Что происходит в `main`?
-Там я показываю небольшое слайд-шоу. Можно посмотреть, как алгоритм работает на 7 разных изображениях. Поиграйся с вызовом функции `fastExtractor`. 
+# What happens in `main'?
+There I show a small slide show. You can see how the algorithm works on 7 different images.
 
 
-# Как запускать?
-Выбери `CMakeLists.txt` в качестве точки запуска и... запускай. Всё должно работать. Возможно придётся конфигугрировать новый кэш для cmake-а. Верю, что ты сможешь разобраться с этим сам.
+# How to launch?
+Choose `CMakeLists.txt ` as a launch point and... launch. Everything should work. You may have to configure a new cache for cmake.
