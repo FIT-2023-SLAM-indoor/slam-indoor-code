@@ -43,7 +43,7 @@ void countMatricies(InputArray qPoints, InputArray gPoints)
     Mat P1(3,4,CV_32F), P2(3, 4, CV_32F);
     Mat D;
     D.diag(4);
-    gemm(cameraCalib, extendedR1, 1, D, 1, P1); // TODO: Понять, как их нормально перемножать
+//    gemm(cameraCalib, extendedR1, 1, D, 1, P1); // TODO: Понять, как их нормально перемножать
     std::cout << "P1: " << P1 << std::endl;
     std::cout << "P2: " << P2 << std::endl;
 }
