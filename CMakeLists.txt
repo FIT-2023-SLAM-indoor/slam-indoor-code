@@ -7,7 +7,7 @@ enable_testing()
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
-add_executable(slam-indoor-code "src/main.cpp" "src/poseEstimation.cpp" "src/poseEstimation.h" "src/cameraCalibration.cpp" "src/cameraCalibration.h")
+add_executable(slam-indoor-code "src/main.cpp" "src/poseEstimation.cpp" "src/poseEstimation.h" "src/cameraCalibration.cpp" "src/cameraCalibration.h"  "src/featureTracking.h"  "src/featureTracking.cpp")
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
 
