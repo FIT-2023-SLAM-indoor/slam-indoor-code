@@ -21,7 +21,7 @@ void countMatricies(InputArray qPoints, InputArray gPoints)
 
 	// Find P (extrinsic matrix) using SVD class
 	SVD svdSolver(essentialMatrix, SVD::NO_UV);
-	Mat extrinsicMatrix = svdSolver.w; // or vt
+	Mat extrinsicMatrix = Mat::diag(svdSolver.w);
 
     std::cout << "P from SVD: " << extrinsicMatrix << std::endl;
 
@@ -40,10 +40,10 @@ void countMatricies(InputArray qPoints, InputArray gPoints)
     std::cout << "R1: " << extendedR1 << std::endl;
     std::cout << "R2: " << extendedR2 << std::endl;
 
-    Mat P1(3,4,CV_32F), P2(3, 4, CV_32F);
-    Mat D;
-    D.diag(4);
-//    gemm(cameraCalib, extendedR1, 1, D, 1, P1); // TODO: Понять, как их нормально перемножать
+    Mat P1 = Mat::zeros(Size(3,4), CV_32F),
+        P2 = Mat::zeros(Size(3,4), CV_32F);
+    gemm(cameraCalib, extendedR1, 1, P1, 0, P1);
+    gemm(cameraCalib, extendedR1, 1, P2, 0, P2);
     std::cout << "P1: " << P1 << std::endl;
     std::cout << "P2: " << P2 << std::endl;
 }
