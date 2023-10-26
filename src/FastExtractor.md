@@ -17,3 +17,8 @@ The other parameters already have default values, they can be omitted. But you c
 
 After the completion of the function in the vector (`std::vector<cv::KeyPoint>`), the link to which we passed, will record meta information about the features in the image.
 
+#  Examples of function results
+![](../data/arfcts/1.png)
+![](../data/arfcts/2.png)
+![](../data/arfcts/3.png)
+![](../data/arfcts/3_.png)
