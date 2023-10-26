@@ -12,6 +12,7 @@ add_executable(
         "src/fastExtractor.cpp" "src/fastExtractor.h"
         "src/cameraCalibration.cpp" "src/cameraCalibration.h"
         "src/cameraTransition.cpp" "src/cameraTransition.h"
+        "src/featureTracking.cpp" "src/featureTracking.h"
 )
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
