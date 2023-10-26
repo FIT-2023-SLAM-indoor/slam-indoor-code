@@ -20,30 +20,23 @@ void countMatricies(InputArray qPoints, InputArray gPoints)
 	Mat essentialMatrix = findEssentialMat(qPoints, gPoints, cameraCalib);
 
 	// Find P (extrinsic matrix) using SVD class
-	SVD svdSolver(essentialMatrix, SVD::NO_UV);
-	Mat extrinsicMatrix = Mat::diag(svdSolver.w);
-
-    std::cout << "P from SVD: " << extrinsicMatrix << std::endl;
-
 	// Find rotations and translation using wrapped SVD
-	Mat rot1, rot2, translation;
-	decomposeEssentialMat(essentialMatrix, rot1, rot2, translation);
+	Mat rot1, rot2, transition, negativeTransition;
+	decomposeEssentialMat(essentialMatrix, rot1, rot2, transition);
 
-    std::cout << "R1: " << rot1 << std::endl;
-    std::cout << "R2: " << rot2 << std::endl;
-    std::cout << "t: " << translation << std::endl;
+    Mat possibleP1(3, 4, CV_32F),
+        possibleP2(3, 4, CV_32F),
+        possibleP3(3, 4, CV_32F),
+        possibleP4(3, 4, CV_32F);
+    hconcat(rot1, transition, possibleP1);
+    hconcat(rot1, -transition, possibleP2);
+    hconcat(rot2, transition, possibleP3);
+    hconcat(rot2, -transition, possibleP4);
 
-    Mat extendedR1(3, 4, CV_32F), extendedR2(3, 4, CV_32F);
-    hconcat(rot1, translation, extendedR1);
-    hconcat(rot2, translation, extendedR2);
+    std::cout << "P1: " << possibleP1 << std::endl;
+    std::cout << "P1: " << possibleP2 << std::endl;
+    std::cout << "P1: " << possibleP3 << std::endl;
+    std::cout << "P1: " << possibleP4 << std::endl;
 
-    std::cout << "R1: " << extendedR1 << std::endl;
-    std::cout << "R2: " << extendedR2 << std::endl;
-
-    Mat P1 = Mat::zeros(Size(3,4), CV_32F),
-        P2 = Mat::zeros(Size(3,4), CV_32F);
-    gemm(cameraCalib, extendedR1, 1, P1, 0, P1);
-    gemm(cameraCalib, extendedR1, 1, P2, 0, P2);
-    std::cout << "P1: " << P1 << std::endl;
-    std::cout << "P2: " << P2 << std::endl;
+    // TODO: add choosing of correct P matrix using the first point
 }
