@@ -1,8 +1,7 @@
 # slam-indoor-code
-Repository with source code of SLAM door project
+Repository with source code of SLAM indoor project
 
 ## Requirements
-- GCC 13.2.0
 - OpenCV 4.8.0 
 - CMake 3.26.2 ([release](https://github.com/Kitware/CMake/releases/tag/v3.27.6))
 
