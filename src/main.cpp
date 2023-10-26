@@ -9,11 +9,11 @@ int main(int argc, char** argv)
 {
     Mat image, result;
     std::vector<KeyPoint> features;
-    // Let's do a little slide show. Let's see how the algorithm processes 7 different images
-    for (int i = 0; i < 7; i++)
+    // Let's do a little slide show. Let's see how the algorithm processes 3 different images
+    for (int i = 0; i < 3; i++)
     {
         // Saved the i-th image into an N-dimensional array
-        image = imread(format("data/%d.jpg", i));  // ImreadModes::IMREAD_GRAYSCALE
+        image = imread(format("data/arfcts/%d.jpg", i));  // ImreadModes::IMREAD_GRAYSCALE
         if (!image.data) {
             printf("No image data \n");
             return -1;
@@ -27,8 +27,8 @@ int main(int argc, char** argv)
 
         namedWindow("Display Image", WINDOW_AUTOSIZE);
         imshow("Display Image", result);
-        // Each image displays for 3 seconds
-        waitKey(3000);
+        // Each image displays for 4 seconds
+        waitKey(4000);
     }
     return 0;
 }

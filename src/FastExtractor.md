@@ -17,10 +17,3 @@ The other parameters already have default values, they can be omitted. But you c
 
 After the completion of the function in the vector (`std::vector<cv::KeyPoint>`), the link to which we passed, will record meta information about the features in the image.
 
-
-# What happens in `main'?
-There I show a small slide show. You can see how the algorithm works on 7 different images.
-
-
-# How to launch?
-Choose `CMakeLists.txt ` as a launch point and... launch. Everything should work. You may have to configure a new cache for cmake.
