@@ -22,3 +22,10 @@ After the completion of the function in the vector (`std::vector<cv::KeyPoint>`)
 ![](../data/arfcts/2.png)
 ![](../data/arfcts/3.png)
 ![](../data/arfcts/3_.png)
+
+# How to use `fastExtractor`?
+ First of all, call this function on the source image and vector in which the points will be stored. After that, if you need it, you can mark key points on the image using the OpenCV `drawKeypoints` function. Your code might look something like this:
+```C++
+fastExtractor(image, features);
+drawKeypoints(image, features, result);
+```
