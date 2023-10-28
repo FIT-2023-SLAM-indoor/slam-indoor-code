@@ -9,7 +9,9 @@
 
 using namespace cv;
 
-void countMatricies(InputArray qPoints, InputArray gPoints)
+
+
+void countMatrices(InputArray qPoints, InputArray gPoints, Mat& P)
 {
 	Mat fundamentalMatrix = findFundamentalMat(qPoints, gPoints);
 
@@ -19,31 +21,13 @@ void countMatricies(InputArray qPoints, InputArray gPoints)
 
 	Mat essentialMatrix = findEssentialMat(qPoints, gPoints, cameraCalib);
 
-	// Find P (extrinsic matrix) using SVD class
-	SVD svdSolver(essentialMatrix, SVD::NO_UV);
-	Mat extrinsicMatrix = svdSolver.w; // or vt
+    // Find P matrix using wrapped SVD and
+    Mat cvR, cvt;
+    Mat p1(1, 2, CV_32F), p2(1, 2, CV_32F);
+    qPoints.getMat().row(0).copyTo(p1.row(0));
+    gPoints.getMat().row(0).copyTo(p2.row(0));
+    recoverPose(essentialMatrix, p1, p2, cvR, cvt);
+    hconcat(cvR, cvt, P);
 
-    std::cout << "P from SVD: " << extrinsicMatrix << std::endl;
 
-	// Find rotations and translation using wrapped SVD
-	Mat rot1, rot2, translation;
-	decomposeEssentialMat(essentialMatrix, rot1, rot2, translation);
-
-    std::cout << "R1: " << rot1 << std::endl;
-    std::cout << "R2: " << rot2 << std::endl;
-    std::cout << "t: " << translation << std::endl;
-
-    Mat extendedR1(3, 4, CV_32F), extendedR2(3, 4, CV_32F);
-    hconcat(rot1, translation, extendedR1);
-    hconcat(rot2, translation, extendedR2);
-
-    std::cout << "R1: " << extendedR1 << std::endl;
-    std::cout << "R2: " << extendedR2 << std::endl;
-
-    Mat P1(3,4,CV_32F), P2(3, 4, CV_32F);
-    Mat D;
-    D.diag(4);
-//    gemm(cameraCalib, extendedR1, 1, D, 1, P1); // TODO: Понять, как их нормально перемножать
-    std::cout << "P1: " << P1 << std::endl;
-    std::cout << "P2: " << P2 << std::endl;
 }
