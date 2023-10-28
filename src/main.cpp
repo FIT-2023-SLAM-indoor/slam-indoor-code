@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
     namedWindow("Display Image", WINDOW_AUTOSIZE);
     imshow("Display Image", result);
-    // Each image displays for 4 seconds
+    // Image displays for 4 seconds
     waitKey(1000);
     ////////////////////////////////////////
 
