@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     std::vector<KeyPoint> features;
 
     // Saved the image into an N-dimensional array
-    image = imread("docs/artifact/3.png");  // ImreadModes::IMREAD_GRAYSCALE
+    image = imread("./docs/artifact/feature_extraction/3.png");  // ImreadModes::IMREAD_GRAYSCALE
     if (!image.data) {
         printf("No image data \n");
         return -1;
