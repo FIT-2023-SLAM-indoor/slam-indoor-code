@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     std::vector<KeyPoint> features;
 
     // Saved the image into an N-dimensional array
-    image = imread("data/arfcts/1.png");  // ImreadModes::IMREAD_GRAYSCALE
+    image = imread("docs/artifact/3.png");  // ImreadModes::IMREAD_GRAYSCALE
     if (!image.data) {
         printf("No image data \n");
         return -1;
@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
     namedWindow("Display Image", WINDOW_AUTOSIZE);
     imshow("Display Image", result);
-    // Image displays for 4 seconds
+    // Image displays for 1 second
     waitKey(1000);
     ////////////////////////////////////////
 
