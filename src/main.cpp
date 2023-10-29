@@ -19,12 +19,13 @@ int main(int argc, char** argv)
 	std::vector<KeyPoint> keypoints;
 
 	// Saved the image into an N-dimensional array
-	VideoCapture cap("data/example.mp4");  // ImreadModes::IMREAD_GRAYSCALE
+	VideoCapture cap("data/indoor_test.mp4");  // ImreadModes::IMREAD_GRAYSCALE
 
 	if (!cap.isOpened()) {
 		std::cerr << "Camera wasn't opened" << std::endl;
 		return -1;
 	}
+	Mat prevP, currentP;
 	while (true) {
 		cap.read(image);
 		cvtColor(image, image, COLOR_BGR2GRAY);
@@ -72,12 +73,18 @@ int main(int argc, char** argv)
 		////////////////////////////////////////
 		// Estimate matrices
 		////////////////////////////////////////
-		Mat newP(3, 4, CV_32F);
-		countMatrices(q, g, newP);
+		currentP = Mat(3, 4, CV_32F);
+		countMatrices(q, g, currentP);
 		////////////////////////////////////////
+
+		///something with P matrix...
+		//Probably here we skip step if this is the first two frames
+
+		//////////////////////////////////////
 		char c = (char)waitKey(33);
 		if (c == ESC_KEY)
 			break;
+		prevP = currentP;
 
 	}
 
