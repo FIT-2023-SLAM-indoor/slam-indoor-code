@@ -12,7 +12,7 @@
 
 using namespace cv;
 
-void calibration(Mat& cameraMatrix, CalibrationOption option, const char *pathToXML, int test) {
+void calibration(Mat& cameraMatrix, CalibrationOption option, const char *pathToXML) {
     VideoCapture cap;
     std::vector<String> files;
     switch (option) {
@@ -30,13 +30,20 @@ void calibration(Mat& cameraMatrix, CalibrationOption option, const char *pathTo
             break;
         default:;
     }
-    loadCalibration("./config/cameraMatrix.xml", cameraMatrix);
+    loadMatrixFromXML(pathToXML, cameraMatrix);
 }
 
-/*
- * Calculates real relative point of real world plane pattern
+/**
+ * Static function for getting chessboard points.
+ *
+ * Loads to `objectPoints` points with relative plane sizes (**we assume Z as 0**) of chessboard corners
+ * with described shape
+ *
+ * @param objectPoints Link for loading result
+ * @param boardSize Shape of board (`Size(int width, int height)`)
+ * @param chessboardSquareSize Rational value of square size. Default `1.0`
  */
-void getObjectPoints(std::vector<Point3f> &objectPoints, Size boardSize, double chessboardSquareSize) {
+static void getObjectPoints(std::vector<Point3f> &objectPoints, Size boardSize, double chessboardSquareSize= 1.0) {
     for (int i = 0; i < boardSize.height; ++i) {
         for (int j = 0; j < boardSize.width; ++j) {
             objectPoints.emplace_back(Point3f(
@@ -95,9 +102,8 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-    // Save only camera matrix. Other parameters unnecessary now
     if (pathToXML != nullptr)
-        saveCalibration(pathToXML, cameraMatrixK);
+        saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
 }
 
 void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount, double squareSize, Size boardSize,
@@ -149,26 +155,35 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-    // Save only camera matrix. Other parameters unnecessary now
     if (pathToXML != nullptr)
-        saveCalibration(pathToXML, cameraMatrixK);
+        saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
 }
 
-void saveCalibration(const char *pathToXML, Mat &cameraMatrix) {
+void saveMatrixToXML(const char *pathToXML, const Mat &matrix, const String& matrixKey, FileStorage::Mode mode) {
+    if (mode != FileStorage::WRITE && mode != FileStorage::APPEND)
+        std::cerr << "Only WRITE or APPEND mode can be used for save function" << std::endl;
     FileStorage fs;
-    if (!fs.open(pathToXML, FileStorage::WRITE)) {
+    if (!fs.open(pathToXML, mode)) {
         std::cerr << format("Cannot open %s", pathToXML) << std::endl;
         exit(-1);
     }
-    fs << "K" << cameraMatrix;
+    fs << matrixKey << matrix;
+}
+
+void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, const Mat& distortionCoeffs,
+                              const Mat& R, const Mat& T) {
+    saveMatrixToXML(pathToXML, cameraMatrixK);
+    saveMatrixToXML(pathToXML, distortionCoeffs, "DC", FileStorage::APPEND);
+    saveMatrixToXML(pathToXML, R, "R", FileStorage::APPEND);
+    saveMatrixToXML(pathToXML, T, "T", FileStorage::APPEND);
 }
 
 
-void loadCalibration(const char *pathToXML, Mat &cameraMatrix) {
+void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey) {
     FileStorage fs;
     if (!fs.open(pathToXML, FileStorage::READ)) {
         std::cerr << format("Cannot open %s", pathToXML) << std::endl;
         exit(-1);
     }
-    fs["K"] >> cameraMatrix;
+    fs[matrixKey] >> matrix;
 }
