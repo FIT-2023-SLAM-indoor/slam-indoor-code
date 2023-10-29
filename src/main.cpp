@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 	std::vector<KeyPoint> keypoints;
 
 	// Saved the image into an N-dimensional array
-	VideoCapture cap("data/indoor_test.mp4");  // ImreadModes::IMREAD_GRAYSCALE
+	VideoCapture cap("data/example.mp4");  // ImreadModes::IMREAD_GRAYSCALE
 
 	if (!cap.isOpened()) {
 		std::cerr << "Camera wasn't opened" << std::endl;
