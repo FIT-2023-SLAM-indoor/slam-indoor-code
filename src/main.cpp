@@ -13,8 +13,6 @@ using namespace cv;
 
 int main(int argc, char** argv)
 {
-	// TODO: Завернуть всё в цикл чтения кадров и определить аргументы для trackFeatures
-	////////////////////////////////////////
 	// Feature extracting
 	////////////////////////////////////////
 	Mat image, image2, result;
