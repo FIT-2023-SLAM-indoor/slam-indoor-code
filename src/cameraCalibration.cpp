@@ -30,7 +30,7 @@ void calibration(Mat& cameraMatrix, CalibrationOption option, const char *pathTo
             break;
         default:;
     }
-    loadCalibration(pathToXML, cameraMatrix);
+    loadMatrixFromXML(pathToXML, cameraMatrix);
 }
 
 /**
@@ -102,9 +102,8 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-    // Save only camera matrix. Other parameters unnecessary now
     if (pathToXML != nullptr)
-        saveCalibration(pathToXML, cameraMatrixK);
+        saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
 }
 
 void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount, double squareSize, Size boardSize,
@@ -156,22 +155,31 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-    // Save only camera matrix. Other parameters unnecessary now
     if (pathToXML != nullptr)
-        saveCalibration(pathToXML, cameraMatrixK);
+        saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
 }
 
-void saveCalibration(const char *pathToXML, Mat &matrix, const String& matrixKey) {
+void saveMatrixToXML(const char *pathToXML, const Mat &matrix, const String& matrixKey, FileStorage::Mode mode) {
+    if (mode != FileStorage::WRITE && mode != FileStorage::APPEND)
+        std::cerr << "Only WRITE or APPEND mode can be used for save function" << std::endl;
     FileStorage fs;
-    if (!fs.open(pathToXML, FileStorage::WRITE)) {
+    if (!fs.open(pathToXML, mode)) {
         std::cerr << format("Cannot open %s", pathToXML) << std::endl;
         exit(-1);
     }
     fs << matrixKey << matrix;
 }
 
+void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, const Mat& distortionCoeffs,
+                              const Mat& R, const Mat& T) {
+    saveMatrixToXML(pathToXML, cameraMatrixK);
+    saveMatrixToXML(pathToXML, distortionCoeffs, "DC", FileStorage::APPEND);
+    saveMatrixToXML(pathToXML, R, "R", FileStorage::APPEND);
+    saveMatrixToXML(pathToXML, T, "T", FileStorage::APPEND);
+}
 
-void loadCalibration(const char *pathToXML, Mat &matrix, const String& matrixKey) {
+
+void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey) {
     FileStorage fs;
     if (!fs.open(pathToXML, FileStorage::READ)) {
         std::cerr << format("Cannot open %s", pathToXML) << std::endl;

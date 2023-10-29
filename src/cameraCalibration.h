@@ -67,7 +67,11 @@ void chessboardPhotosCalibration(std::vector<String>& fileNames, int itersCount=
  * @param [out] matrix Matrix for saving.
  * @param [in] matrixKey Tag name for saving block.
  */
-void saveCalibration(const char *pathToXML, Mat &matrix, const String& matrixKey= "K");
+void saveMatrixToXML(const char *pathToXML, const Mat &matrix, const String& matrixKey= "K",
+                     FileStorage::Mode mode= FileStorage::WRITE);
+
+void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, const Mat& distortionCoeffs,
+                              const Mat& R, const Mat& T);
 
 /**
  * Function for loading matrix.
@@ -78,4 +82,4 @@ void saveCalibration(const char *pathToXML, Mat &matrix, const String& matrixKey
  * @param [out] matrix Matrix for loading.
  * @param [in] matrixKey Tag name of block with desired matirx.
  */
-void loadCalibration(const char *pathToXML, Mat &matrix, const String& matrixKey= "K");
+void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey= "K");
