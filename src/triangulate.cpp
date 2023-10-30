@@ -12,9 +12,9 @@ constexpr int PROJ_MATR_COLS = 4;
  * To do this, we use the singular value decomposition (SVD) over A.
  * For more details see the book "Multiple View Geometry in CV".
  */
-static void reconstructPointsFor3D(CvMat* projMatr1, CvMat* projMatr2, CvMat* projPoints1, CvMat* projPoints2, CvMat* points4D)
+static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& projPoints1, CvMat& projPoints2, CvMat& points4D)
 {
-    int numPoints = projPoints1->cols;
+    int numPoints = projPoints1.cols;
 
     // Preallocate SVD matrices on stack.
     cv::Matx<double, 4, 4> matrA;
@@ -22,8 +22,8 @@ static void reconstructPointsFor3D(CvMat* projMatr1, CvMat* projMatr2, CvMat* pr
     cv::Matx<double, 4, 1> matrW;
     cv::Matx<double, 4, 4> matrV;
 
-    CvMat* projPoints[2] = { projPoints1, projPoints2 };
-    CvMat* projMatrs[2] = { projMatr1, projMatr2 };
+    CvMat* projPoints[2] = { &projPoints1, &projPoints2 };
+    CvMat* projMatrs[2] = { &projMatr1, &projMatr2 };
 
     // Solve system for each point.
     for (int p = 0; p < numPoints; p++)   // For each Point. 
@@ -44,29 +44,14 @@ static void reconstructPointsFor3D(CvMat* projMatr1, CvMat* projMatr2, CvMat* pr
         cv::SVD::compute(matrA, matrW, matrU, matrV);
 
         // Write computed point into points array.
-        cvmSet(points4D, 0, p, matrV(3, 0)); /* X */
-        cvmSet(points4D, 1, p, matrV(3, 1)); /* Y */
-        cvmSet(points4D, 2, p, matrV(3, 2)); /* Z */
-        cvmSet(points4D, 3, p, matrV(3, 3)); /* W */
+        cvmSet(&points4D, 0, p, matrV(3, 0)); /* X */
+        cvmSet(&points4D, 1, p, matrV(3, 1)); /* Y */
+        cvmSet(&points4D, 2, p, matrV(3, 2)); /* Z */
+        cvmSet(&points4D, 3, p, matrV(3, 3)); /* W */
     }
 }
 
 
-/* 
- * This function is a wrapper over reconstructPointsFor3D. 
- * First, it converts the transmitted data into computationally convenient data types.
- * Secondly, we allocate an array to store points in 3D.
- * As a result of inner function work, we get three-dimensional points (in homogeneous coordinates).
- *
- * @param projPoints1 and projPoints2 is 2xN array of feature points in the images. 
- *     It can be also a vector of feature points or two-channel matrix of size 1xN or Nx1.
- *
- * @param matr1 and matr2 3x4 projection matrix of the camera, 
- *     i.e. this matrix projects 3D points given in the world's coordinate system into the image.
- *
- * @param points 4D is 4xN array of reconstructed points in homogeneous coordinates. 
- *     These points are returned in the world's coordinate system.
- */
 void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     cv::Mat matr1, cv::Mat matr2,
     cv::OutputArray points4D)
@@ -81,5 +66,5 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     cv::Mat matPoints4D = points4D.getMat();
     CvMat cvPoints4D = cvMat(matPoints4D);
     
-    reconstructPointsFor3D(&cvMatr1, &cvMatr2, &cvPoints1, &cvPoints2, &cvPoints4D);
+    reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
 }
