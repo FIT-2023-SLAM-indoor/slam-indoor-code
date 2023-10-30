@@ -6,15 +6,15 @@ constexpr int NUM_VIEWS = 2;
 constexpr int PROJ_MATR_COLS = 4;
 
 
-/* 
+/*
  * This function reconstructs 3-dimensional points (in homogeneous coordinates).
  * Calculates matrix A, after that denotes three-dimensional positions for all points.
  * To do this, we use the singular value decomposition (SVD) over A.
- * For more details see the book "Multiple View Geometry in CV".
+ * For more details about linear triangulation see the book "Multiple View Geometry in CV".
  */
 static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& projPoints1, CvMat& projPoints2, CvMat& points4D)
 {
-    int numPoints = projPoints1.cols;
+    int numPoints = projPoints1.rows;
 
     // Preallocate SVD matrices on stack.
     cv::Matx<double, 4, 4> matrA;
@@ -32,8 +32,8 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
         for (int v = 0; v < NUM_VIEWS; v++)   // For each View.
         {
             double x, y;
-            x = cvmGet(projPoints[v], 0, p);
-            y = cvmGet(projPoints[v], 1, p);
+            x = cvmGet(projPoints[v], p, 0);
+            y = cvmGet(projPoints[v], p, 1);
             for (int c = 0; c < PROJ_MATR_COLS; c++)   // For each Column.
             {
                 matrA(v * 2, c) = x * cvmGet(projMatrs[v], 2, c) - cvmGet(projMatrs[v], 0, c);
@@ -48,6 +48,7 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
         cvmSet(&points4D, 1, p, matrV(3, 1)); /* Y */
         cvmSet(&points4D, 2, p, matrV(3, 2)); /* Z */
         cvmSet(&points4D, 3, p, matrV(3, 3)); /* W */
+        // TODO: на будущее можно поменять местами (p) и индексы столбцов, и устанавливать значение не столбцов, а сразу строки
     }
 }
 
@@ -62,9 +63,9 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     CvMat cvPoints1 = cvMat(points1), cvPoints2 = cvMat(points2);
 
     // Create the array for our 3D points. 
-    points4D.create(4, points1.cols, points1.type());   // Four rows because we have additional parameter W for coords.
+    points4D.create(4, points1.rows, points1.type());   // Four rows because we have additional parameter W for coords.
     cv::Mat matPoints4D = points4D.getMat();
     CvMat cvPoints4D = cvMat(matPoints4D);
-    
+
     reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
 }
