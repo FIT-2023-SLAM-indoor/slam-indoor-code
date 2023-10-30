@@ -9,10 +9,7 @@
 
 using namespace cv;
 
-/*
- * Gets the feature and returns a std::vector of batch with given radius consists of points around this feature.
- * Barrier is used to choose the density of resulting circle;
- */
+
 void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vector<Point2f>& pointsAround, Mat& img)
 {
 	int WIDTH = img.size().width;
@@ -33,9 +30,7 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vec
 		}
 	}
 }
-/*
- * Gets two circle batches from two different pictures and returs sum of squared difference of pixels colors of given batches.
- */
+
 double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>& batch2, Mat& image1, Mat& image2, double min)
 {
 	double sum = 0;
@@ -64,11 +59,7 @@ double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>&
 
 	return sum;
 }
-/*
- * Tracking one feature.Gets feature,two images and address of feature in the second image to put the result in int.
- * @param barier is required for choosing density of circles.
- *
- */
+
 int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
 {
 	int WIDTH = image1.size().width;
@@ -103,13 +94,7 @@ int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double
 	}
 	return 0;
 }
-/*
- * Tracking all the features.
- * @param features vector of previous features.
- * @param newFeatures vector of tracked features
- * @param barier is required to choose density of circles.
- *
- */
+
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
 	for (int j = 0; j < features.size(); j++)
