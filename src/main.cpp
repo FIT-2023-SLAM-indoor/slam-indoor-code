@@ -9,6 +9,7 @@
 #define ESC_KEY 27
 
 using namespace cv;
+
 // Checks if a matrix is a valid rotation matrix.
 bool isRotationMatrix(Mat& R)
 {
@@ -67,8 +68,6 @@ int main(int argc, char** argv)
 	Mat prevP, currentP;
 	prevP = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
 
-
-
 	while (true) {
 		cap.read(image);
 		cvtColor(image, image, COLOR_BGR2GRAY);
@@ -83,8 +82,8 @@ int main(int argc, char** argv)
 		imshow("Display Image", result);
 		// Each image displays for 4 seconds
 		waitKey(1000);
-		// 
-		//Transform image into black and white
+
+    //Transform image into black and white
 		cap.read(image2);
 		cvtColor(image2, image2, COLOR_BGR2GRAY);
 		cvtColor(image2, image2, COLOR_GRAY2BGR);
