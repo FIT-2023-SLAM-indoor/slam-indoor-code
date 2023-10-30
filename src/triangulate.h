@@ -7,7 +7,7 @@
  * Secondly, we allocate an array to store points in 3D.
  * As a result of inner function work, we get three-dimensional points (in homogeneous coordinates).
  *
- * @param projPoints1 and projPoints2 is 2xN array of feature points in the images.
+ * @param projPoints1 and projPoints2 is Nx2 array of feature points in the images.
  *     It can be also a vector of feature points or two-channel matrix of size 1xN or Nx1.
  *
  * @param matr1 and matr2 3x4 projection matrix of the camera,
