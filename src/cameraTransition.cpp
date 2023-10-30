@@ -10,13 +10,15 @@
 using namespace cv;
 
 
-void estimateIgorAss(InputArray qPoints, InputArray gPoints, Mat& P)
+void countMatrices(InputArray qPoints, InputArray gPoints, Mat& P)
 {
 	Mat fundamentalMatrix = findFundamentalMat(qPoints, gPoints);
 
 	// How to find K camera calibration matrix?
 	Mat cameraCalib(3, 3, CV_32F);
     calibration(cameraCalib, CalibrationOption::load);
+
+    // Maybe it's have sense to undistort points and matrix K
 
 	Mat essentialMatrix = findEssentialMat(qPoints, gPoints, cameraCalib);
 
@@ -27,6 +29,4 @@ void estimateIgorAss(InputArray qPoints, InputArray gPoints, Mat& P)
     gPoints.getMat().row(0).copyTo(p2.row(0));
     recoverPose(essentialMatrix, p1, p2, cvR, cvt);
     hconcat(cvR, cvt, P);
-
-
 }
