@@ -9,7 +9,46 @@
 #define ESC_KEY 27
 
 using namespace cv;
+// Checks if a matrix is a valid rotation matrix.
+bool isRotationMatrix(Mat& R)
+{
+	Mat Rt;
+	transpose(R, Rt);
+	Mat shouldBeIdentity = Rt * R;
+	Mat I = Mat::eye(3, 3, shouldBeIdentity.type());
 
+	return  norm(I, shouldBeIdentity) < 1e-6;
+
+}
+
+// Calculates rotation matrix to euler angles
+// The result is the same as MATLAB except the order
+// of the euler angles ( x and z are swapped ).
+Vec3f rotationMatrixToEulerAngles(Mat& R)
+{
+
+	assert(isRotationMatrix(R));
+
+	float sy = sqrt(R.at<double>(0, 0) * R.at<double>(0, 0) + R.at<double>(1, 0) * R.at<double>(1, 0));
+
+	bool singular = sy < 1e-6; // If
+
+	float x, y, z;
+	if (!singular)
+	{
+		x = atan2(R.at<double>(2, 1), R.at<double>(2, 2));
+		y = atan2(-R.at<double>(2, 0), sy);
+		z = atan2(R.at<double>(1, 0), R.at<double>(0, 0));
+	}
+	else
+	{
+		x = atan2(-R.at<double>(1, 2), R.at<double>(1, 1));
+		y = atan2(-R.at<double>(2, 0), sy);
+		z = 0;
+	}
+	return Vec3f(round(x * 100) / 100.0, round(y * 100) / 100.0, round(z * 100) / 100.0);
+
+}
 
 int main(int argc, char** argv)
 {
@@ -19,7 +58,7 @@ int main(int argc, char** argv)
 	std::vector<KeyPoint> keypoints;
 
 	// Saved the image into an N-dimensional array
-	VideoCapture cap("data/indoor_test.mp4");  // ImreadModes::IMREAD_GRAYSCALE
+	VideoCapture cap("data/example.mp4");  // ImreadModes::IMREAD_GRAYSCALE
 
 	if (!cap.isOpened()) {
 		std::cerr << "Camera wasn't opened" << std::endl;
@@ -37,7 +76,7 @@ int main(int argc, char** argv)
 
 		// Applied the FAST algorithm to the image and saved the image
 		// with the highlighted features in @result
-		fastExtractor(image, keypoints, 12);
+		fastExtractor(image, keypoints, 40);
 		drawKeypoints(image, keypoints, result);
 
 		namedWindow("Display Image", WINDOW_AUTOSIZE);
@@ -85,11 +124,15 @@ int main(int argc, char** argv)
 		//Probably here we skip step if this is the first two frames
 
 		//////////////////////////////////////
+
 		char c = (char)waitKey(33);
-		std::cout << currentP << std::endl;
+		Mat mm = currentP(Range::all(), Range(0, 3)).clone();
+		Vec3f res = rotationMatrixToEulerAngles(mm);
+		std::cout << res << std::endl;
 		if (c == ESC_KEY)
 			break;
 		prevP = currentP;
+
 
 	}
 
