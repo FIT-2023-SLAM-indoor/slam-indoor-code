@@ -26,6 +26,10 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	Mat prevP, currentP;
+	prevP = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+
+
+
 	while (true) {
 		cap.read(image);
 		cvtColor(image, image, COLOR_BGR2GRAY);
@@ -33,7 +37,7 @@ int main(int argc, char** argv)
 
 		// Applied the FAST algorithm to the image and saved the image
 		// with the highlighted features in @result
-		fastExtractor(image, keypoints, 30);
+		fastExtractor(image, keypoints, 12);
 		drawKeypoints(image, keypoints, result);
 
 		namedWindow("Display Image", WINDOW_AUTOSIZE);
@@ -82,13 +86,12 @@ int main(int argc, char** argv)
 
 		//////////////////////////////////////
 		char c = (char)waitKey(33);
+		std::cout << currentP << std::endl;
 		if (c == ESC_KEY)
 			break;
 		prevP = currentP;
 
 	}
-
-
 
 	return 0;
 }
