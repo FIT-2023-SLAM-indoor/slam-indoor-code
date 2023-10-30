@@ -10,8 +10,7 @@
 using namespace cv;
 
 
-
-void countMatrices(InputArray qPoints, InputArray gPoints, Mat& P)
+void estimateIgorAss(InputArray qPoints, InputArray gPoints, Mat& P)
 {
 	Mat fundamentalMatrix = findFundamentalMat(qPoints, gPoints);
 
