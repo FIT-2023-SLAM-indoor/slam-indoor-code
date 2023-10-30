@@ -121,7 +121,7 @@ int main(int argc, char** argv)
 		////////////////////////////////////////
 
 		///something with P matrix...
-		//Probably here we skip step if this is the first two frames
+		//Probably here we skip step if this is the first twogit  frames
 
 		//////////////////////////////////////
 
@@ -131,6 +131,7 @@ int main(int argc, char** argv)
 		std::cout << res << std::endl;
 		if (c == ESC_KEY)
 			break;
+
 		prevP = currentP;
 
 
