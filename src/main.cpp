@@ -7,7 +7,7 @@
 #include "featureTracking.h"
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
-
+#include "triangulate.h"
 
 #define ESC_KEY 27
 
@@ -66,8 +66,8 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	Mat previousProjectionMatrix, currentProjectionMatrix;
-    previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+	Mat previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
+        currentProjectionMatrix(3, 4, CV_64F);
 
     Mat calibrationMatrix(3, 3, CV_64F);
     calibration(calibrationMatrix, CalibrationOption::load);
@@ -120,8 +120,10 @@ int main(int argc, char** argv)
                            translationVector, currentProjectionMatrix);
 		////////////////////////////////////////
 
-		///something with P matrix...
-		//Probably here we skip step if this is the first two frames
+        Mat homogeneous3DPoints;
+        triangulate(q, g, previousProjectionMatrix,
+                    currentProjectionMatrix, homogeneous3DPoints);
+        previousProjectionMatrix = currentProjectionMatrix;
 
 		//////////////////////////////////////
 
@@ -130,9 +132,6 @@ int main(int argc, char** argv)
 		std::cout << res << std::endl;
 		if (c == ESC_KEY)
 			break;
-        previousProjectionMatrix = currentProjectionMatrix;
-
-
 	}
 
 	return 0;
