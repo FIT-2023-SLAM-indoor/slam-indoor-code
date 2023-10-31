@@ -48,7 +48,7 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
         cvmSet(&points4D, 1, p, matrV(3, 1)); /* Y */
         cvmSet(&points4D, 2, p, matrV(3, 2)); /* Z */
         cvmSet(&points4D, 3, p, matrV(3, 3)); /* W */
-        // TODO: �� ������� ����� �������� ������� (p) � ������� ��������, � ������������� �������� �� ��������, � ����� ������
+        // TODO: in the future, you can swap (p) and column indexes, and set the value not of columns, but of rows at once
     }
 }
 
