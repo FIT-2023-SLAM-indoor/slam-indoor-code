@@ -1,7 +1,7 @@
 #pragma once
 #include "opencv2/core/core_c.h"
 
-/*
+/**
  * This function is a wrapper over reconstructPointsFor3D.
  * First, it converts the transmitted data into computationally convenient data types.
  * Secondly, we allocate an array to store points in 3D.
