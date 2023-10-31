@@ -6,7 +6,7 @@ constexpr int NUM_VIEWS = 2;
 constexpr int PROJ_MATR_COLS = 4;
 
 
-/*
+/**
  * This function reconstructs 3-dimensional points (in homogeneous coordinates).
  * Calculates matrix A, after that denotes three-dimensional positions for all points.
  * To do this, we use the singular value decomposition (SVD) over A.
@@ -48,7 +48,7 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
         cvmSet(&points4D, 1, p, matrV(3, 1)); /* Y */
         cvmSet(&points4D, 2, p, matrV(3, 2)); /* Z */
         cvmSet(&points4D, 3, p, matrV(3, 3)); /* W */
-        // TODO: на будущее можно поменять местами (p) и индексы столбцов, и устанавливать значение не столбцов, а сразу строки
+        // TODO: пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (p) пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     }
 }
 

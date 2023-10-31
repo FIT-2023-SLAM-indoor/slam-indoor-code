@@ -1,7 +1,7 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 
-/*
+/**
  * Detects corners using the FAST algorithm and writes info about them into vector.
  *
  * @param srcImage where keypoints (corners) are detected.
