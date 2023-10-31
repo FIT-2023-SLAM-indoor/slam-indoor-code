@@ -5,7 +5,10 @@
 
 #include "fastExtractor.h"
 #include "featureTracking.h"
+#include "cameraCalibration.h"
 #include "cameraTransition.h"
+
+
 #define ESC_KEY 27
 
 using namespace cv;
@@ -47,26 +50,27 @@ Vec3f rotationMatrixToEulerAngles(Mat& R)
 		y = atan2(-R.at<double>(2, 0), sy);
 		z = 0;
 	}
-	return Vec3f(round(x * 100) / 100.0, round(y * 100) / 100.0, round(z * 100) / 100.0);
+	return Vec3f(x, y, z);
 
 }
 
 int main(int argc, char** argv)
 {
-	// Feature extracting
-	////////////////////////////////////////
 	Mat image, image2, result;
 	std::vector<KeyPoint> keypoints;
 
-	// Saved the image into an N-dimensional array
-	VideoCapture cap("data/example.mp4");  // ImreadModes::IMREAD_GRAYSCALE
 
+	VideoCapture cap("data/indoor_speed.mp4");
 	if (!cap.isOpened()) {
 		std::cerr << "Camera wasn't opened" << std::endl;
 		return -1;
 	}
-	Mat prevP, currentP;
-	prevP = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+
+	Mat previousProjectionMatrix, currentProjectionMatrix;
+    previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+
+    Mat calibrationMatrix(3, 3, CV_64F);
+    calibration(calibrationMatrix, CalibrationOption::load);
 
 	while (true) {
 		cap.read(image);
@@ -75,15 +79,14 @@ int main(int argc, char** argv)
 
 		// Applied the FAST algorithm to the image and saved the image
 		// with the highlighted features in @result
-		fastExtractor(image, keypoints, 40);
+		fastExtractor(image, keypoints, 10);
 		drawKeypoints(image, keypoints, result);
 
 		namedWindow("Display Image", WINDOW_AUTOSIZE);
 		imshow("Display Image", result);
-		// Each image displays for 4 seconds
-		waitKey(1000);
+        waitKey(33);
 
-    //Transform image into black and white
+        //Transform image into black and white
 		cap.read(image2);
 		cvtColor(image2, image2, COLOR_BGR2GRAY);
 		cvtColor(image2, image2, COLOR_GRAY2BGR);
@@ -95,15 +98,10 @@ int main(int argc, char** argv)
 		trackFeatures(features, image, image2, newFeatures, 10, 10000);
 
 		//Getting keypoints vector to show from points vector(needed only for afcts, you can delete it)
-		std::vector<KeyPoint> keypoints2;
-		for (size_t i = 0; i < newFeatures.size(); i++) {
-			keypoints2.push_back(cv::KeyPoint(newFeatures[i], 1.f));
-		}
-
-		// Second image with tracked features
-		drawKeypoints(image2, keypoints2, result);
+		std::vector<KeyPoint> keyPoints2;
+        KeyPoint::convert(newFeatures, keyPoints2);
+		drawKeypoints(image2, keyPoints2, result);
 		imshow("Display Image", result);
-		waitKey(1000);
 
 		Mat q = Mat(features);
 		Mat g = Mat(newFeatures);
@@ -115,8 +113,11 @@ int main(int argc, char** argv)
 		////////////////////////////////////////
 		// Estimate matrices
 		////////////////////////////////////////
-		currentP = Mat(3, 4, CV_32F);
-		countMatrices(q, g, currentP);
+		currentProjectionMatrix = Mat(3, 4, CV_64F);
+        Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
+            translationVector = Mat::zeros(3, 1, CV_64F);
+        estimateProjection(q, q, calibrationMatrix, rotationMatrix,
+                           translationVector, currentProjectionMatrix);
 		////////////////////////////////////////
 
 		///something with P matrix...
@@ -125,12 +126,11 @@ int main(int argc, char** argv)
 		//////////////////////////////////////
 
 		char c = (char)waitKey(33);
-		Mat mm = currentP(Range::all(), Range(0, 3)).clone();
-		Vec3f res = rotationMatrixToEulerAngles(mm);
+		Vec3f res = rotationMatrixToEulerAngles(rotationMatrix);
 		std::cout << res << std::endl;
 		if (c == ESC_KEY)
 			break;
-		prevP = currentP;
+        previousProjectionMatrix = currentProjectionMatrix;
 
 
 	}
