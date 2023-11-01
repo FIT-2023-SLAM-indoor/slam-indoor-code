@@ -4,13 +4,11 @@
 #include <opencv2/core/hal/hal.hpp>
 #include <random>
 
-
 #include "cameraTransition.h"
 
 using namespace cv;
 
-
-void estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv::Mat& calibrationMatrix,
+bool estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv::Mat& calibrationMatrix,
                         cv::Mat& rotationMatrix, cv::Mat& translationVector, cv::Mat& projectionMatrix)
 {
 
@@ -19,12 +17,15 @@ void estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv
 	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
     std::cout  << "E:\n" << essentialMatrix << std::endl;
 
-    // Find P matrix using wrapped SVD and
+    // Choose one random corresponding points pair
     int randomPointIndex = rand() % points1.rows();
     Mat p1(1, 2, CV_64F), p2(1, 2, CV_64F);
     points1.getMat().row(randomPointIndex).copyTo(p1.row(0));
     points2.getMat().row(randomPointIndex).copyTo(p2.row(0));
-    std::cout << recoverPose(essentialMatrix, p1, p1, rotationMatrix, translationVector) << std::endl;
+
+    // Find P matrix using wrapped OpenCV SVD and triangulation
+    int passedPointsCount = recoverPose(essentialMatrix, points1, points2, rotationMatrix, translationVector);
     hconcat(rotationMatrix, translationVector, projectionMatrix);
     std::cout << projectionMatrix << std:: endl;
+    return passedPointsCount > 0;
 }
