@@ -1,0 +1,8 @@
+Features extracted: 214
+Threshold: 10
+
+Tracked points: 4
+Barrier: 10
+Max acceptable difference: 10000
+
+Exception occurred: OpenCV(4.8.0) C:\GHA-OCV-1\_work\ci-gha-workflow\ci-gha-workflow\opencv\modules\core\src\matrix.cpp:1174: error: (-13:Image step is wrong) The matrix is not continuous, thus its number of rows can not be changed in function 'cv::Mat::reshape'
