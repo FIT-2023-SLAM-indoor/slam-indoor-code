@@ -82,11 +82,21 @@ static Vec3f rotationMatrixToEulerAngles(Mat& R)
 
 }
 
-static void setTwoFramesPaths(int folderNumber, char* frame1, char* frame2, char* report, std::ofstream& reportStream) {
+static void setTwoFramesPaths(
+        int folderNumber, char* frame1, char* frame2, char* report, std::ofstream& reportStream,
+        std::ofstream& pointsStream1, std::ofstream& pointsStream2, std::ofstream& d3PointsStream
+) {
     sprintf(frame1, "./data/two_frames/%d/0.png", folderNumber);
     sprintf(frame2, "./data/two_frames/%d/1.png", folderNumber);
     sprintf(report, "./data/two_frames/%d/report.txt", folderNumber);
     reportStream.open(report);
+    char tmp[256] = "";
+    sprintf(tmp, "./data/two_frames/%d/points1.txt", folderNumber);
+    pointsStream1.open(tmp);
+    sprintf(tmp, "./data/two_frames/%d/points2.txt", folderNumber);
+    pointsStream2.open(tmp);
+    sprintf(tmp, "./data/two_frames/%d/3Dpoints.txt", folderNumber);
+    d3PointsStream.open(tmp);
 }
 
 #define ESC_KEY 27
@@ -96,16 +106,17 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
     Mat image, image2, result;
     std::vector<KeyPoint> featuresKeyPoints;
 
-    Mat currentProjectionMatrix(3, 4, CV_64F);
+    Mat previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
+        currentProjectionMatrix(3, 4, CV_64F);
 
     Mat calibrationMatrix(3, 3, CV_64F);
     calibration(calibrationMatrix, CalibrationOption::load);
 
     char frame1[256], frame2[256], report[256];
-    std::ofstream reportStream;
+    std::ofstream reportStream, pointsStream1, pointsStream2, d3PointsStream;
     for (int i = 1; i <= 8; ++i) {
         try {
-            setTwoFramesPaths(i, frame1, frame2, report, reportStream);
+            setTwoFramesPaths(i, frame1, frame2, report, reportStream, pointsStream1, pointsStream2, d3PointsStream);
             std::cout << "Working with pair " << i << std::endl;
             image = imread(frame1);
             cvtColor(image, image, COLOR_BGR2GRAY);
@@ -136,6 +147,12 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
             reportStream << "Tracked points: " << trackedPoints.size() << std::endl
                          << "Barrier: " << FEATURE_TRACKING_BARRIER << std::endl
                          << "Max acceptable difference: " << FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE << std::endl << std::endl;
+            pointsStream1 << "Features extracted and tracked: " << featuresPoints.size() << std::endl << std::endl
+                          << featuresPoints;
+            pointsStream2 << "Tracked points: " << trackedPoints.size() << std::endl
+                         << "Barrier: " << FEATURE_TRACKING_BARRIER << std::endl
+                         << "Max acceptable difference: " << FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE << std::endl << std::endl
+                         << trackedPoints;
 //        std::cout << trackedPoints << std::endl;
 
             //Getting keypoints vector to show from points vector(needed only for afcts, you can delete it)
@@ -160,6 +177,15 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
             reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
             ////////////////////////////////////////
 
+            Mat homogeneous3DPoints;
+            triangulate(q, g, previousProjectionMatrix,
+                        currentProjectionMatrix, homogeneous3DPoints);
+            convertPointsFromHomogeneous(homogeneous3DPoints);
+            reportStream << "3D points: " << homogeneous3DPoints.rows << std::endl << std::endl;
+            d3PointsStream << "3D points: " << homogeneous3DPoints.rows << std::endl << std::endl
+                        << homogeneous3DPoints;
+            previousProjectionMatrix = currentProjectionMatrix;
+
             char c = (char) waitKey(1000);
             Vec3f res = rotationMatrixToEulerAngles(rotationMatrix);
             reportStream << "Degrees rotations: " << res << std::endl << std::endl;
@@ -170,5 +196,8 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
             reportStream.flush();
         }
         reportStream.close();
+        pointsStream1.close();
+        pointsStream2.close();
+        d3PointsStream.close();
     }
 }

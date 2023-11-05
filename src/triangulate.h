@@ -17,5 +17,11 @@
  *     These points are returned in the world's coordinate system.
  */
 void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
-    cv::Mat matr1, cv::Mat matr2,
+    const cv::Mat& matr1, const cv::Mat& matr2,
     cv::OutputArray points4D);
+
+/**
+ * Converts points from homogeneous format to 3D
+ * @param homogeneous3DPoints
+ */
+void convertPointsFromHomogeneous(cv::Mat& homogeneous3DPoints);

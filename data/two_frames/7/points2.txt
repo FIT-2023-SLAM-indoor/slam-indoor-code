@@ -1,0 +1,8 @@
+Tracked points: 4
+Barrier: 10
+Max acceptable difference: 10000
+
+[1057, 389;
+ 1077, 389;
+ 1156, 392;
+ 1166, 391]

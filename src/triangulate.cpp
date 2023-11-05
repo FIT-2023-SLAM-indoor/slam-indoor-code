@@ -52,9 +52,15 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
     }
 }
 
+void convertPointsFromHomogeneous(cv::Mat& homogeneous3DPoints) {
+    homogeneous3DPoints = homogeneous3DPoints.t(); // TODO: This line must be deleted when you will precce points as matrix Nx4
+    for (int row = 0; row < homogeneous3DPoints.rows; ++row) {
+        homogeneous3DPoints.row(row) /= homogeneous3DPoints.at<float>(row, 3);
+    }
+}
 
 void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
-    cv::Mat matr1, cv::Mat matr2,
+    const cv::Mat& matr1, const cv::Mat& matr2,
     cv::OutputArray points4D)
 {
     cv::Mat points1 = projPoints1.getMat(), points2 = projPoints2.getMat();
