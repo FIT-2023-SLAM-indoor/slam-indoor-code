@@ -18,10 +18,10 @@ The other parameters already have default values, they can be omitted. But you c
 After the completion of the function in the vector (`std::vector<cv::KeyPoint>`), the link to which we passed, will record meta information about the features in the image.
 
 #  Examples of function results
-![](./artifact/1.png)
-![](./artifact/2.png)
-![](./artifact/3.png)
-![](./artifact/3_.png)
+![](./artifact/feature_extraction/1.png)
+![](./artifact/feature_extraction/2.png)
+![](./artifact/feature_extraction/3.png)
+![](./artifact/feature_extraction/3_.png)
 
 # How to use `fastExtractor`?
  First of all, call this function on the source image and vector in which the points will be stored. After that, if you need it, you can mark key points on the image using the OpenCV `drawKeypoints` function. Your code might look something like this:

@@ -69,7 +69,13 @@ void chessboardPhotosCalibration(std::vector<String>& fileNames, int itersCount=
  */
 void saveMatrixToXML(const char *pathToXML, const Mat &matrix, const String& matrixKey= "K",
                      FileStorage::Mode mode= FileStorage::WRITE);
-
+/**
+ * Save all camera parameters to specified XML.
+ *
+ * @param [in] pathToXML Path to existing XML-file
+ * @param [in] cameraMatrixK 3x3 intrinsic camera
+ * @param [in] distortionCoeffs, R, T Other calibration data
+ */
 void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, const Mat& distortionCoeffs,
                               const Mat& R, const Mat& T);
 
