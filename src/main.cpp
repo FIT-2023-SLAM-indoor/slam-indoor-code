@@ -12,13 +12,13 @@
 #include "triangulate.h"
 
 #define ESC_KEY 27
-#define FEATURE_EXTRACTING_THRESHOLD 10
-#define FEATURE_TRACKING_BARRIER 20
+#define FEATURE_EXTRACTING_THRESHOLD 20
+#define FEATURE_TRACKING_BARRIER 10
 #define FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE 10000
 using namespace cv;
 
 
-#define FRAMES_GAP 10
+#define FRAMES_GAP 2
 #define REQUIRED_EXTRACTED_POINTS_COUNT 10
 
 int main(int argc, char** argv)
@@ -56,8 +56,9 @@ int main(int argc, char** argv)
 			fastExtractor(currentFrame, currentFrameExtractedKeyPoints, FEATURE_EXTRACTING_THRESHOLD);
 			if (currentFrameExtractedKeyPoints.size() < REQUIRED_EXTRACTED_POINTS_COUNT)
 				continue;
+			KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
 			if (first) {
-				KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
+
 				previousFrameExtractedPoints = currentFrameExtractedPoints;
 				previousFrame = currentFrame.clone();
 				first = false;
@@ -65,26 +66,48 @@ int main(int argc, char** argv)
 			}
 
 
-			trackFeatures(previousFrameExtractedPoints, currentFrameTrackedPoints, previousFrame,
-				currentFrame, FEATURE_TRACKING_BARRIER, FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE);
+			std::cout << "prev features extracted: " << previousFrameExtractedPoints.size() << std::endl;
+			std::cout << "curr features extracted: " << currentFrameExtractedPoints.size() << std::endl;
+
+			trackFeatures(previousFrameExtractedPoints, previousFrame,
+				currentFrame, currentFrameTrackedPoints, FEATURE_TRACKING_BARRIER, FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE);
+
+			std::cout << "changed feat extracted: " << previousFrameExtractedPoints.size() << std::endl;
+			std::cout << "Tracked points: " << currentFrameTrackedPoints.size() << std::endl;
+			if (currentFrameTrackedPoints.size() < REQUIRED_EXTRACTED_POINTS_COUNT) {
+				currentFrameTrackedPoints.clear();
+				currentFrameExtractedPoints.clear();
+				first = true;
+				continue;
+			}
+
+			imshow("d", currentFrame);
+			cv::waitKey(0);
+
 			Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
 				translationVector = Mat::zeros(3, 1, CV_64F);
-			if (estimateProjection(previousFrameExtractedPoints, currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
+			if (estimateProjection(Mat(previousFrameExtractedPoints).reshape(1),
+				Mat(currentFrameTrackedPoints).reshape(1), calibrationMatrix, rotationMatrix,
 				translationVector, currentProjectionMatrix)) {
-				Mat homogeneous3DPoints;
-				triangulate(previousFrameExtractedPoints, currentFrameTrackedPoints, previousProjectionMatrix,
-					currentProjectionMatrix, homogeneous3DPoints);
-				previousFrameExtractedPoints = currentFrameExtractedPoints;
-				previousProjectionMatrix = currentProjectionMatrix;
-				previousFrame = currentFrame;
-			}
-			reportStream << "Features extracted: " << previousFrameExtractedPoints.size() << std::endl;
-			reportStream << "Tracked points: " << currentFrameTrackedPoints.size() << std::endl;
-			reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 
+				Mat homogeneous3DPoints;
+				triangulate(Mat(previousFrameExtractedPoints).reshape(1),
+					Mat(currentFrameTrackedPoints).reshape(1), previousProjectionMatrix,
+					currentProjectionMatrix, homogeneous3DPoints);
+
+				previousFrameExtractedPoints = currentFrameExtractedPoints;
+
+				previousProjectionMatrix = currentProjectionMatrix.clone();
+				previousFrame = currentFrame.clone();
+			}
+			currentFrameTrackedPoints.clear();
+			currentFrameExtractedPoints.clear();
+			reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 		}
-		reportStream.flush();
-		reportStream.close();
+
 	}
+
+	reportStream.flush();
+	reportStream.close();
 	return 0;
 }
