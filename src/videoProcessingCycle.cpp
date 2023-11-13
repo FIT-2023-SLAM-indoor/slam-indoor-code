@@ -11,8 +11,10 @@
 #include "cameraTransition.h"
 #include "triangulate.h"
 #include "videoProcessingCycle.h"
+
+#define ESC_KEY 27
 int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
-	int framesGap, int requiredExtractedPointsCount, int featureExtractingThreshold)
+	int framesGap, int requiredExtractedPointsCount, int featureExtractingThreshold, char* filename)
 {
 	Mat currentFrame, previousFrame, result, homogeneous3DPoints;
 	std::vector<KeyPoint> currentFrameExtractedKeyPoints;
@@ -22,8 +24,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 	std::vector<Point2f> previousFrameExtractedPointsTemp;
 	std::vector<Point2f> currentFrameTrackedPoints;
 	std::ofstream reportStream;
-	char report[256];
-	reportStream.open(report);
+	reportStream.open(filename);
 
 
 
@@ -90,7 +91,10 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 		reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 		reportStream.flush();
 		countOfFrames = 0;
+		char c = (char)waitKey(1000);
 
+		if (c == ESC_KEY)
+			break;
 	}
 
 

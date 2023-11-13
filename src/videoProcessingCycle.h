@@ -32,4 +32,4 @@ KKKKKKKKK    KKKKKKKIIIIIIIIIIRRRRRRRR     RRRRRRRIIIIIIIIIILLLLLLLLLLLLLLLLLLLL
 
 */
 int videoProcessingCycle(cv::VideoCapture& cap, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
-	int framesGap, int requiredExtractedPointsCount, int featureExtractingThreshold);
+	int framesGap, int requiredExtractedPointsCount, int featureExtractingThreshold, char* filename);

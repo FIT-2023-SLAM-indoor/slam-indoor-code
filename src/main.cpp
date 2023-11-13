@@ -28,6 +28,7 @@ int main(int argc, char** argv)
 		std::cerr << "Camera wasn't opened" << std::endl;
 		return -1;
 	}
-	videoProcessingCycle(cap, 10, 10000, 3, 10, 20);
+	char path[] = "./file.txt";
+	videoProcessingCycle(cap, 10, 10000, 3, 10, 20, path);
 	return 0;
 }
