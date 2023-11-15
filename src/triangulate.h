@@ -22,7 +22,7 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
 
 /**
  * Converts points from homogeneous format to 3D.
- * @param [in] homogeneous3DPoints input matrix with homogeneous points
- * @param [out] euclideanPoints output matrix with euclidian 3D points
+ * @param [in] homogeneous3DPoints input matrix 4xN with homogeneous points
+ * @param [out] euclideanPoints output matrix Nx3 with euclidian 3D points
  */
 void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints);
