@@ -12,5 +12,7 @@ Current projection matrix:
 
 3D points: 203
 
+New world camera pose: [0.389070514694411, 1.094076944940992, 0.4643601667474869]
+
 Degrees rotations: [-0.0214276, -0.00615185, -0.00772433]
 

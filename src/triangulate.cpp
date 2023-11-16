@@ -1,11 +1,14 @@
+#include <iostream>
+
 #include "opencv2/calib3d.hpp"
 #include "opencv2/core/core_c.h"
 
 #include "triangulate.h"
 
+using namespace cv;
+
 constexpr int NUM_VIEWS = 2;
 constexpr int PROJ_MATR_COLS = 4;
-
 
 /**
  * This function reconstructs 3-dimensional points (in homogeneous coordinates).
@@ -53,11 +56,6 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
     }
 }
 
-void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints) {
-    homogeneous3DPoints = homogeneous3DPoints.t(); // TODO: This line must be deleted when you will process points as matrix Nx4
-    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints);
-}
-
 void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     const cv::Mat& matr1, const cv::Mat& matr2,
     cv::OutputArray points4D)
@@ -73,4 +71,22 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     CvMat cvPoints4D = cvMat(matPoints4D);
 
     reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
+}
+
+void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints)
+{
+    homogeneous3DPoints = homogeneous3DPoints.t(); // TODO: This line must be deleted when you will process points as matrix Nx4
+//    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
+    for (int row = 0; row < homogeneous3DPoints.rows; ++row) {
+        homogeneous3DPoints.row(row) /= homogeneous3DPoints.at<float>(row, 3);
+    }
+    euclideanPoints = (homogeneous3DPoints.colRange(0, homogeneous3DPoints.cols-1)).clone();
+}
+
+void placeEuclideanPointsInWorldSystem(Mat& points, Mat& worldCameraPose)
+{
+//    worldEuclideanPoints.create(points.rows, points.cols, CV_64F);
+    for (int r = 0; r < points.rows; ++r) {
+        points.row(r) += worldCameraPose.row(0);
+    }
 }

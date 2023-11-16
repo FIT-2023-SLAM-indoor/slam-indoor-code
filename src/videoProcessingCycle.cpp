@@ -12,9 +12,19 @@
 #include "triangulate.h"
 #include "videoProcessingCycle.h"
 
+static void setReportsPaths(
+        char* path, std::ofstream& reportStream, std::ofstream& d3PointsStream
+) {
+    char tmp[256] = "";
+    sprintf(tmp, "%s/main.txt", path);
+    reportStream.open(tmp);
+    sprintf(tmp, "%s/3Dpoints.txt", path);
+    d3PointsStream.open(tmp);
+}
+
 #define ESC_KEY 27
 int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
-	int framesGap, int requiredExtractedPointsCount, int featureExtractingThreshold, char* filename)
+	int framesGap, int requiredExtractedPointsCount, int featureExtractingThreshold, char* reportsDirPath)
 {
 	Mat currentFrame, previousFrame, result, homogeneous3DPoints;
 	std::vector<KeyPoint> currentFrameExtractedKeyPoints;
@@ -24,12 +34,13 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 	std::vector<Point2f> previousFrameExtractedPointsTemp;
 	std::vector<Point2f> currentFrameTrackedPoints;
 	std::ofstream reportStream;
-	reportStream.open(filename);
-
+    std::ofstream d3PointsStream;
+    setReportsPaths(reportsDirPath, reportStream, d3PointsStream);
 
 
 	Mat previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
-		currentProjectionMatrix(3, 4, CV_64F);
+		currentProjectionMatrix(3, 4, CV_64F),
+        worldCameraPose = (Mat_<double>(1, 3) << 0, 0, 0);
 
 	Mat calibrationMatrix(3, 3, CV_64F);
 	calibration(calibrationMatrix, CalibrationOption::load);
@@ -80,6 +91,16 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			triangulate(Mat(previousFrameExtractedPointsTemp).reshape(1),
 				Mat(currentFrameTrackedPoints).reshape(1), previousProjectionMatrix,
 				currentProjectionMatrix, homogeneous3DPoints);
+            Mat euclideanPoints;
+            convertPointsFromHomogeneousWrapper(homogeneous3DPoints, euclideanPoints);
+            Mat worldEuclideanPoints = euclideanPoints.clone();
+            placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose);
+            reportStream << "3D points: " << worldEuclideanPoints.rows << std::endl << std::endl;
+            d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl << std::endl
+                           << worldEuclideanPoints;
+
+            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose);
+            reportStream << "New world camera pose: " << worldCameraPose << std::endl << std::endl;
 
 			previousFrameExtractedPoints = currentFrameExtractedPoints;
 
