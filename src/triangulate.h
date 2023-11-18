@@ -33,5 +33,6 @@ void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& 
  *
  * @param [in,out] points Nx3 matrix with points which will be placed in world system
  * @param [in] worldCameraPose 1x3 vector-matrix with world camera position
+ * @param [in] worldCameraRotation 3x3 world camera rotation matrix
  */
-void placeEuclideanPointsInWorldSystem(cv::Mat& points, cv::Mat& worldCameraPose);
+void placeEuclideanPointsInWorldSystem(cv::Mat& points, cv::Mat& worldCameraPose, cv::Mat& worldCameraRotation);

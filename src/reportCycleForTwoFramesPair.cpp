@@ -89,7 +89,8 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
 
     Mat previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
             currentProjectionMatrix(3, 4, CV_64F),
-            worldCameraPose = (Mat_<double>(1, 3) << 0, 0, 0);
+            worldCameraPose = (Mat_<double>(1, 3) << 0, 0, 0),
+            worldCameraRotation = (Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 
     Mat calibrationMatrix(3, 3, CV_64F);
     calibration(calibrationMatrix, CalibrationOption::load);
@@ -145,8 +146,8 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
 
             Mat q = Mat(featuresPoints);
             Mat g = Mat(trackedPoints);
-            q = q.reshape(1);
-            g = g.reshape(1);
+            q.reshape(1).convertTo(q, CV_64F);
+            g.reshape(1).convertTo(g, CV_64F);
 
             ////////////////////////////////////////
             // Estimate matrices
@@ -166,13 +167,14 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
             convertPointsFromHomogeneousWrapper(homogeneous3DPoints, euclideanPoints);
             reportStream << "3D points: " << euclideanPoints.rows << std::endl << std::endl;
             Mat worldEuclideanPoints = euclideanPoints.clone();
-            placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose);
+            placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose, worldCameraRotation);
             d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl << std::endl
                            << worldEuclideanPoints;
 
             previousProjectionMatrix = currentProjectionMatrix;
-            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose);
+            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose, worldCameraRotation);
             reportStream << "New world camera pose: " << worldCameraPose << std::endl << std::endl;
+            reportStream << "New world camera rotation: " << worldCameraRotation << std::endl << std::endl;
 
             char c = (char) waitKey(1000);
             Vec3f res = rotationMatrixToEulerAngles(rotationMatrix);

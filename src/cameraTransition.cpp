@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
@@ -30,6 +32,10 @@ bool estimateProjection(InputArray points1, InputArray points2, const Mat& calib
 	return passedPointsCount > 0;
 }
 
-void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector, Mat& worldCameraPose) {
+void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
+                           Mat& worldCameraPose, Mat& worldCameraRotation)
+{
+//    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
+    worldCameraRotation *= rotationMatrix;
     worldCameraPose += (rotationMatrix * translationVector).t();
 }

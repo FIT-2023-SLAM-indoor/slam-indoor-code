@@ -17,22 +17,15 @@
 bool estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv::Mat& calibrationMatrix,
                         cv::Mat& rotationMatrix, cv::Mat& translationVector, cv::Mat& projectionMatrix);
 /**
- * Refiner for world point.
+ * Refiner for world point nad world rotation.
  * In common case, updates any 3D point by rotation and translation
  *
  * @param [out] rotationMatrix 3x3 rotation matrix
  * @param [out] translationVector 3x1 translation vector-matrix
  * @param [in,out] worldCameraPose 1x3 vector-matrix with camera world pose which will be refined by estimated rotation and
  *     translation
+ * @param [in,out] worldCameraRotation 3x3 global rotation matrix
  */
-void refineWorldCameraPose(cv::Mat& rotationMatrix, cv::Mat& translationVector, cv::Mat& worldCameraPose);
+void refineWorldCameraPose(cv::Mat& rotationMatrix, cv::Mat& translationVector,
+                           cv::Mat& worldCameraPose, cv::Mat& worldCameraRotation);
 
-/**
- * Main cycle test with frames-pairs.
- *
- * @param [in] FEATURE_EXTRACTING_THRESHOLD
- * @param [in] FEATURE_TRACKING_BARRIER
- * @param [in] FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE
- */
-void reportingCycleForFramesPairs(int FEATURE_EXTRACTING_THRESHOLD, int FEATURE_TRACKING_BARRIER,
-                                  int FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE);

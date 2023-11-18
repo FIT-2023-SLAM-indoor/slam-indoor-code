@@ -40,7 +40,8 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 
 	Mat previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
 		currentProjectionMatrix(3, 4, CV_64F),
-        worldCameraPose = (Mat_<double>(1, 3) << 0, 0, 0);
+        worldCameraPose = (Mat_<double>(1, 3) << 0, 0, 0),
+        worldCameraRotation = (Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 
 	Mat calibrationMatrix(3, 3, CV_64F);
 	calibration(calibrationMatrix, CalibrationOption::load);
@@ -81,26 +82,30 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			continue;
 		}
 
-
+        Mat previousFrameExtractedPointsMatrix = Mat(previousFrameExtractedPointsTemp);
+        Mat currentFrameTrackedPointsMatrix = Mat(currentFrameTrackedPoints);
+        previousFrameExtractedPointsMatrix.reshape(1).convertTo(previousFrameExtractedPointsMatrix, CV_64F);
+        currentFrameTrackedPointsMatrix.reshape(1).convertTo(currentFrameTrackedPointsMatrix, CV_64F);
 		Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
 			translationVector = Mat::zeros(3, 1, CV_64F);
-		if (estimateProjection(Mat(previousFrameExtractedPointsTemp).reshape(1),
-			Mat(currentFrameTrackedPoints).reshape(1), calibrationMatrix, rotationMatrix,
-			translationVector, currentProjectionMatrix)) {
+		if (estimateProjection(previousFrameExtractedPointsMatrix,
+            currentFrameTrackedPointsMatrix, calibrationMatrix, rotationMatrix,
+            translationVector, currentProjectionMatrix)) {
 
-			triangulate(Mat(previousFrameExtractedPointsTemp).reshape(1),
-				Mat(currentFrameTrackedPoints).reshape(1), previousProjectionMatrix,
+			triangulate(previousFrameExtractedPointsMatrix,
+                        currentFrameTrackedPointsMatrix, previousProjectionMatrix,
 				currentProjectionMatrix, homogeneous3DPoints);
             Mat euclideanPoints;
             convertPointsFromHomogeneousWrapper(homogeneous3DPoints, euclideanPoints);
             Mat worldEuclideanPoints = euclideanPoints.clone();
-            placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose);
+            placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose, worldCameraRotation);
             reportStream << "3D points: " << worldEuclideanPoints.rows << std::endl << std::endl;
             d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl << std::endl
                            << worldEuclideanPoints;
 
-            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose);
+            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose, worldCameraRotation);
             reportStream << "New world camera pose: " << worldCameraPose << std::endl << std::endl;
+            reportStream << "New world camera rotation: " << worldCameraRotation << std::endl << std::endl;
 
 			previousFrameExtractedPoints = currentFrameExtractedPoints;
 

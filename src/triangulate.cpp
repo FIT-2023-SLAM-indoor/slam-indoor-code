@@ -78,15 +78,21 @@ void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& 
     homogeneous3DPoints = homogeneous3DPoints.t(); // TODO: This line must be deleted when you will process points as matrix Nx4
 //    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
     for (int row = 0; row < homogeneous3DPoints.rows; ++row) {
-        homogeneous3DPoints.row(row) /= homogeneous3DPoints.at<float>(row, 3);
+        homogeneous3DPoints.row(row) /= homogeneous3DPoints.at<double>(row, 3);
     }
     euclideanPoints = (homogeneous3DPoints.colRange(0, homogeneous3DPoints.cols-1)).clone();
 }
 
-void placeEuclideanPointsInWorldSystem(Mat& points, Mat& worldCameraPose)
+void placeEuclideanPointsInWorldSystem(Mat& points, Mat& worldCameraPose, Mat& worldCameraRotation)
 {
 //    worldEuclideanPoints.create(points.rows, points.cols, CV_64F);
+    Mat point, rotatedPoint;
     for (int r = 0; r < points.rows; ++r) {
-        points.row(r) += worldCameraPose.row(0);
+        point = points.row(r).clone();
+        point = point.t();
+        rotatedPoint = worldCameraRotation * point;
+        rotatedPoint = rotatedPoint.t();
+        point = worldCameraPose + rotatedPoint;
+        points.row(r) = point.clone();
     }
 }
