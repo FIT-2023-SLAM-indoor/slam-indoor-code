@@ -95,13 +95,14 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			triangulate(previousFrameExtractedPointsMatrix,
                         currentFrameTrackedPointsMatrix, previousProjectionMatrix,
 				currentProjectionMatrix, homogeneous3DPoints);
+            reportStream << "Homogeneous 3D points: " << homogeneous3DPoints.cols << std::endl;
             Mat euclideanPoints;
             convertPointsFromHomogeneousWrapper(homogeneous3DPoints, euclideanPoints);
+            reportStream << "3D points: " << euclideanPoints.rows << std::endl << std::endl;
             Mat worldEuclideanPoints = euclideanPoints.clone();
             placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose, worldCameraRotation);
-            reportStream << "3D points: " << worldEuclideanPoints.rows << std::endl << std::endl;
-            d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl << std::endl
-                           << worldEuclideanPoints;
+            d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl
+                           << worldEuclideanPoints << std::endl << std::endl;
 
             refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose, worldCameraRotation);
             reportStream << "New world camera pose: " << worldCameraPose << std::endl << std::endl;
@@ -116,6 +117,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 		currentFrameExtractedPoints.clear();
 		reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 		reportStream.flush();
+        d3PointsStream.flush();
 		countOfFrames = 0;
 		char c = (char)waitKey(1000);
 
@@ -123,7 +125,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			break;
 	}
 
-
 	reportStream.close();
+    d3PointsStream.close();
 	return 0;
 }

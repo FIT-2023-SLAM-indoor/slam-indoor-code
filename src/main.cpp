@@ -15,7 +15,7 @@ using namespace cv;
 #define FRAMES_GAP 2
 #define REQUIRED_EXTRACTED_POINTS_COUNT 10
 
-#define DEBUG
+#define NDEBUG
 
 int main(int argc, char** argv)
 {

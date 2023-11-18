@@ -73,14 +73,26 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
 }
 
-void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints)
+void convertPointsFromHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Mat& euclideanPoints)
 {
-    homogeneous3DPoints = homogeneous3DPoints.t(); // TODO: This line must be deleted when you will process points as matrix Nx4
+    Mat homogeneous3DPoints = inputHomogeneous3DPoints.t();
 //    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
+    int euclidianRow = 0;
+    double w;
+    Mat euclideanPoint = Mat::zeros(1, 3, CV_64F);
+    euclideanPoints.create(homogeneous3DPoints.rows, 3, CV_64F);
     for (int row = 0; row < homogeneous3DPoints.rows; ++row) {
-        homogeneous3DPoints.row(row) /= homogeneous3DPoints.at<double>(row, 3);
+        w = homogeneous3DPoints.at<double>(row, 3);
+        if (fabs(w) < 0.000000000001) {
+            continue;
+        }
+        euclideanPoint = homogeneous3DPoints.row(row).clone();
+        euclideanPoint /= w;
+        euclideanPoint
+            .colRange(0, homogeneous3DPoints.cols-1)
+            .copyTo(euclideanPoints.row(euclidianRow++));
     }
-    euclideanPoints = (homogeneous3DPoints.colRange(0, homogeneous3DPoints.cols-1)).clone();
+    euclideanPoints = euclideanPoints.rowRange(0, euclidianRow).clone();
 }
 
 void placeEuclideanPointsInWorldSystem(Mat& points, Mat& worldCameraPose, Mat& worldCameraRotation)

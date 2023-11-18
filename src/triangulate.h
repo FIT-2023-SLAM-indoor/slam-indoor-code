@@ -25,7 +25,7 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
  * @param [in] homogeneous3DPoints input 4xN matrix with homogeneous points
  * @param [out] euclideanPoints output Nx3 matrix with euclidian 3D points
  */
-void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints);
+void convertPointsFromHomogeneousWrapper(const cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints);
 
 /**
  * Converter to world coordinates.

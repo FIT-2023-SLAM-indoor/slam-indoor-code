@@ -163,6 +163,7 @@ void reportingCycleForFramesPairs(const int FEATURE_EXTRACTING_THRESHOLD, const 
             Mat homogeneous3DPoints;
             triangulate(q, g, previousProjectionMatrix,
                         currentProjectionMatrix, homogeneous3DPoints);
+            reportStream << "Homogeneous 3D points: " << homogeneous3DPoints.cols << std::endl;
             Mat euclideanPoints;
             convertPointsFromHomogeneousWrapper(homogeneous3DPoints, euclideanPoints);
             reportStream << "3D points: " << euclideanPoints.rows << std::endl << std::endl;
