@@ -11,16 +11,21 @@
  * @param [out] rotationMatrix 3x3 rotation between every two points
  * @param [out] translationVector 3x1 translation between every two points
  * @param [out] projectionMatrix 3x4 projection matrix composed from rotation and translation as [R|t]
- * @return true weather new projection matrix was estimated correctly (one of four possible P matrices project points with positive Z
+ * @return true weather new projection matrix was estimated correctly (one of four possible P matrices project points
+ *     with positive Z
  */
 bool estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv::Mat& calibrationMatrix,
                         cv::Mat& rotationMatrix, cv::Mat& translationVector, cv::Mat& projectionMatrix);
 /**
- * Main cycle test with frames-pairs.
+ * Refiner for world point nad world rotation.
+ * In common case, updates any 3D point by rotation and translation
  *
- * @param [in] FEATURE_EXTRACTING_THRESHOLD
- * @param [in] FEATURE_TRACKING_BARRIER
- * @param [in] FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE
+ * @param [out] rotationMatrix 3x3 rotation matrix
+ * @param [out] translationVector 3x1 translation vector-matrix
+ * @param [in,out] worldCameraPose 1x3 vector-matrix with camera world pose which will be refined by estimated rotation and
+ *     translation
+ * @param [in,out] worldCameraRotation 3x3 global rotation matrix
  */
-void reportingCycleForFramesPairs(int FEATURE_EXTRACTING_THRESHOLD, int FEATURE_TRACKING_BARRIER,
-                                  int FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE);
+void refineWorldCameraPose(cv::Mat& rotationMatrix, cv::Mat& translationVector,
+                           cv::Mat& worldCameraPose, cv::Mat& worldCameraRotation);
+

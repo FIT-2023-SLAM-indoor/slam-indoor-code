@@ -1,11 +1,14 @@
+#include <iostream>
+
 #include "opencv2/calib3d.hpp"
 #include "opencv2/core/core_c.h"
 
 #include "triangulate.h"
 
+using namespace cv;
+
 constexpr int NUM_VIEWS = 2;
 constexpr int PROJ_MATR_COLS = 4;
-
 
 /**
  * This function reconstructs 3-dimensional points (in homogeneous coordinates).
@@ -53,11 +56,6 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
     }
 }
 
-void convertPointsFromHomogeneousWrapper(cv::Mat& homogeneous3DPoints, cv::Mat& euclideanPoints) {
-    homogeneous3DPoints = homogeneous3DPoints.t(); // TODO: This line must be deleted when you will process points as matrix Nx4
-    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints);
-}
-
 void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     const cv::Mat& matr1, const cv::Mat& matr2,
     cv::OutputArray points4D)
@@ -73,4 +71,40 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     CvMat cvPoints4D = cvMat(matPoints4D);
 
     reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
+}
+
+void convertPointsFromHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Mat& euclideanPoints)
+{
+    Mat homogeneous3DPoints = inputHomogeneous3DPoints.t();
+//    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
+    int euclidianRow = 0;
+    double w;
+    Mat euclideanPoint = Mat::zeros(1, 3, CV_64F);
+    euclideanPoints.create(homogeneous3DPoints.rows, 3, CV_64F);
+    for (int row = 0; row < homogeneous3DPoints.rows; ++row) {
+        w = homogeneous3DPoints.at<double>(row, 3);
+        if (fabs(w) < 0.000000000001) {
+            continue;
+        }
+        euclideanPoint = homogeneous3DPoints.row(row).clone();
+        euclideanPoint /= w;
+        euclideanPoint
+            .colRange(0, homogeneous3DPoints.cols-1)
+            .copyTo(euclideanPoints.row(euclidianRow++));
+    }
+    euclideanPoints = euclideanPoints.rowRange(0, euclidianRow).clone();
+}
+
+void placeEuclideanPointsInWorldSystem(Mat& points, Mat& worldCameraPose, Mat& worldCameraRotation)
+{
+//    worldEuclideanPoints.create(points.rows, points.cols, CV_64F);
+    Mat point, rotatedPoint;
+    for (int r = 0; r < points.rows; ++r) {
+        point = points.row(r).clone();
+        point = point.t();
+        rotatedPoint = worldCameraRotation * point;
+        rotatedPoint = rotatedPoint.t();
+        point = worldCameraPose + rotatedPoint;
+        points.row(r) = point.clone();
+    }
 }

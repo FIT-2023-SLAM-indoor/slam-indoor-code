@@ -1,6 +1,7 @@
 #include <iostream>
+#define _USE_MATH_DEFINES
 
-#include "cameraTransition.h"
+#include "reportCycleForTwoFramesPair.h"
 #include "videoProcessingCycle.h"
 
 using namespace cv;
@@ -14,7 +15,7 @@ using namespace cv;
 #define FRAMES_GAP 2
 #define REQUIRED_EXTRACTED_POINTS_COUNT 10
 
-#define DEBUG
+#define NDEBUG
 
 int main(int argc, char** argv)
 {
@@ -30,7 +31,7 @@ int main(int argc, char** argv)
 		std::cerr << "Camera wasn't opened" << std::endl;
 		return -1;
 	}
-	char path[] = "./file.txt";
+	char path[] = "./data/video_report";
 	videoProcessingCycle(cap, 10, 10000, 3, 10, 20, path);
 #endif
     return 0;
