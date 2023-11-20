@@ -1,3 +1,6 @@
+/data/two_frames/*/*.txt
+/data/video_report/*.txt
+
 roborock_*.mp4
 *.sfk
 
