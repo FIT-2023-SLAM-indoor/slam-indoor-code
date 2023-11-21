@@ -120,10 +120,11 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
     // Recognition
     Mat frame, gray;
     for (const String& filename : fileNames) {
+        std::cout << filename << std::endl;
         frame = imread(filename);
         if (frame.empty()) {
             std::cerr << "Empty frame" << std::endl;
-            exit(-1);
+            continue;
         }
         cvtColor(frame, gray, COLOR_BGR2GRAY);
 
