@@ -52,10 +52,10 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 	bool first = true;
 	while (true) {
 		cap.read(currentFrame);
+		fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
+		if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
+			continue;
 		if (first) {
-			fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
-			if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
-				continue;
 			KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
 			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
 			cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
@@ -74,7 +74,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 
 
 		reportStream << "prev features extracted: " << previousFrameExtractedPoints.size() << std::endl;
-		int max = 0;
+		int findIndex = -1;
 		Mat imgWithMaxTracked;
 		for (int batchIndex = batch.size() - 1;batchIndex >= 0;batchIndex--) {
 			currentFrame = batch.at(batchIndex);
@@ -86,10 +86,10 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			if (currentFrameTrackedPoints.size() < requiredExtractedPointsCount) {
 				reportStream << "currentFrameTrackedPoints:" << currentFrameTrackedPoints.size() << std::endl;
 				currentFrameTrackedPoints.clear();
-				newBatch.push_back(currentFrame);
 				continue;
 			}
 			else {
+				findIndex = batchIndex;
 				reportStream << batchIndex << std::endl;
 				previousFrame = currentFrame.clone();
 				fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
@@ -99,8 +99,22 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			}
 
 		}
-
-
+		if (findIndex != -1) {
+			for (int i = findIndex + 1;i < batch.size();i++)
+				newBatch.push_back(batch.at(i));
+		}
+		else {
+			batch.clear();
+			reportStream << "Batch skipped" << std::endl;
+			newBatch.clear();
+			first = 1;
+			previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+			currentFrameTrackedPoints.clear();
+			currentFrameExtractedPoints.clear();
+			previousFrameExtractedPoints.clear();
+			currentFrameExtractedPoints.clear();
+			continue;
+		}
 
 		reportStream << "changed feat extracted: " << previousFrameExtractedPointsTemp.size() << std::endl;
 
@@ -139,20 +153,19 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 
 
 
-		currentFrameTrackedPoints.clear();
-		currentFrameExtractedPoints.clear();
+
 		reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 		reportStream.flush();
 		d3PointsStream.flush();
 		countOfFrames = newBatch.size();
-		std::cout << "Type esc to leave cycle" << std::endl;
-		char c = (char)waitKey(2000);
+		imshow("dd", currentFrame);
+		waitKey(1000);
+		currentFrameTrackedPoints.clear();
+		currentFrameExtractedPoints.clear();
 		batch.clear();
 		batch = newBatch;
 		newBatch.clear();
 
-		if (c == ESC_KEY)
-			break;
 	}
 
 	reportStream.close();
