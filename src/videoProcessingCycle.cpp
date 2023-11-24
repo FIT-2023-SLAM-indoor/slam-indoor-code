@@ -117,7 +117,6 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 		}
 
 		reportStream << "changed feat extracted: " << previousFrameExtractedPointsTemp.size() << std::endl;
-
 		reportStream << "Tracked points: " << currentFrameTrackedPoints.size() << std::endl;
 
 
@@ -152,16 +151,27 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 		}
 
 
-
-
 		reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 		reportStream.flush();
 		d3PointsStream.flush();
 		countOfFrames = newBatch.size();
-		imshow("dd", currentFrame);
-		waitKey(1000);
+
+		/* This code shows tracked points
+		Mat pointFrame = currentFrame.clone();
+		for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
+			Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
+			color[0] = 0;
+			color[1] = 0;
+			color[2] = 255;
+			pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
+		}
+		imshow("dd", pointFrame);
+		waitKey(1000);*/
+
 		currentFrameTrackedPoints.clear();
 		currentFrameExtractedPoints.clear();
+		currentFrameExtractedKeyPoints.clear();
+		previousFrameExtractedPointsTemp.clear();
 		batch.clear();
 		batch = newBatch;
 		newBatch.clear();
