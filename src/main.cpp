@@ -1,6 +1,7 @@
 #include <iostream>
 #define _USE_MATH_DEFINES
 
+#include "cameraCalibration.h"
 #include "reportCycleForTwoFramesPair.h"
 #include "videoProcessingCycle.h"
 
@@ -16,9 +17,18 @@ using namespace cv;
 #define REQUIRED_EXTRACTED_POINTS_COUNT 10
 
 #define NDEBUG
+#define NCALIB
 
 int main(int argc, char** argv)
 {
+#ifdef CALIB
+    std::vector<String> files;
+    glob("./data/for_calib/roborock/plane_board_filtered/*.JPG", files, false);
+    chessboardPhotosCalibration(files, 22);
+//    VideoCapture calibCapture("./data/for_calib/roborock/video2.mp4");
+//    chessboardVideoCalibration(calibCapture, 15);
+    return 0;
+#endif
 #ifdef DEBUG
     reportingCycleForFramesPairs(
             FEATURE_EXTRACTING_THRESHOLD,

@@ -37,5 +37,5 @@ void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
 {
 //    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
     worldCameraRotation *= rotationMatrix;
-    worldCameraPose += (rotationMatrix * translationVector).t();
+    worldCameraPose += (worldCameraRotation * translationVector).t();
 }
