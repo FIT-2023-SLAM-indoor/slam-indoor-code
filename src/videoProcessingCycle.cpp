@@ -126,8 +126,9 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			reportStream << "3D points: " << euclideanPoints.rows << std::endl << std::endl;
 			Mat worldEuclideanPoints = euclideanPoints.clone();
 			placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose, worldCameraRotation);
-			d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl
-				<< worldEuclideanPoints << std::endl << std::endl;
+			d3PointsStream << worldEuclideanPoints << std::endl << std::endl;
+			/*d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl
+				<< worldEuclideanPoints << std::endl << std::endl;*/
 
 			refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose, worldCameraRotation);
 			reportStream << "New world camera pose: " << worldCameraPose << std::endl << std::endl;
