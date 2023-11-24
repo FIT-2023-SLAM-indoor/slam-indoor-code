@@ -75,7 +75,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 
 		reportStream << "prev features extracted: " << previousFrameExtractedPoints.size() << std::endl;
 		int findIndex = -1;
-		Mat imgWithMaxTracked;
+
 		for (int batchIndex = batch.size() - 1;batchIndex >= 0;batchIndex--) {
 			currentFrame = batch.at(batchIndex);
 			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
@@ -108,6 +108,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			reportStream << "Batch skipped" << std::endl;
 			newBatch.clear();
 			first = 1;
+			countOfFrames = 0;
 			previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
 			currentFrameTrackedPoints.clear();
 			currentFrameExtractedPoints.clear();
