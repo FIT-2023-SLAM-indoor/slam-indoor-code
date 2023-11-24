@@ -141,7 +141,7 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
         }
 #ifdef VISUAL_CALIB
         imshow("Test", frame);
-        char c = (char)waitKey(33);
+        char c = (char)waitKey(500);
         if (c == 27)
             break;
 #endif

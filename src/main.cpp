@@ -23,8 +23,10 @@ int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./data/for_calib/roborock/merged1/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 20);
+    glob("./data/for_calib/roborock/plane_board_filtered/*.JPG", files, false);
+    chessboardPhotosCalibration(files, 22);
+//    VideoCapture calibCapture("./data/for_calib/roborock/video2.mp4");
+//    chessboardVideoCalibration(calibCapture, 15);
     return 0;
 #endif
 #ifdef DEBUG
