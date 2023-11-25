@@ -50,8 +50,8 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 	int findedIndex = 0;
 	int countOfFrames = 0;
 	bool first = true;
-	while (true) {
-		cap.read(currentFrame);
+	while (cap.read(currentFrame)) {
+
 		fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
 		if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
 			continue;
@@ -62,6 +62,8 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			previousFrameExtractedPoints = currentFrameExtractedPoints;
 			previousFrame = currentFrame.clone();
 			first = false;
+			currentFrameExtractedPoints.clear();
+			currentFrameExtractedKeyPoints.clear();
 			continue;
 		}
 
@@ -153,11 +155,8 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 
 
 		reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
-		reportStream.flush();
-		d3PointsStream.flush();
-		countOfFrames = newBatch.size();
 
-		/* This code shows tracked points
+#ifdef SHOW_TRACKED_POINTS
 		Mat pointFrame = currentFrame.clone();
 		for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
 			Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
@@ -167,8 +166,11 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
 		}
 		imshow("dd", pointFrame);
-		waitKey(1000);*/
-
+		waitKey(1000);
+#endif
+		reportStream.flush();
+		d3PointsStream.flush();
+		countOfFrames = newBatch.size();
 		currentFrameTrackedPoints.clear();
 		currentFrameExtractedPoints.clear();
 		currentFrameExtractedKeyPoints.clear();

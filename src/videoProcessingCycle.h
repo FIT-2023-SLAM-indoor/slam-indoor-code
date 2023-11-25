@@ -28,7 +28,7 @@
  * @param requiredExtractedPointsCount This parameter is responsible for choosing frames for tracking. If extracted points count is too small, we skip the frame(go to another in our pool)
  * @param featureExtractingThreshold (The maximal acceptable difference beetwen points in feature finding.
  * @param reportsDirPath path to dir for reports' files WITHOUT last /. Dir must exist!
- * @return 0 if everything is ok, -1 otherwise.
+ * @return 0 after video finished.
  */
 int videoProcessingCycle(cv::VideoCapture& cap, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
 	int framesBatchSize, int requiredExtractedPointsCount, int featureExtractingThreshold, char* reportsDirPath);
