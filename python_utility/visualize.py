@@ -11,7 +11,7 @@ stadium = p.loadSDF("stadium.sdf")
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
 p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 1)
-p.resetDebugVisualizerCamera(cameraYaw=0.0, cameraPitch=-40.0,cameraDistance=7.5,cameraTargetPosition=[0.0,0.0,0.0])
+p.resetDebugVisualizerCamera(cameraYaw=0.0, cameraPitch=-40.0,cameraDistance=5.5,cameraTargetPosition=[0.0,-3.0,3.0])
 
 
 
@@ -19,30 +19,18 @@ file = open("../data/video_report/test.txt",'r')
 lst = file.readlines()
 file.close()
 
-
-
 for i, val in enumerate(lst):  
     res = lst[i].replace('[', '').replace(']', '').replace(';', '').split(", ")
     if len(res) != 3:
         continue
     if abs(float(res[0])) > 1000 or abs(float(res[1])) > 1000:
         continue
-    startPos = [float(res[0]),float(res[1]),float(res[2]) + 3]
+    startPos = [float(res[0]),float(res[1]),float(res[2])]
 
     startOrientation = p.getQuaternionFromEuler([0,0,0])
-    boxId = p.loadURDF("cube.urdf", startPos, startOrientation, globalScaling=0.12)
+    boxId = p.loadURDF("sphere2red.urdf", startPos, startOrientation, globalScaling=0.12)
     time.sleep(0.000001)
 
-for phi in range(0, 181, 10):
-    for theta in range(0, 361, 18):
-        x = 2.2 * math.sin(math.radians(phi)) * math.cos(math.radians(theta)) 
-        y = 2.2 * math.sin(math.radians(phi)) * math.sin(math.radians(theta))
-        z = 2.2 * math.cos(math.radians(phi)) + 3
-    
-        startOrientation = p.getQuaternionFromEuler([0,0,0])
-        boxId = p.loadURDF("sphere2red.urdf", [x, y, z], startOrientation, globalScaling=0.12)
-    
-    time.sleep(0.000001)
 
 
 def move_xyz(x, y, z):
@@ -83,10 +71,10 @@ while(1):
         move_xyz(x, y, xyz[2])
     
     if keys.get(ord('z')):  # Roll left
-        yaw = cam[8] + 1.25
+        yaw = cam[8] - 1.25
         move_yaw(yaw)
     if keys.get(ord('x')):  # Roll right
-        yaw = cam[8] - 1.25
+        yaw = cam[8] + 1.25
         move_yaw(yaw)
 
     if keys.get(ord('f')):  # Roll up
