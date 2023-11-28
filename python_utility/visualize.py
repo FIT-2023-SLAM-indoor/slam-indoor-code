@@ -59,28 +59,28 @@ while(1):
 
     if keys.get(p.B3G_RIGHT_ARROW):  # >
         xyz = cam[11]
-        x = float(xyz[0]) + 0.125
-        y = xyz[1]
-        z = xyz[2]
-        move_xyz(x, y, z)
+        yaw = cam[8]
+        x = float(xyz[0]) + math.cos(math.radians(yaw)) * 0.125
+        y = float(xyz[1]) + math.sin(math.radians(yaw)) * 0.125
+        move_xyz(x, y, xyz[2])
     if keys.get(p.B3G_LEFT_ARROW):  # <
         xyz = cam[11]
-        x = float(xyz[0]) - 0.125
-        y = xyz[1]
-        z = xyz[2]
-        move_xyz(x, y, z)
+        yaw = cam[8]
+        x = float(xyz[0]) - math.cos(math.radians(yaw)) * 0.125
+        y = float(xyz[1]) - math.sin(math.radians(yaw)) * 0.125
+        move_xyz(x, y, xyz[2])
     if keys.get(p.B3G_UP_ARROW):  # ^
         xyz = cam[11]
-        x = xyz[0] 
-        y = float(xyz[1]) + 0.125
-        z = xyz[2]
-        move_xyz(x, y, z)
+        yaw = cam[8]
+        x = float(xyz[0]) - math.sin(math.radians(yaw)) * 0.125
+        y = float(xyz[1]) + math.cos(math.radians(yaw)) * 0.125
+        move_xyz(x, y, xyz[2])
     if keys.get(p.B3G_DOWN_ARROW):  # v 
         xyz = cam[11]
-        x = xyz[0] 
-        y = float(xyz[1]) - 0.125
-        z = xyz[2]
-        move_xyz(x, y, z)
+        yaw = cam[8]
+        x = float(xyz[0]) + math.sin(math.radians(yaw)) * 0.125
+        y = float(xyz[1]) - math.cos(math.radians(yaw)) * 0.125
+        move_xyz(x, y, xyz[2])
     
     if keys.get(ord('z')):  # Roll left
         yaw = cam[8] + 1.25
@@ -98,15 +98,11 @@ while(1):
     
     if keys.get(ord('q')):  # Z up
         xyz = cam[11]
-        x = xyz[0]
-        y = xyz[1]
         z = float(xyz[2]) + 0.125
-        move_xyz(x, y, z)
+        move_xyz(xyz[0], xyz[1], z)
     if keys.get(ord('a')):  # Z down
         xyz = cam[11]
-        x = xyz[0]
-        y = xyz[1]
         z = float(xyz[2]) - 0.125
-        move_xyz(x, y, z)
+        move_xyz(xyz[0], xyz[1], z)
 
     time.sleep(0.000001)
