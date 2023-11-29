@@ -1,49 +1,41 @@
 #include <iostream>
-#include <opencv2/calib3d.hpp>
-#include <opencv2/core.hpp>
-#include <opencv2/core/hal/hal.hpp>
 
-#include "cameraCalibration.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <opencv2/calib3d.hpp>
+#include <opencv2/core/hal/hal.hpp>
 
 #include "cameraTransition.h"
 
 using namespace cv;
 
-void countMatricies(InputArray qPoints, InputArray gPoints)
+bool estimateProjection(InputArray points1, InputArray points2, const Mat& calibrationMatrix,
+	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix)
 {
-	Mat fundamentalMatrix = findFundamentalMat(qPoints, gPoints);
 
-	// How to find K camera calibration matrix?
-	Mat cameraCalib(3, 3, CV_32F);
-    calibration(cameraCalib, CalibrationOption::load);
+	// Maybe it's have sense to undistort points and matrix K
 
-	Mat essentialMatrix = findEssentialMat(qPoints, gPoints, cameraCalib);
+	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
 
-	// Find P (extrinsic matrix) using SVD class
-	SVD svdSolver(essentialMatrix, SVD::NO_UV);
-	Mat extrinsicMatrix = svdSolver.w; // or vt
+    // Choose one random corresponding points pair
+    int randomPointIndex = rand() % points1.rows();
+    Mat p1(1, 2, CV_64F), p2(1, 2, CV_64F);
+    points1.getMat().row(randomPointIndex).copyTo(p1.row(0));
+    points2.getMat().row(randomPointIndex).copyTo(p2.row(0));
 
-    std::cout << "P from SVD: " << extrinsicMatrix << std::endl;
+	// Find P matrix using wrapped OpenCV SVD and triangulation
+	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, rotationMatrix, translationVector);
+	hconcat(rotationMatrix, translationVector, projectionMatrix);
 
-	// Find rotations and translation using wrapped SVD
-	Mat rot1, rot2, translation;
-	decomposeEssentialMat(essentialMatrix, rot1, rot2, translation);
+    // Here bundle adjustment can be implemented
 
-    std::cout << "R1: " << rot1 << std::endl;
-    std::cout << "R2: " << rot2 << std::endl;
-    std::cout << "t: " << translation << std::endl;
+	return passedPointsCount > 0;
+}
 
-    Mat extendedR1(3, 4, CV_32F), extendedR2(3, 4, CV_32F);
-    hconcat(rot1, translation, extendedR1);
-    hconcat(rot2, translation, extendedR2);
-
-    std::cout << "R1: " << extendedR1 << std::endl;
-    std::cout << "R2: " << extendedR2 << std::endl;
-
-    Mat P1(3,4,CV_32F), P2(3, 4, CV_32F);
-    Mat D;
-    D.diag(4);
-//    gemm(cameraCalib, extendedR1, 1, D, 1, P1); // TODO: Понять, как их нормально перемножать
-    std::cout << "P1: " << P1 << std::endl;
-    std::cout << "P2: " << P2 << std::endl;
+void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
+                           Mat& worldCameraPose, Mat& worldCameraRotation)
+{
+//    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
+    worldCameraRotation *= rotationMatrix;
+    worldCameraPose += (worldCameraRotation * translationVector).t();
 }
