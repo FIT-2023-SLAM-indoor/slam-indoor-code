@@ -1,5 +1,6 @@
 roborock_*.mp4
 *.sfk
+.venv
 
 .idea
 
