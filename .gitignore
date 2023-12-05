@@ -4,6 +4,7 @@
 roborock_*.mp4
 *.sfk
 config.py
+main_config.h
 
 .idea
 
