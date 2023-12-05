@@ -4,6 +4,7 @@
 #include "reportCycleForTwoFramesPair.h"
 #include "videoProcessingCycle.h"
 #include "main_config.h"
+#include "cameraTransition.h"
 
 using namespace cv;
 
@@ -14,8 +15,9 @@ int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./data/for_calib/roborock/plane_board_filtered/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 22);
+    glob("./data/for_calib/pixel/*.jpg", files, false);
+    chessboardPhotosCalibration(files, 15);
+    return 0;
 #endif
 #ifdef DEBUG
     reportingCycleForFramesPairs(

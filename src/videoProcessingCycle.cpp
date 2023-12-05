@@ -13,15 +13,28 @@
 #include "videoProcessingCycle.h"
 
 static void setReportsPaths(
-	char* path, std::ofstream& reportStream, std::ofstream& d3PointsStream
+	char* path, std::ofstream& reportStream, std::ofstream& d3PointsStream,
+    std::ofstream& d3PointsStream1, std::ofstream& d3PointsStream2, std::ofstream& d3PointsStream3,
+    std::ofstream& poseStream, std::ofstream& poseStream2
 ) {
 	char tmp[256] = "";
 	sprintf(tmp, "%s/main.txt", path);
 	reportStream.open(tmp);
-	sprintf(tmp, "%s/3Dpoints.txt", path);
+	sprintf(tmp, "%s/3DpointsTriangMlt.txt", path);
 	d3PointsStream.open(tmp);
+    sprintf(tmp, "%s/3DpointsRecoverMlt.txt", path);
+    d3PointsStream1.open(tmp);
+    sprintf(tmp, "%s/3DpointsTriangRt.txt", path);
+    d3PointsStream2.open(tmp);
+    sprintf(tmp, "%s/3DpointsRecoverRt.txt", path);
+    d3PointsStream3.open(tmp);
+    sprintf(tmp, "%s/pose.txt", path);
+    poseStream.open(tmp);
+    sprintf(tmp, "%s/pose_handy_calc.txt", path);
+    poseStream2.open(tmp);
 }
 
+#define SHOW_TRACKED_POINTS
 #define ESC_KEY 27
 int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
 	int framesBatchSize, int requiredExtractedPointsCount, int featureExtractingThreshold, char* reportsDirPath)
@@ -35,13 +48,20 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 	std::vector<Point2f> currentFrameTrackedPoints;
 	std::ofstream reportStream;
 	std::ofstream d3PointsStream;
-	setReportsPaths(reportsDirPath, reportStream, d3PointsStream);
+    std::ofstream d3PointsStream1;
+    std::ofstream d3PointsStream2;
+    std::ofstream d3PointsStream3;
+    std::ofstream poseStream;
+    std::ofstream poseStream2;
+	setReportsPaths(reportsDirPath, reportStream, d3PointsStream, d3PointsStream1, d3PointsStream2, d3PointsStream3, poseStream, poseStream2);
 
 
-	Mat previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
+	Mat originProjection = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
+        previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
 		currentProjectionMatrix(3, 4, CV_64F),
-		worldCameraPose = (Mat_<double>(1, 3) << 0, 0, 0),
-		worldCameraRotation = (Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
+		worldCameraPose = (Mat_<double>(3, 1) << 0, 0, 0),
+        worldCameraPoseFromHandCalc = (Mat_<double>(3, 1) << 0, 0, 0),
+        worldCameraRotation = (Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
 
 	Mat calibrationMatrix(3, 3, CV_64F);
 	calibration(calibrationMatrix, CalibrationOption::load);
@@ -72,8 +92,6 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			batch.push_back(currentFrame.clone());
 			continue;
 		}
-
-
 
 		reportStream << "prev features extracted: " << previousFrameExtractedPoints.size() << std::endl;
 		int findIndex = -1;
@@ -111,7 +129,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			newBatch.clear();
 			first = 1;
 			countOfFrames = 0;
-			previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
+//			previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
 			currentFrameTrackedPoints.clear();
 			currentFrameExtractedPoints.clear();
 			previousFrameExtractedPoints.clear();
@@ -128,33 +146,71 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 		previousFrameExtractedPointsMatrix.reshape(1).convertTo(previousFrameExtractedPointsMatrix, CV_64F);
 		currentFrameTrackedPointsMatrix.reshape(1).convertTo(currentFrameTrackedPointsMatrix, CV_64F);
 		Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
-			translationVector = Mat::zeros(3, 1, CV_64F);
+			translationVector = Mat::zeros(3, 1, CV_64F),
+            triangulatedPointsFromRecoverPose;
 		if (estimateProjection(previousFrameExtractedPointsMatrix,
-			currentFrameTrackedPointsMatrix, calibrationMatrix, rotationMatrix,
-			translationVector, currentProjectionMatrix)) {
+                               currentFrameTrackedPointsMatrix, calibrationMatrix, rotationMatrix,
+                               translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
 
-			triangulate(previousFrameExtractedPointsMatrix,
-				currentFrameTrackedPointsMatrix, previousProjectionMatrix,
-				currentProjectionMatrix, homogeneous3DPoints);
-			reportStream << "Homogeneous 3D points: " << homogeneous3DPoints.cols << std::endl;
-			Mat euclideanPoints;
-			convertPointsFromHomogeneousWrapper(homogeneous3DPoints, euclideanPoints);
-			reportStream << "3D points: " << euclideanPoints.rows << std::endl << std::endl;
-			Mat worldEuclideanPoints = euclideanPoints.clone();
-			placeEuclideanPointsInWorldSystem(worldEuclideanPoints, worldCameraPose, worldCameraRotation);
-			d3PointsStream << worldEuclideanPoints << std::endl << std::endl;
-			/*d3PointsStream << "3D points in world system: " << worldEuclideanPoints.rows << std::endl
-				<< worldEuclideanPoints << std::endl << std::endl;*/
+            triangulate(previousFrameExtractedPointsMatrix,
+                        currentFrameTrackedPointsMatrix, originProjection,
+                        currentProjectionMatrix, homogeneous3DPoints);
+            reportStream << "Homogeneous 3D points: " << homogeneous3DPoints.cols << std::endl;
+            Mat normalizedHomogeneous3DPointsFromTriangulation, normalizedHomogeneous3DPointsFromRecoverPose;
+            normalizeHomogeneousWrapper(homogeneous3DPoints, normalizedHomogeneous3DPointsFromTriangulation);
+            normalizeHomogeneousWrapper(triangulatedPointsFromRecoverPose, normalizedHomogeneous3DPointsFromRecoverPose);
 
-			refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPose, worldCameraRotation);
-			reportStream << "New world camera pose: " << worldCameraPose << std::endl << std::endl;
-			reportStream << "New world camera rotation: " << worldCameraRotation << std::endl << std::endl;
-			previousProjectionMatrix = currentProjectionMatrix.clone();
+            Mat newGlobalProjectionMatrix(4, 4, CV_64F);
+            addHomogeneousRow(previousProjectionMatrix);
+            addHomogeneousRow(currentProjectionMatrix);
+
+            Mat H3DPointsFromTriangulationInWorldUsingP = normalizedHomogeneous3DPointsFromTriangulation.clone();
+            H3DPointsFromTriangulationInWorldUsingP = previousProjectionMatrix * H3DPointsFromTriangulationInWorldUsingP;
+            Mat H3DPointsFromRecoverPoseInWorldUsingP = normalizedHomogeneous3DPointsFromTriangulation.clone();
+            H3DPointsFromRecoverPoseInWorldUsingP = previousProjectionMatrix * H3DPointsFromRecoverPoseInWorldUsingP;
+
+            newGlobalProjectionMatrix = previousProjectionMatrix * currentProjectionMatrix;
+
+            removeHomogeneousRow(newGlobalProjectionMatrix);
+            removeHomogeneousRow(previousProjectionMatrix);
+
+            addHomogeneousRow(worldCameraPose);
+            worldCameraPose = currentProjectionMatrix * worldCameraPose;
+            removeHomogeneousRow(worldCameraPose);
+            removeHomogeneousRow(currentProjectionMatrix);
+//            removeHomogeneousRow(currentProjectionMatrix);
+
+
+
+			Mat worldEuclideanPoints(3, homogeneous3DPoints.cols, CV_64F);
+            worldEuclideanPoints = H3DPointsFromTriangulationInWorldUsingP.rowRange(0, 3).clone();
+            Mat worldEuclideanPointsFromRecoverPose(3, homogeneous3DPoints.cols, CV_64F);
+            worldEuclideanPointsFromRecoverPose = H3DPointsFromRecoverPoseInWorldUsingP.rowRange(0, 3).clone();
+			d3PointsStream << worldEuclideanPoints.t() << std::endl << std::endl;
+            d3PointsStream1 << worldEuclideanPointsFromRecoverPose.t() << std::endl << std::endl;
+
+            reportStream << "Current projection: " << currentProjectionMatrix << std::endl << std::endl;
+			reportStream << "New world camera pose from multiply: " << worldCameraPose << std::endl << std::endl;
+            poseStream << worldCameraPose.t() << std::endl << std::endl;
+			reportStream << "New world camera projection: " << newGlobalProjectionMatrix << std::endl << std::endl;
+            previousProjectionMatrix = newGlobalProjectionMatrix.clone();
+
+            // Place with old-concept global pose estimating
+            Mat euclidean3DPointsFromTriangulationInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
+            placeEuclideanPointsInWorldSystem(euclidean3DPointsFromTriangulationInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
+            Mat euclidean3DPointsFromRecoverPoseInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
+            placeEuclideanPointsInWorldSystem(euclidean3DPointsFromRecoverPoseInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
+
+            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);
+
+            d3PointsStream2 << euclidean3DPointsFromTriangulationInWorldUsingRt.t() << std::endl << std::endl;
+            d3PointsStream3 << euclidean3DPointsFromRecoverPoseInWorldUsingRt.t() << std::endl << std::endl;
+            reportStream << "New world camera pose from handy calc: " << worldCameraPoseFromHandCalc << std::endl << std::endl;
+            reportStream << "New world camera rotation from handy calc: " << worldCameraRotation << std::endl << std::endl;
+            poseStream2 << worldCameraPoseFromHandCalc.t() << std::endl << std::endl;
+
 
 		}
-
-
-		reportStream << "Current projection matrix:\n" << currentProjectionMatrix << std::endl << std::endl;
 
 #ifdef SHOW_TRACKED_POINTS
 		Mat pointFrame = currentFrame.clone();
