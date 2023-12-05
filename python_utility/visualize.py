@@ -10,21 +10,22 @@ PITCH_IDX = 9
 DIST_IDX = 10
 TARG_POS = 11
 CAM_DISTANCE = 1.0
-COORD_Z_SCALE = 7.0
+COEFF_MODES = [0.03, 0.08, 0.13, 0.25, 0.6, 1.5, 3.0, 4.5]
+MAX_COEFF_MODE = 7
 
 
 #'''
 physicsClient = p.connect(p.GUI)   # or p.DIRECT for non-graphical version
 p.setAdditionalSearchPath(pybullet_data.getDataPath())  # optionally
 p.setGravity(0,0,0)
-p.loadURDF("plane.urdf")
+p.loadURDF("plane.urdf", globalScaling=25.0)
 p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
 p.configureDebugVisualizer(p.COV_ENABLE_MOUSE_PICKING, 1)
 p.configureDebugVisualizer(p.COV_ENABLE_KEYBOARD_SHORTCUTS, 1)
-p.resetDebugVisualizerCamera(cameraYaw=0.0, 
+p.resetDebugVisualizerCamera(cameraYaw=0.0,
                              cameraPitch=-40.0,
                              cameraDistance=CAM_DISTANCE,
-                             cameraTargetPosition=[0.0,-6.0,8.0])
+                             cameraTargetPosition=[0.0,-7.0,9.0])
 
 
 def move_xyz(x, y, z):
@@ -34,17 +35,19 @@ def move_yaw(yaw):
 def move_pitch(pitch):
     p.resetDebugVisualizerCamera(cameraYaw=cam[8], cameraPitch=pitch,cameraDistance=cam[10],cameraTargetPosition=cam[11])
 
-def visible(line):
+def visualizePointFromString(line):
     coords = line.replace('[', '').replace(']', '').replace(';', '').split(", ")
     if len(coords) == 3:
-        startPos = [float(number) for number in coords]
+        startPos = [float(coords[0]) * cfg.COORD_X_SCALE, 
+                    float(coords[1]) * cfg.COORD_Y_SCALE,
+                    float(coords[2]) * cfg.COORD_Z_SCALE]
         startOrientation = p.getQuaternionFromEuler([0,0,0])
         p.loadURDF("sphere2red.urdf", startPos, startOrientation, globalScaling=0.4)
 
 
 points_data = open(cfg.FILE_PATH,'r')
 visualize_flag = True
-coeff = 0.115
+curr_coeff = 2
 while(True):
     if visualize_flag:
         line = points_data.readline()
@@ -55,65 +58,65 @@ while(True):
             print("-FILE ENDED-")
             print("#######\n#######\n#######")
         else:
-            visible(line)
+            visualizePointFromString(line)
 
     
     keys = p.getKeyboardEvents()
     cam = p.getDebugVisualizerCamera()
 
     if keys.get(p.B3G_SHIFT):
-        if coeff < 4.2:
-            coeff += 0.00002
+        if curr_coeff < MAX_COEFF_MODE:
+            curr_coeff += 1
     if keys.get(p.B3G_CONTROL):
-        if coeff > 0.05:
-            coeff -= 0.00002
+        if curr_coeff > 0:
+            curr_coeff -= 1
 
     if keys.get(ord('c')):  # >
         xyz = cam[11]
         yaw = cam[8]
-        x = float(xyz[0]) + math.cos(math.radians(yaw)) * coeff
-        y = float(xyz[1]) + math.sin(math.radians(yaw)) * coeff
+        x = float(xyz[0]) + math.cos(math.radians(yaw)) * COEFF_MODES[curr_coeff]
+        y = float(xyz[1]) + math.sin(math.radians(yaw)) * COEFF_MODES[curr_coeff]
         move_xyz(x, y, xyz[2])
     if keys.get(ord('z')):  # <
         xyz = cam[11]
         yaw = cam[8]
-        x = float(xyz[0]) - math.cos(math.radians(yaw)) * coeff
-        y = float(xyz[1]) - math.sin(math.radians(yaw)) * coeff
+        x = float(xyz[0]) - math.cos(math.radians(yaw)) * COEFF_MODES[curr_coeff]
+        y = float(xyz[1]) - math.sin(math.radians(yaw)) * COEFF_MODES[curr_coeff]
         move_xyz(x, y, xyz[2])
     if keys.get(ord('s')):  # ^
         xyz = cam[11]
         yaw = cam[8]
-        x = float(xyz[0]) - math.sin(math.radians(yaw)) * coeff
-        y = float(xyz[1]) + math.cos(math.radians(yaw)) * coeff
+        x = float(xyz[0]) - math.sin(math.radians(yaw)) * COEFF_MODES[curr_coeff]
+        y = float(xyz[1]) + math.cos(math.radians(yaw)) * COEFF_MODES[curr_coeff]
         move_xyz(x, y, xyz[2])
     if keys.get(ord('x')):  # v 
         xyz = cam[11]
         yaw = cam[8]
-        x = float(xyz[0]) + math.sin(math.radians(yaw)) * coeff
-        y = float(xyz[1]) - math.cos(math.radians(yaw)) * coeff
+        x = float(xyz[0]) + math.sin(math.radians(yaw)) * COEFF_MODES[curr_coeff]
+        y = float(xyz[1]) - math.cos(math.radians(yaw)) * COEFF_MODES[curr_coeff]
         move_xyz(x, y, xyz[2])
     
     if keys.get(p.B3G_LEFT_ARROW):  # Left yaw
-        yaw = cam[8] - coeff * 7
+        yaw = cam[8] - COEFF_MODES[curr_coeff] * 5
         move_yaw(yaw)
     if keys.get(p.B3G_RIGHT_ARROW):  # Right yaw
-        yaw = cam[8] + coeff * 7
+        yaw = cam[8] + COEFF_MODES[curr_coeff] * 5
         move_yaw(yaw)
 
     if keys.get(p.B3G_DOWN_ARROW):  # Up pitch
-        pitch = cam[9] - coeff * 7
+        pitch = cam[9] - COEFF_MODES[curr_coeff] * 5
         move_pitch(pitch)
     if keys.get(p.B3G_UP_ARROW):  # Down pithc
-        pitch = cam[9] + coeff * 7
+        pitch = cam[9] + COEFF_MODES[curr_coeff] * 5
         move_pitch(pitch)
     
     if keys.get(ord('q')):  # Z up
         xyz = cam[11]
-        z = float(xyz[2]) + coeff * 7
+        z = float(xyz[2]) + COEFF_MODES[curr_coeff] * 5
         move_xyz(xyz[0], xyz[1], z)
     if keys.get(ord('a')):  # Z down
         xyz = cam[11]
-        z = float(xyz[2]) - coeff * 7
+        z = float(xyz[2]) - COEFF_MODES[curr_coeff] * 5
         move_xyz(xyz[0], xyz[1], z)
 
 
