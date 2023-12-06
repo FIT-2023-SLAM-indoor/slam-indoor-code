@@ -38,9 +38,9 @@ def move_pitch(pitch):
 def visualizePointFromString(line):
     coords = line.replace('[', '').replace(']', '').replace(';', '').split(", ")
     if len(coords) == 3:
-        startPos = [float(coords[0]) * cfg.COORD_X_SCALE, 
+        startPos = [float(coords[2]) * cfg.COORD_X_SCALE, 
                     float(coords[1]) * cfg.COORD_Y_SCALE,
-                    float(coords[2]) * cfg.COORD_Z_SCALE]
+                    float(coords[0]) * cfg.COORD_Z_SCALE]
         startOrientation = p.getQuaternionFromEuler([0,0,0])
         p.loadURDF("sphere2red.urdf", startPos, startOrientation, globalScaling=0.4)
 
