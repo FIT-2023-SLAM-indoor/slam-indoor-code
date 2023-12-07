@@ -138,13 +138,16 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
 #endif
             imagePointsVector.push_back(imagePoints);
             objectPointsVector.push_back(objectPoints);
-        }
 #ifdef VISUAL_CALIB
-        imshow("Test", frame);
-        char c = (char)waitKey(500);
-        if (c == 27)
-            break;
+            imshow("Test", frame);
+            char c = (char)waitKey(500);
+            if (c == 27)
+                break;
 #endif
+        }
+        else {
+            std::cout << "Cannot find chessboard corners" << std::endl;
+        }
 
         if (imagePointsVector.size() >= itersCount)
             break;
