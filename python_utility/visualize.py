@@ -10,8 +10,7 @@ PITCH_IDX = 9
 DIST_IDX = 10
 TARG_POS = 11
 CAM_DISTANCE = 1.0
-COEFF_MODES = [0.03, 0.08, 0.13, 0.25, 0.6, 1.5, 3.0, 4.5]
-MAX_COEFF_MODE = 7
+COEFF_MODES = [0.03, 0.08, 0.13, 0.25, 0.6, 1.5]
 
 
 #'''
@@ -72,7 +71,7 @@ while(True):
         visualize_flag = not visualize_flag
 
     if keys.get(p.B3G_SHIFT):
-        if curr_coeff < MAX_COEFF_MODE:
+        if curr_coeff < len(COEFF_MODES) - 1:
             curr_coeff += 1
     if keys.get(p.B3G_CONTROL):
         if curr_coeff > 0:

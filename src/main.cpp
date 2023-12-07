@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./data/for_calib/pixel/*.jpg", files, false);
+    glob("./data/for_calib/realme8/photos_horizontal/*.JPG", files, false);
     chessboardPhotosCalibration(files, 15);
     return 0;
 #endif
