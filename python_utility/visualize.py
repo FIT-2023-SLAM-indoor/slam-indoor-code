@@ -43,14 +43,18 @@ def visualizePointFromString(line):
                     float(coords[1]) * cfg.COORD_Z_SCALE]
         startOrientation = p.getQuaternionFromEuler([0,0,0])
         p.loadURDF("sphere2red.urdf", startPos, startOrientation, globalScaling=0.4)
+        print(lineIndex)
 
 
 points_data = open(cfg.FILE_PATH,'r')
+lines = points_data.readlines()
+lineIndex = 0
 visualize_flag = True
 curr_coeff = 2
 while(True):
     if visualize_flag:
-        line = points_data.readline()
+        line = lines[lineIndex]
+        lineIndex += 1
         if line == "FINISH":
             visualize_flag = False
             points_data.close()
@@ -63,6 +67,9 @@ while(True):
     
     keys = p.getKeyboardEvents()
     cam = p.getDebugVisualizerCamera()
+
+    if keys.get(ord('p')): # once stops visualization
+        visualize_flag = not visualize_flag
 
     if keys.get(p.B3G_SHIFT):
         if curr_coeff < MAX_COEFF_MODE:

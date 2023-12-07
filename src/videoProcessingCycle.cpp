@@ -236,7 +236,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
 		}
 		imshow("dd", pointFrame);
-        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
+//        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
 #endif
 		reportStream.flush();
 		d3PointsStream.flush();
