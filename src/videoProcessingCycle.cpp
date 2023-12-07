@@ -93,11 +93,12 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			continue;
 		}
 
-		countOfFrames++;
-		if (countOfFrames <= framesBatchSize) {
-			batch.push_back(currentFrame.clone());
-			continue;
-		}
+        if (countOfFrames < framesBatchSize) {
+            batch.push_back(currentFrame.clone());
+            countOfFrames++;
+            if (countOfFrames < framesBatchSize)
+                continue;
+        }
 		reportStream << "Current second:" << cap.get(CAP_PROP_POS_MSEC) / 1000 << std::endl;
 		reportStream << "prev features extracted: " << previousFrameExtractedPoints.size() << std::endl;
 		int findIndex = -1;

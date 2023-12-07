@@ -2,13 +2,16 @@
 
 #include "cameraCalibration.h"
 #include "reportCycleForTwoFramesPair.h"
+#include "photosProcessingCycle.h"
+
 #include "videoProcessingCycle.h"
-#include "main_config.h"
 #include "cameraTransition.h"
+
+#include "main_config.h"
 
 using namespace cv;
 
-#define NDEBUG
+#define DEBUG
 #define NCALIB
 
 int main(int argc, char** argv)
@@ -20,11 +23,16 @@ int main(int argc, char** argv)
     return 0;
 #endif
 #ifdef DEBUG
-    reportingCycleForFramesPairs(
-            FEATURE_EXTRACTING_THRESHOLD,
-            FEATURE_TRACKING_BARRIER,
-            FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE
-    );
+    std::vector<String> photos;
+    glob("./data/two_frames/for_triang/*.JPG", photos, false);
+    char path[] = OUTPUT_DATA_DIR;
+    photosProcessingCycle(photos,
+                          FEATURE_TRACKING_BARRIER,
+                          FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE,
+                          FRAMES_BATCH_SIZE,
+                          REQUIRED_EXTRACTED_POINTS_COUNT,
+                          FEATURE_EXTRACTING_THRESHOLD,
+                          path);
 #else
     VideoCapture cap(VIDEO_SOURCE_PATH);
 	if (!cap.isOpened()) {
