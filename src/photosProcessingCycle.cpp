@@ -39,8 +39,6 @@ static void setReportsPaths(
     poseStream2.open(tmp);
 }
 
-#define SHOW_TRACKED_POINTS
-#define ESC_KEY 27
 int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
                          int framesBatchSize, int requiredExtractedPointsCount, int featureExtractingThreshold, char* reportsDirPath)
 {

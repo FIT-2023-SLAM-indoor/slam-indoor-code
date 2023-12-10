@@ -11,6 +11,7 @@
 #include "cameraTransition.h"
 #include "triangulate.h"
 #include "videoProcessingCycle.h"
+#include "main_config.h"
 
 static void setReportsPaths(
 	char* path, std::ofstream& reportStream, std::ofstream& d3PointsStream,
@@ -37,8 +38,6 @@ static void setReportsPaths(
     poseStream2.open(tmp);
 }
 
-#define N_SHOW_TRACKED_POINTS
-#define ESC_KEY 27
 int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
 	int framesBatchSize, int requiredExtractedPointsCount, int featureExtractingThreshold, char* reportsDirPath)
 {

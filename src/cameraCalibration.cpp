@@ -6,9 +6,10 @@
 #include <ctime>
 #include <iostream>
 
+#include "main_config.h"
 #include "cameraCalibration.h"
 
-#define VISUAL_CALIB
+#define MINIMAL_FOUND_FRAMES_COUNT 10
 
 using namespace cv;
 
@@ -95,6 +96,10 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             break;
 #endif
     }
+    if (imagePointsVector.size() < MINIMAL_FOUND_FRAMES_COUNT) {
+        std::cerr << "Cannot find enough chessboard frames" << std::endl;
+        exit(-1);
+    }
 
     Mat cameraMatrixK, distortionCoeffs, R, T;
     calibrateCamera(
@@ -151,6 +156,10 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
 
         if (imagePointsVector.size() >= itersCount)
             break;
+    }
+    if (imagePointsVector.size() < MINIMAL_FOUND_FRAMES_COUNT) {
+        std::cerr << "Cannot detect chessboard on enough count of photos" << std::endl;
+        exit(-1);
     }
 
     Mat cameraMatrixK, distortionCoeffs, R, T;

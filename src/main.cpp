@@ -1,11 +1,6 @@
-#include <iostream>
-
 #include "cameraCalibration.h"
-#include "reportCycleForTwoFramesPair.h"
 #include "photosProcessingCycle.h"
-
 #include "videoProcessingCycle.h"
-#include "cameraTransition.h"
 
 #include "main_config.h"
 
