@@ -31,10 +31,14 @@ bool estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv
  */
 void refineWorldCameraPose(cv::Mat& rotationMatrix, cv::Mat& translationVector,
                            cv::Mat& worldCameraPose, cv::Mat& worldCameraRotation);
-
+/**
+ * Transformer for adding "homogeneous" row.
+ * @param [in,out] m matrix for where will be added row contains zeros and 1 on the last position
+ */
 void addHomogeneousRow(Mat& m);
 
+/**
+ * Removes last row in matrix
+ * @param [in, out] m matrix where will be removed last row
+ */
 void removeHomogeneousRow(Mat& m);
-
-void combineProjectionMatrices(cv::Mat& p1, cv::Mat& p2, cv::Mat& res);
-

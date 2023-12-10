@@ -53,11 +53,3 @@ void addHomogeneousRow(Mat& m) {
 void removeHomogeneousRow(Mat& m) {
     m.pop_back();
 }
-
-void combineProjectionMatrices(cv::Mat& p1, cv::Mat& p2, cv::Mat& res) {
-    Mat lastRow = (Mat_<double>(1, 4) << 0, 0, 0, 1);
-    Mat p1H = p1.clone(), p2H = p2.clone();
-    p1H.push_back(lastRow.clone());
-    p2H.push_back(lastRow.clone());
-    res = p1H * p2H;
-}

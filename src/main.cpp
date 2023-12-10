@@ -11,20 +11,17 @@
 
 using namespace cv;
 
-#define DEBUG
-#define NCALIB
-
 int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./data/for_calib/realme8/photos_horizontal/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 15);
+    glob("./data/for_calib/realme8/photos_vertical-2/*.JPG", files, false);
+    chessboardPhotosCalibration(files, 12);
     return 0;
 #endif
-#ifdef DEBUG
+#ifdef PHOTOS_CYCLE
     std::vector<String> photos;
-    glob("./data/two_frames/for_triang/*.JPG", photos, false);
+    glob(PHOTOS_PATH_PATTERN, photos, false);
     char path[] = OUTPUT_DATA_DIR;
     photosProcessingCycle(photos,
                           FEATURE_TRACKING_BARRIER,

@@ -23,7 +23,7 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
 /**
  * Converts points from homogeneous format to 3D.
  * @param [in] inputHomogeneous3DPoints input 4xN matrix with homogeneous points
- * @param [out] normalizedHomogeneous3DPoints output Nx3 matrix with euclidian 3D points
+ * @param [out] normalizedHomogeneous3DPoints output 3xN matrix with euclidian 3D points
  */
 void normalizeHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Mat& normalizedHomogeneous3DPoints);
 
@@ -31,7 +31,7 @@ void normalizeHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Ma
  * Converter to world coordinates.
  * Adds to points current world camera position
  *
- * @param [in,out] points Nx3 matrix with points which will be placed in world system
+ * @param [in,out] points 3xN matrix with points which will be placed in world system
  * @param [in] worldCameraPose 1x3 vector-matrix with world camera position
  * @param [in] worldCameraRotation 3x3 world camera rotation matrix
  */

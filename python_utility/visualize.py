@@ -10,7 +10,7 @@ PITCH_IDX = 9
 DIST_IDX = 10
 TARG_POS = 11
 CAM_DISTANCE = 1.0
-COEFF_MODES = [0.03, 0.08, 0.13, 0.25, 0.6, 1.5]
+COEFF_MODES = [0.03, 0.08, 0.13, 0.25, 0.6, 1.5, 2.5]
 
 
 #'''
@@ -34,27 +34,41 @@ def move_yaw(yaw):
 def move_pitch(pitch):
     p.resetDebugVisualizerCamera(cameraYaw=cam[8], cameraPitch=pitch,cameraDistance=cam[10],cameraTargetPosition=cam[11])
 
+pointsSet = set()
+def isAlreadyPlaced(point):
+    tuplePoint = tuple(point)
+    if tuplePoint in pointsSet:
+        return True
+    pointsSet.add(tuplePoint)
+    return False
+
 def visualizePointFromString(line):
     coords = line.replace('[', '').replace(']', '').replace(';', '').split(", ")
     if len(coords) == 3:
-        startPos = [float(coords[0]) * cfg.COORD_X_SCALE, 
-                    float(coords[2]) * cfg.COORD_Y_SCALE,
-                    float(coords[1]) * cfg.COORD_Z_SCALE]
+        startPos = [float(coords[2]), 
+                    float(coords[0]),
+                    float(coords[1])]
+        startPos[0] = round(startPos[0], 2) * cfg.COORD_X_SCALE
+        startPos[1] = round(startPos[1], 2) * cfg.COORD_Y_SCALE
+        startPos[2] = round(startPos[2], 2) * cfg.COORD_Z_SCALE
+        if isAlreadyPlaced(startPos):
+            return
         startOrientation = p.getQuaternionFromEuler([0,0,0])
         p.loadURDF("sphere2red.urdf", startPos, startOrientation, globalScaling=0.4)
-        print(lineIndex)
+        print(lineIndex, startPos)
 
 
 points_data = open(cfg.FILE_PATH,'r')
 lines = points_data.readlines()
 lineIndex = 0
+linesCnt = len(lines)
 visualize_flag = True
 curr_coeff = 2
 while(True):
-    if visualize_flag:
+    if visualize_flag and lineIndex < linesCnt:
         line = lines[lineIndex]
         lineIndex += 1
-        if line == "FINISH":
+        if lineIndex == linesCnt:
             visualize_flag = False
             points_data.close()
             print("#######\n#######\n#######")

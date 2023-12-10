@@ -174,7 +174,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
             Mat H3DPointsFromTriangulationInWorldUsingP = normalizedHomogeneous3DPointsFromTriangulation.clone();
             H3DPointsFromTriangulationInWorldUsingP = previousProjectionMatrix * H3DPointsFromTriangulationInWorldUsingP;
-            Mat H3DPointsFromRecoverPoseInWorldUsingP = normalizedHomogeneous3DPointsFromTriangulation.clone();
+            Mat H3DPointsFromRecoverPoseInWorldUsingP = normalizedHomogeneous3DPointsFromRecoverPose.clone();
             H3DPointsFromRecoverPoseInWorldUsingP = previousProjectionMatrix * H3DPointsFromRecoverPoseInWorldUsingP;
 
             newGlobalProjectionMatrix = previousProjectionMatrix * currentProjectionMatrix;
@@ -213,7 +213,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             // Part with old-concept global pose estimating
             Mat euclidean3DPointsFromTriangulationInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
             placeEuclideanPointsInWorldSystem(euclidean3DPointsFromTriangulationInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
-            Mat euclidean3DPointsFromRecoverPoseInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
+            Mat euclidean3DPointsFromRecoverPoseInWorldUsingRt = normalizedHomogeneous3DPointsFromRecoverPose.rowRange(0, 3).clone();
             placeEuclideanPointsInWorldSystem(euclidean3DPointsFromRecoverPoseInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
 
             refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);

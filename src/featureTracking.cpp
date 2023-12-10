@@ -7,6 +7,8 @@
 
 #include "featureTracking.h"
 
+#include "main_config.h"
+
 using namespace cv;
 
 
@@ -96,7 +98,6 @@ int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double
 }
 
 
-#define STANDART_FT
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
 #ifdef STANDART_FT

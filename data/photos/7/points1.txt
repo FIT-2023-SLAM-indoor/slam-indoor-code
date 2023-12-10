@@ -1,0 +1,6 @@
+Features extracted and tracked: 4
+
+[1060, 377;
+ 1080, 377;
+ 1159, 381;
+ 1168, 382]
