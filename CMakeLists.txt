@@ -14,7 +14,9 @@ add_executable(
         "src/cameraTransition.cpp" "src/cameraTransition.h"
         "src/featureTracking.cpp" "src/featureTracking.h"
         "src/triangulate.cpp" "src/triangulate.h"
- "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp" src/reportCycleForTwoFramesPair.cpp src/reportCycleForTwoFramesPair.h)
+        "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
+        "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
+        "src/main_config.h")
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
 

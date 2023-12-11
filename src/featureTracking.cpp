@@ -7,6 +7,8 @@
 
 #include "featureTracking.h"
 
+#include "main_config.h"
+
 using namespace cv;
 
 
@@ -95,8 +97,10 @@ int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double
 	return 0;
 }
 
+
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
+#ifdef STANDART_FT
 	for (int j = 0; j < features.size(); j++)
 	{
 		Point2f feature;
@@ -109,4 +113,33 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 
 		newFeatures.push_back(feature);
 	}
+#else
+	int WIDTH = previousFrame.size().width;
+	int HEIGHT = previousFrame.size().height;
+	std::vector<uchar> status;
+	std::vector<float> err;
+	Size winSize = Size(21, 21);
+	TermCriteria termcrit = TermCriteria(TermCriteria::COUNT + TermCriteria::EPS, 50, 0.01);
+
+	calcOpticalFlowPyrLK(previousFrame, currentFrame, features, newFeatures, status, err, winSize, 3, termcrit, 0, 0.001);
+
+	//getting rid of points for which the KLT tracking failed or those who have gone outside the frame
+	int indexCorrection = 0;
+	for (int i = 0; i < status.size(); i++)
+	{
+
+		Point2f pt = newFeatures.at(i - indexCorrection);
+		if ((status.at(i) == 0) || (pt.x < 0) || (pt.y < 0) || (pt.x >= WIDTH - 3) || (pt.y >= HEIGHT - 3)) {
+			if ((pt.x < 0) || (pt.y < 0) || (pt.x >= WIDTH - 3) || (pt.y >= HEIGHT - 3)) {
+				status.at(i) = 0;
+			}
+
+			features.erase(features.begin() + (i - indexCorrection));
+			newFeatures.erase(newFeatures.begin() + (i - indexCorrection));
+			indexCorrection++;
+		}
+
+	}
+
+#endif
 }
