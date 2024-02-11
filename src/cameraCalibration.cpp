@@ -90,8 +90,12 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             prevClock = clock();
         }
 #ifdef VISUAL_CALIB
-        imshow("Test", frame);
         char c = (char)waitKey(33);
+//        Mat resized;
+        namedWindow("Test", cv::WINDOW_NORMAL);
+        resizeWindow("Test", frame.rows / 32, frame.cols / 32);
+        imshow("Test", frame);
+//        imwrite("./test.jpg", frame);
         if (c == 27)
             break;
 #endif
