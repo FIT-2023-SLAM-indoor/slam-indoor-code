@@ -98,10 +98,7 @@ void trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, doubl
 	}
 
 }
-void function(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
-{
-	trackFeature(feature, image1, image2, res, barier, maxAcceptableDifference);
-}
+
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
@@ -113,26 +110,7 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	}
 	for (int j = 0; j < features.size(); j++)
 	{
-		std::thread th1(function, features[j], std::ref(previousFrame),
-			std::ref(currentFrame), std::ref(isGoodFeatures.at(j)), barier, maxAcceptableDifference);
-		j++;
-		if (j < features.size()) {
-			std::thread th2(function, features[j], std::ref(previousFrame),
-				std::ref(currentFrame), std::ref(isGoodFeatures.at(j)), barier, maxAcceptableDifference);
-			j++;
-			if (j < features.size()) {
-				std::thread th3(function, features[j], std::ref(previousFrame),
-					std::ref(currentFrame), std::ref(isGoodFeatures.at(j)), barier, maxAcceptableDifference);
-				th3.join();
-				j++;
-			}
-			th2.join();
-
-		}
-		
-		th1.join();
-		
-		
+		trackFeature(features[j], previousFrame, currentFrame, isGoodFeatures.at(j), barier, maxAcceptableDifference);
 	}
 	int deletedCount = 0;
 	for (int i = 0;i < isGoodFeatures.size();i++) {
