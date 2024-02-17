@@ -2,13 +2,15 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <algorithm>
+#include <thread>
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
 #include "featureTracking.h"
 
 #include "main_config.h"
-
+#define STANDART_FT
+#define THREADS_COUNT 10;
 using namespace cv;
 
 
@@ -53,7 +55,7 @@ double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>&
 	{
 		Vec3b& color1 = image1.at<Vec3b>(batch1[i]);
 		Vec3b& color2 = image2.at<Vec3b>(batch2[i]);
-		sum += (color1[0] - color2[0]) * (color1[0] - color2[0]);
+		sum += abs(color1[0] - color2[0]);
 
 		if (sum > min)
 			return sum;
@@ -62,7 +64,7 @@ double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>&
 	return sum;
 }
 
-int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
+void trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
 {
 	int WIDTH = image1.size().width;
 	int HEIGHT = image1.size().height;
@@ -92,27 +94,57 @@ int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double
 	}
 	if (min > maxAcceptableDifference)
 	{
-		return -1;
+		res.x = -1;
 	}
-	return 0;
-}
 
+}
+void function(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
+{
+	trackFeature(feature, image1, image2, res, barier, maxAcceptableDifference);
+}
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
 #ifdef STANDART_FT
+
+	std::vector<Point2f> isGoodFeatures;
+	for (int i = 0;i < features.size();i++) {
+		isGoodFeatures.push_back(Point2f());
+	}
 	for (int j = 0; j < features.size(); j++)
 	{
-		Point2f feature;
-		if (trackFeature(features[j], previousFrame, currentFrame, feature, barier, maxAcceptableDifference) == -1)
-		{
-			features.erase(features.begin() + j);
-			j--;
-			continue;
-		}
+		std::thread th1(function, features[j], std::ref(previousFrame),
+			std::ref(currentFrame), std::ref(isGoodFeatures.at(j)), barier, maxAcceptableDifference);
+		j++;
+		if (j < features.size()) {
+			std::thread th2(function, features[j], std::ref(previousFrame),
+				std::ref(currentFrame), std::ref(isGoodFeatures.at(j)), barier, maxAcceptableDifference);
+			j++;
+			if (j < features.size()) {
+				std::thread th3(function, features[j], std::ref(previousFrame),
+					std::ref(currentFrame), std::ref(isGoodFeatures.at(j)), barier, maxAcceptableDifference);
+				th3.join();
+				j++;
+			}
+			th2.join();
 
-		newFeatures.push_back(feature);
+		}
+		
+		th1.join();
+		
+		
 	}
+	int deletedCount = 0;
+	for (int i = 0;i < isGoodFeatures.size();i++) {
+		if (isGoodFeatures.at(i).x == -1) {
+			features.erase(features.begin() + (i - deletedCount));
+		    deletedCount++;
+		}
+		else {
+			newFeatures.push_back(isGoodFeatures.at(i));
+		}
+	}
+	isGoodFeatures.clear();
 #else
 	int WIDTH = previousFrame.size().width;
 	int HEIGHT = previousFrame.size().height;
