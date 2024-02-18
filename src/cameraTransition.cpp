@@ -9,13 +9,23 @@ using namespace cv;
 
 #define DISTANCE_THRESHOLD 100
 
-bool estimateProjection(InputArray points1, InputArray points2, const Mat& calibrationMatrix,
+bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& points2, const Mat& calibrationMatrix,
 	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix, Mat& triangulatedPoints)
 {
 
 	// Maybe it's have sense to undistort points and matrix K
+    double focal_length = 0.5*(calibrationMatrix.at<double>(0) + calibrationMatrix.at<double>(4));
+    Point2d principle_point(calibrationMatrix.at<double>(2), calibrationMatrix.at<double>(5));
+    Mat mask;
+//	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC, 0.999, 1, mask);
+    Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+    if (essentialMatrix.empty())
+        return false;
 
-	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+//    double maskNonZeroElemsCnt = countNonZero(mask);
+//    std::cout << maskNonZeroElemsCnt << std::endl;
+//    if ((maskNonZeroElemsCnt / points1.size()) < 0.6)
+//        return false;
 
 	// Find P matrix using wrapped OpenCV SVD and triangulation
 	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,

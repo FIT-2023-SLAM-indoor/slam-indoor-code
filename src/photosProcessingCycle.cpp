@@ -136,8 +136,8 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
         Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
                 translationVector = Mat::zeros(3, 1, CV_64F),
                 triangulatedPointsFromRecoverPose;
-        if (estimateProjection(previousFrameExtractedPointsMatrix,
-                               currentFrameTrackedPointsMatrix, calibrationMatrix, rotationMatrix,
+        if (estimateProjection(previousFrameExtractedPointsTemp,
+                               currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
 
             triangulate(previousFrameExtractedPointsMatrix,
