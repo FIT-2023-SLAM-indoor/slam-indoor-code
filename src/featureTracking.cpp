@@ -9,9 +9,7 @@
 #include "featureTracking.h"
 
 #include "main_config.h"
-#define THREADS_COUNT 10;
 using namespace cv;
-#define STANDART_FT
 void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vector<Point2f>& pointsAround, Mat& img)
 {
 	int WIDTH = img.size().width;
@@ -110,13 +108,15 @@ void function(int threadNumber, int threadsCount, std::vector<Point2f>& features
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
+#ifdef FT_TIME
+	std::time_t start = std::time(nullptr);
+#endif 
 #ifdef STANDART_FT
-
 	std::vector<Point2f> isGoodFeatures;
 	for (int i = 0;i < features.size();i++) {
 		isGoodFeatures.push_back(Point2f());
 	}
-	int threadsCount = 3;
+	int threadsCount = THREADS_COUNT;
 	std::vector<std::thread*> threadPool;
 	std::cout << "start pool" << std::endl;
 	for (int i = 0;i < threadsCount;i++) {
@@ -126,10 +126,11 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	}
 	std::cout << "start join\n";
 
-	for (int j = 0; j < threadsCount; j++)
+	for (int j = threadsCount-1; j >= 0; j--)
 	{
 		(*threadPool.at(j)).join();
 	}
+	threadPool.clear();
 	std::cout << "end join\n";
 	int deletedCount = 0;
 	for (int i = 0;i < isGoodFeatures.size();i++) {
@@ -141,7 +142,9 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 			newFeatures.push_back(isGoodFeatures.at(i));
 		}
 	}
+
 	isGoodFeatures.clear();
+
 #else
 	int WIDTH = previousFrame.size().width;
 	int HEIGHT = previousFrame.size().height;
@@ -171,4 +174,7 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	}
 
 #endif
+#ifdef FT_TIME
+	std::cout << "Feature tracking time:" << std::time(nullptr) - start << std::endl;
+#endif 
 }
