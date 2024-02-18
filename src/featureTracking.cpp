@@ -108,11 +108,11 @@ void function(int threadNumber, int threadsCount, std::vector<Point2f>& features
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
-#ifdef STANDART_FT
+
 #ifdef FT_TIME
 	std::time_t start = std::time(nullptr);
 #endif 
-
+#ifdef STANDART_FT
 	std::vector<Point2f> isGoodFeatures;
 	for (int i = 0;i < features.size();i++) {
 		isGoodFeatures.push_back(Point2f());
