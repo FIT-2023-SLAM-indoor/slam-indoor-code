@@ -3,19 +3,21 @@
 #include <opencv2/core.hpp>
 #include <algorithm>
 #include <thread>
+
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
 #include "featureTracking.h"
 
 #include "main_config.h"
+
 using namespace cv;
 void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vector<Point2f>& pointsAround, Mat& img)
 {
 	int WIDTH = img.size().width;
 	int HEIGHT = img.size().height;
 	pointsAround.push_back(feature);
-	for (double k = 0; k < radius; k++)
+	for (double k = 0; k < radius; k+=2)
 	{
 		for (double fi = 0; fi < barier; fi++)
 		{
@@ -23,6 +25,7 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vec
 			point.x = ceil(k * cos(2 * M_PI * fi / barier) + feature.x);
 
 			point.y = ceil(k * sin(2 * M_PI * fi / barier) + feature.y);
+			
 			if (std::count(pointsAround.begin(), pointsAround.end(), point))
 				continue;
 			if (point.x < WIDTH && point.x > 0 && point.y < HEIGHT && point.y > 0)
@@ -34,20 +37,16 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vec
 double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>& batch2, Mat& image1, Mat& image2, double min)
 {
 	double sum = 0;
-	std::vector<Point2f> mn;
-	std::vector<Point2f> mx;
+	int mn;
 	if (batch1.size() <= batch2.size())
 	{
-		mn = batch1;
-		mx = batch2;
+		mn = batch1.size();
 	}
-
 	else
 	{
-		mn = batch2;
-		mx = batch1;
+		mn = batch2.size();
 	}
-	for (int i = 0; i < mn.size(); i++)
+	for (int i = 0; i < mn; i++)
 	{
 		Vec3b& color1 = image1.at<Vec3b>(batch1[i]);
 		Vec3b& color2 = image2.at<Vec3b>(batch2[i]);
@@ -60,7 +59,6 @@ double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>&
 		if (sum > min)
 			return sum;
 	}
-
 	return sum;
 }
 
@@ -79,7 +77,6 @@ void trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, doubl
 	for (int j = 0; j < circ.size(); j++)
 	{
 		std::vector<Point2f> currentCirc;
-
 		getPointsAroundFeature(circ[j], r + 1, barier, currentCirc, image1);
 		sum = sumSquaredDifferences(circ, currentCirc, image1, image2, min);
 		if (sum < min)
@@ -96,15 +93,13 @@ void trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, doubl
 	{
 		res.x = -1;
 	}
-
+	circ.clear();
 }
 void function(int threadNumber, int threadsCount, std::vector<Point2f>& features,
 	Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& isGoodFeatures, double barier, double maxAcceptableDifference)
 {
 	for (int i = threadNumber;i < features.size();i += threadsCount) {
-
 		trackFeature(features[i], previousFrame, currentFrame, isGoodFeatures.at(i), barier, maxAcceptableDifference);
-
 	}
 	std::cout << threadNumber << std::endl;
 
