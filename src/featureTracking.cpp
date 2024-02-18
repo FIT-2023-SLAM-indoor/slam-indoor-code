@@ -51,8 +51,12 @@ double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>&
 	{
 		Vec3b& color1 = image1.at<Vec3b>(batch1[i]);
 		Vec3b& color2 = image2.at<Vec3b>(batch2[i]);
+#ifdef FT_SSD
+		sum += (color1[0] - color2[0]) * (color1[0] - color2[0]);
+#endif // DEBUG
+#ifdef FT_SAD
 		sum += abs(color1[0] - color2[0]);
-
+#endif // DEBUG
 		if (sum > min)
 			return sum;
 	}
@@ -112,12 +116,12 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 #ifdef FT_TIME
 	std::time_t start = std::time(nullptr);
 #endif 
-#ifdef STANDART_FT
+#ifdef FT_STANDART
 	std::vector<Point2f> isGoodFeatures;
 	for (int i = 0;i < features.size();i++) {
 		isGoodFeatures.push_back(Point2f());
 	}
-	int threadsCount = THREADS_COUNT;
+	int threadsCount = FT_THREADS_COUNT;
 	std::vector<std::thread*> threadPool;
 	std::cout << "start pool" << std::endl;
 	for (int i = 0;i < threadsCount;i++) {
