@@ -17,19 +17,11 @@ bool estimateProjection(InputArray points1, InputArray points2, const Mat& calib
 
 	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
 
-    // Choose one random corresponding points pair
-    int randomPointIndex = rand() % points1.rows();
-    Mat p1(1, 2, CV_64F), p2(1, 2, CV_64F);
-    points1.getMat().row(randomPointIndex).copyTo(p1.row(0));
-    points2.getMat().row(randomPointIndex).copyTo(p2.row(0));
-
 	// Find P matrix using wrapped OpenCV SVD and triangulation
 	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,
                                         rotationMatrix, translationVector,
                                         DISTANCE_THRESHOLD, noArray(), triangulatedPoints);
 	hconcat(rotationMatrix, translationVector, projectionMatrix);
-
-    // Here bundle adjustment can be implemented
 
 	return passedPointsCount > 0;
 }

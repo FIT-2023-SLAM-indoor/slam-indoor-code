@@ -165,7 +165,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
             normalizeHomogeneousWrapper(homogeneous3DPoints, normalizedHomogeneous3DPointsFromTriangulation);
             normalizeHomogeneousWrapper(triangulatedPointsFromRecoverPose, normalizedHomogeneous3DPointsFromRecoverPose);
 
-            Mat newGlobalProjectionMatrix(4, 4, CV_64F);
+            Mat newWorldProjectionMatrix(4, 4, CV_64F);
             addHomogeneousRow(worldProjectionMatrix);
             addHomogeneousRow(currentProjectionMatrix);
 
@@ -174,9 +174,9 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
             Mat H3DPointsFromRecoverPoseInWorldUsingP = normalizedHomogeneous3DPointsFromRecoverPose.clone();
             H3DPointsFromRecoverPoseInWorldUsingP = worldProjectionMatrix * H3DPointsFromRecoverPoseInWorldUsingP;
 
-            newGlobalProjectionMatrix = worldProjectionMatrix * currentProjectionMatrix;
+            newWorldProjectionMatrix = worldProjectionMatrix * currentProjectionMatrix;
 
-            removeHomogeneousRow(newGlobalProjectionMatrix);
+            removeHomogeneousRow(newWorldProjectionMatrix);
             removeHomogeneousRow(worldProjectionMatrix);
 
             addHomogeneousRow(worldCameraPose);
@@ -195,13 +195,13 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
             reportStream << "Current projection: " << currentProjectionMatrix << std::endl << std::endl;
 			reportStream << "New world camera pose from multiply: " << worldCameraPose << std::endl << std::endl;
             poseStream << worldCameraPose.t() << std::endl << std::endl;
-			reportStream << "New world camera projection: " << newGlobalProjectionMatrix << std::endl << std::endl;
+			reportStream << "New world camera projection: " << newWorldProjectionMatrix << std::endl << std::endl;
 
             // Part with WORLD triangulation
             Mat globalTriangulatedHomogeneousPoints;
             triangulate(previousFrameExtractedPointsMatrix,
                         currentFrameTrackedPointsMatrix, worldProjectionMatrix,
-                        newGlobalProjectionMatrix, globalTriangulatedHomogeneousPoints);
+                        newWorldProjectionMatrix, globalTriangulatedHomogeneousPoints);
             Mat normalizedGlobalTriangulatedHomogeneousPoints;
             normalizeHomogeneousWrapper(globalTriangulatedHomogeneousPoints, normalizedGlobalTriangulatedHomogeneousPoints);
             Mat euclideanGlobalTriangulatedHomogeneousPoints = normalizedGlobalTriangulatedHomogeneousPoints.rowRange(0, 3).clone();
@@ -222,7 +222,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
             poseStream2 << worldCameraPoseFromHandCalc.t() << std::endl << std::endl;
 
 
-            worldProjectionMatrix = newGlobalProjectionMatrix.clone();
+            worldProjectionMatrix = newWorldProjectionMatrix.clone();
 		}
 
 #ifdef SHOW_TRACKED_POINTS
