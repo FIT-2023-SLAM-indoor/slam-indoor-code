@@ -102,8 +102,8 @@ void function(int threadNumber, int threadsCount, std::vector<Point2f>& features
 		trackFeature(features[i], previousFrame, currentFrame, isGoodFeatures.at(i), barier, maxAcceptableDifference);
 
 	}
-	std::cout << threadNumber <<  std::endl;
-	
+	std::cout << threadNumber << std::endl;
+
 }
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
@@ -121,13 +121,13 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	std::vector<std::thread*> threadPool;
 	std::cout << "start pool" << std::endl;
 	for (int i = 0;i < threadsCount;i++) {
-		std::thread *th = new std::thread(function,i, threadsCount, std::ref(features),
+		std::thread* th = new std::thread(function, i, threadsCount, std::ref(features),
 			std::ref(previousFrame), std::ref(currentFrame), std::ref(isGoodFeatures), barier, maxAcceptableDifference);
 		threadPool.push_back(th);
 	}
 	std::cout << "start join\n";
 
-	for (int j = threadsCount-1; j >= 0; j--)
+	for (int j = threadsCount - 1; j >= 0; j--)
 	{
 		(*threadPool.at(j)).join();
 	}
@@ -137,7 +137,7 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	for (int i = 0;i < isGoodFeatures.size();i++) {
 		if (isGoodFeatures.at(i).x == -1) {
 			features.erase(features.begin() + (i - deletedCount));
-		    deletedCount++;
+			deletedCount++;
 		}
 		else {
 			newFeatures.push_back(isGoodFeatures.at(i));
@@ -145,9 +145,6 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	}
 
 	isGoodFeatures.clear();
-#ifdef FT_TIME
-	std::cout << "Feature tracking Time:" << std::time(nullptr) - start << std::endl;
-#endif 
 #else
 	int WIDTH = previousFrame.size().width;
 	int HEIGHT = previousFrame.size().height;
