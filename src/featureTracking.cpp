@@ -25,7 +25,7 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vec
 			point.y = ceil(k * sin(2 * M_PI * fi / barier) + feature.y);
 			if (std::count(pointsAround.begin(), pointsAround.end(), point))
 				continue;
-			if (point.x < WIDTH && point.x >= 0 && point.y < HEIGHT && point.y >= 0)
+			if (point.x < WIDTH && point.x > 0 && point.y < HEIGHT && point.y > 0)
 				pointsAround.push_back(point);
 		}
 	}
@@ -108,10 +108,11 @@ void function(int threadNumber, int threadsCount, std::vector<Point2f>& features
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
+#ifdef STANDART_FT
 #ifdef FT_TIME
 	std::time_t start = std::time(nullptr);
 #endif 
-#ifdef STANDART_FT
+
 	std::vector<Point2f> isGoodFeatures;
 	for (int i = 0;i < features.size();i++) {
 		isGoodFeatures.push_back(Point2f());
@@ -144,7 +145,9 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	}
 
 	isGoodFeatures.clear();
-
+#ifdef FT_TIME
+	std::cout << "Feature tracking Time:" << std::time(nullptr) - start << std::endl;
+#endif 
 #else
 	int WIDTH = previousFrame.size().width;
 	int HEIGHT = previousFrame.size().height;
@@ -175,6 +178,6 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 
 #endif
 #ifdef FT_TIME
-	std::cout << "Feature tracking time:" << std::time(nullptr) - start << std::endl;
+	std::cout << "time:" << std::time(nullptr) - start << std::endl;
 #endif 
 }
