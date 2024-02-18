@@ -9,11 +9,9 @@
 #include "featureTracking.h"
 
 #include "main_config.h"
-#define STANDART_FT
 #define THREADS_COUNT 10;
 using namespace cv;
-
-
+#define STANDART_FT
 void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vector<Point2f>& pointsAround, Mat& img)
 {
 	int WIDTH = img.size().width;
@@ -98,7 +96,17 @@ void trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, doubl
 	}
 
 }
+void function(int threadNumber, int threadsCount, std::vector<Point2f>& features,
+	Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& isGoodFeatures, double barier, double maxAcceptableDifference)
+{
+	for (int i = threadNumber;i < features.size();i += threadsCount) {
 
+		trackFeature(features[i], previousFrame, currentFrame, isGoodFeatures.at(i), barier, maxAcceptableDifference);
+
+	}
+	std::cout << threadNumber <<  std::endl;
+	
+}
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
@@ -108,10 +116,21 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	for (int i = 0;i < features.size();i++) {
 		isGoodFeatures.push_back(Point2f());
 	}
-	for (int j = 0; j < features.size(); j++)
-	{
-		trackFeature(features[j], previousFrame, currentFrame, isGoodFeatures.at(j), barier, maxAcceptableDifference);
+	int threadsCount = 3;
+	std::vector<std::thread*> threadPool;
+	std::cout << "start pool" << std::endl;
+	for (int i = 0;i < threadsCount;i++) {
+		std::thread *th = new std::thread(function,i, threadsCount, std::ref(features),
+			std::ref(previousFrame), std::ref(currentFrame), std::ref(isGoodFeatures), barier, maxAcceptableDifference);
+		threadPool.push_back(th);
 	}
+	std::cout << "start join\n";
+
+	for (int j = 0; j < threadsCount; j++)
+	{
+		(*threadPool.at(j)).join();
+	}
+	std::cout << "end join\n";
 	int deletedCount = 0;
 	for (int i = 0;i < isGoodFeatures.size();i++) {
 		if (isGoodFeatures.at(i).x == -1) {
