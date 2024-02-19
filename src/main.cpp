@@ -19,8 +19,8 @@ int main(int argc, char** argv)
     glob(PHOTOS_PATH_PATTERN, photos, false);
     char path[] = OUTPUT_DATA_DIR;
     photosProcessingCycle(photos,
-                          FEATURE_TRACKING_BARRIER,
-                          FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE,
+                          FT_BARRIER,
+                          FT_MAX_ACCEPTABLE_DIFFERENCE,
                           FRAMES_BATCH_SIZE,
                           REQUIRED_EXTRACTED_POINTS_COUNT,
                           FEATURE_EXTRACTING_THRESHOLD,
