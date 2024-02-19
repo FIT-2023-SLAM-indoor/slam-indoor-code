@@ -2,6 +2,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <algorithm>
+#include <thread>
+
 #include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
@@ -10,14 +12,12 @@
 #include "main_config.h"
 
 using namespace cv;
-
-
 void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vector<Point2f>& pointsAround, Mat& img)
 {
 	int WIDTH = img.size().width;
 	int HEIGHT = img.size().height;
 	pointsAround.push_back(feature);
-	for (double k = 0; k < radius; k++)
+	for (double k = 0; k < radius; k+=2)
 	{
 		for (double fi = 0; fi < barier; fi++)
 		{
@@ -25,9 +25,10 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vec
 			point.x = ceil(k * cos(2 * M_PI * fi / barier) + feature.x);
 
 			point.y = ceil(k * sin(2 * M_PI * fi / barier) + feature.y);
+			
 			if (std::count(pointsAround.begin(), pointsAround.end(), point))
 				continue;
-			if (point.x < WIDTH && point.x >= 0 && point.y < HEIGHT && point.y >= 0)
+			if (point.x < WIDTH && point.x > 0 && point.y < HEIGHT && point.y > 0)
 				pointsAround.push_back(point);
 		}
 	}
@@ -36,33 +37,32 @@ void getPointsAroundFeature(Point2f feature, int radius, double barier, std::vec
 double sumSquaredDifferences(std::vector<Point2f>& batch1, std::vector<Point2f>& batch2, Mat& image1, Mat& image2, double min)
 {
 	double sum = 0;
-	std::vector<Point2f> mn;
-	std::vector<Point2f> mx;
+	int mn;
 	if (batch1.size() <= batch2.size())
 	{
-		mn = batch1;
-		mx = batch2;
+		mn = batch1.size();
 	}
-
 	else
 	{
-		mn = batch2;
-		mx = batch1;
+		mn = batch2.size();
 	}
-	for (int i = 0; i < mn.size(); i++)
+	for (int i = 0; i < mn; i++)
 	{
 		Vec3b& color1 = image1.at<Vec3b>(batch1[i]);
 		Vec3b& color2 = image2.at<Vec3b>(batch2[i]);
+#ifdef FT_SSD
 		sum += (color1[0] - color2[0]) * (color1[0] - color2[0]);
-
+#endif // DEBUG
+#ifdef FT_SAD
+		sum += abs(color1[0] - color2[0]);
+#endif // DEBUG
 		if (sum > min)
 			return sum;
 	}
-
 	return sum;
 }
 
-int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
+void trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double barier, double maxAcceptableDifference)
 {
 	int WIDTH = image1.size().width;
 	int HEIGHT = image1.size().height;
@@ -77,7 +77,6 @@ int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double
 	for (int j = 0; j < circ.size(); j++)
 	{
 		std::vector<Point2f> currentCirc;
-
 		getPointsAroundFeature(circ[j], r + 1, barier, currentCirc, image1);
 		sum = sumSquaredDifferences(circ, currentCirc, image1, image2, min);
 		if (sum < min)
@@ -92,27 +91,59 @@ int trackFeature(Point2f feature, Mat& image1, Mat& image2, Point2f& res, double
 	}
 	if (min > maxAcceptableDifference)
 	{
-		return -1;
+		res.x = -1;
 	}
-	return 0;
+	circ.clear();
 }
+void function(int threadNumber, int threadsCount, std::vector<Point2f>& features,
+	Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& isGoodFeatures, double barier, double maxAcceptableDifference)
+{
+	for (int i = threadNumber;i < features.size();i += threadsCount) {
+		trackFeature(features[i], previousFrame, currentFrame, isGoodFeatures.at(i), barier, maxAcceptableDifference);
+	}
+	std::cout << threadNumber << std::endl;
 
+}
 
 void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& currentFrame, std::vector<Point2f>& newFeatures, int barier, double maxAcceptableDifference)
 {
-#ifdef STANDART_FT
-	for (int j = 0; j < features.size(); j++)
-	{
-		Point2f feature;
-		if (trackFeature(features[j], previousFrame, currentFrame, feature, barier, maxAcceptableDifference) == -1)
-		{
-			features.erase(features.begin() + j);
-			j--;
-			continue;
-		}
 
-		newFeatures.push_back(feature);
+#ifdef FT_TIME
+	std::time_t start = std::time(nullptr);
+#endif 
+#ifdef FT_STANDART
+	std::vector<Point2f> isGoodFeatures;
+	for (int i = 0;i < features.size();i++) {
+		isGoodFeatures.push_back(Point2f());
 	}
+	int threadsCount = FT_THREADS_COUNT;
+	std::vector<std::thread*> threadPool;
+	std::cout << "start pool" << std::endl;
+	for (int i = 0;i < threadsCount;i++) {
+		std::thread* th = new std::thread(function, i, threadsCount, std::ref(features),
+			std::ref(previousFrame), std::ref(currentFrame), std::ref(isGoodFeatures), barier, maxAcceptableDifference);
+		threadPool.push_back(th);
+	}
+	std::cout << "start join\n";
+
+	for (int j = threadsCount - 1; j >= 0; j--)
+	{
+		(*threadPool.at(j)).join();
+	}
+	threadPool.clear();
+	std::cout << "end join\n";
+	int deletedCount = 0;
+	for (int i = 0;i < isGoodFeatures.size();i++) {
+		if (isGoodFeatures.at(i).x == -1) {
+			features.erase(features.begin() + (i - deletedCount));
+			deletedCount++;
+		}
+		else {
+			newFeatures.push_back(isGoodFeatures.at(i));
+		}
+	}
+
+	isGoodFeatures.clear();
 #else
 	int WIDTH = previousFrame.size().width;
 	int HEIGHT = previousFrame.size().height;
@@ -142,4 +173,7 @@ void trackFeatures(std::vector<Point2f>& features, Mat& previousFrame, Mat& curr
 	}
 
 #endif
+#ifdef FT_TIME
+	std::cout << "time:" << std::time(nullptr) - start << std::endl;
+#endif 
 }
