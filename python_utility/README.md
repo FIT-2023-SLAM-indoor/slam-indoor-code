@@ -1,0 +1,1 @@
+# Motivation for using Open3D
