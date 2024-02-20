@@ -17,8 +17,8 @@ bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& poi
     double focal_length = 0.5*(calibrationMatrix.at<double>(0) + calibrationMatrix.at<double>(4));
     Point2d principle_point(calibrationMatrix.at<double>(2), calibrationMatrix.at<double>(5));
     Mat mask;
-//	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC, 0.999, 1, mask);
-    Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC, 0.999, 1, mask);
+//    Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
     if (essentialMatrix.empty())
         return false;
 
@@ -40,7 +40,7 @@ void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
                            Mat& worldCameraPose, Mat& worldCameraRotation)
 {
 //    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
-    worldCameraRotation *= rotationMatrix;
+    worldCameraRotation = rotationMatrix * worldCameraRotation;
     worldCameraPose += worldCameraRotation * translationVector;
 }
 

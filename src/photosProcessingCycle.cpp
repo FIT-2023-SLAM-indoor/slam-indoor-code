@@ -75,6 +75,8 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             continue;
         }
 
+
+
         if (countOfFrames < framesBatchSize) {
             batch.push_back(currentFrame.clone());
             countOfFrames++;
@@ -89,6 +91,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
             cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
             previousFrameExtractedPointsTemp = previousFrameExtractedPoints;
+
             trackFeatures(previousFrameExtractedPointsTemp, previousFrame,
                           currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
             if (currentFrameTrackedPoints.size() < requiredExtractedPointsCount) {
@@ -148,36 +151,36 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             Mat normalizedHomogeneous3DPointsFromTriangulation;
             normalizeHomogeneousWrapper(homogeneous3DPoints, normalizedHomogeneous3DPointsFromTriangulation);
 
-//            Mat newGlobalProjectionMatrix(4, 4, CV_64F);
-//            addHomogeneousRow(previousProjectionMatrix);
-//            addHomogeneousRow(currentProjectionMatrix);
+            Mat newGlobalProjectionMatrix(4, 4, CV_64F);
+            addHomogeneousRow(previousProjectionMatrix);
+            addHomogeneousRow(currentProjectionMatrix);
 //
-//            newGlobalProjectionMatrix = previousProjectionMatrix * currentProjectionMatrix;
+            newGlobalProjectionMatrix = previousProjectionMatrix * currentProjectionMatrix;
 //
-//            removeHomogeneousRow(newGlobalProjectionMatrix);
-//            removeHomogeneousRow(previousProjectionMatrix);
+            removeHomogeneousRow(newGlobalProjectionMatrix);
+            removeHomogeneousRow(previousProjectionMatrix);
 //
-//            addHomogeneousRow(worldCameraPose);
-//            worldCameraPose = currentProjectionMatrix * worldCameraPose;
-//            removeHomogeneousRow(worldCameraPose);
-//            removeHomogeneousRow(currentProjectionMatrix);
+            addHomogeneousRow(worldCameraPose);
+            worldCameraPose = currentProjectionMatrix * worldCameraPose;
+            removeHomogeneousRow(worldCameraPose);
+            removeHomogeneousRow(currentProjectionMatrix);
 
 
             reportStream << "Current projection: " << currentProjectionMatrix << std::endl << std::endl;
             reportStream << "New world camera pose from multiply: " << worldCameraPose << std::endl << std::endl;
             poseStream << worldCameraPose.t() << std::endl << std::endl;
-//            reportStream << "New world camera projection: " << newGlobalProjectionMatrix << std::endl << std::endl;
+            reportStream << "New world camera projection: " << newGlobalProjectionMatrix << std::endl << std::endl;
 
             Mat euclidean3DPointsFromTriangulationInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
-//            placeEuclideanPointsInWorldSystem(euclidean3DPointsFromTriangulationInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
+            placeEuclideanPointsInWorldSystem(euclidean3DPointsFromTriangulationInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
 
-//            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);
+            refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);
 
             d3PointsStream4 << euclidean3DPointsFromTriangulationInWorldUsingRt.t() << std::endl << std::endl;
             reportStream << "New world camera pose from handy calc: " << worldCameraPoseFromHandCalc << std::endl << std::endl;
             reportStream << "New world camera rotation from handy calc: " << worldCameraRotation << std::endl << std::endl;
 
-//            previousProjectionMatrix = newGlobalProjectionMatrix.clone();
+            previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }
 
 #ifdef SHOW_TRACKED_POINTS

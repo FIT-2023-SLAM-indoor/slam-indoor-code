@@ -10,8 +10,8 @@ int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./docs/artifact/calibration/for_calib_1/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 11);
+    glob("../static/for_calib/samsung-horizontal-p/*.JPG", files, false);
+    chessboardPhotosCalibration(files, 14);
     return 0;
 #endif
 #ifdef PHOTOS_CYCLE
