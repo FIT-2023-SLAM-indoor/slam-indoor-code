@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
@@ -9,8 +7,10 @@
 
 using namespace cv;
 
+#define DISTANCE_THRESHOLD 100
+
 bool estimateProjection(InputArray points1, InputArray points2, const Mat& calibrationMatrix,
-	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix)
+	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix, Mat& triangulatedPoints)
 {
 
 	// Maybe it's have sense to undistort points and matrix K
@@ -24,7 +24,9 @@ bool estimateProjection(InputArray points1, InputArray points2, const Mat& calib
     points2.getMat().row(randomPointIndex).copyTo(p2.row(0));
 
 	// Find P matrix using wrapped OpenCV SVD and triangulation
-	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, rotationMatrix, translationVector);
+	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,
+                                        rotationMatrix, translationVector,
+                                        DISTANCE_THRESHOLD, noArray(), triangulatedPoints);
 	hconcat(rotationMatrix, translationVector, projectionMatrix);
 
     // Here bundle adjustment can be implemented
@@ -37,5 +39,15 @@ void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
 {
 //    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
     worldCameraRotation *= rotationMatrix;
-    worldCameraPose += (worldCameraRotation * translationVector).t();
+    worldCameraPose += worldCameraRotation * translationVector;
+}
+
+void addHomogeneousRow(Mat& m) {
+    Mat row = Mat::zeros(1, m.cols, CV_64F);
+    row.at<double>(0, m.cols-1) = 1;
+    m.push_back(row);
+}
+
+void removeHomogeneousRow(Mat& m) {
+    m.pop_back();
 }

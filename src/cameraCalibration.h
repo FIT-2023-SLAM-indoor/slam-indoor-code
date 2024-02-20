@@ -2,6 +2,7 @@
  * Camera calibration header
  */
 #include <opencv2/videoio.hpp>
+#include "main_config.h"
 #pragma once
 
 using namespace cv;
@@ -26,7 +27,7 @@ enum CalibrationOption {
  * @param [in] option Option that determines how calibration wrapper will get calibration matrix.
  * @param [in] pathToXML Path to XML file for saving/loading. Relative path starts from project root.
  */
-void calibration(Mat& cameraMatrix, CalibrationOption option, const char* pathToXML= "./config/cameraMatrix.xml");
+void calibration(Mat& cameraMatrix, CalibrationOption option, const char* pathToXML= CALIBRATION_PATH);
 
 /**
  * Chessboard calibration from video source.
@@ -42,7 +43,7 @@ void calibration(Mat& cameraMatrix, CalibrationOption option, const char* pathTo
  */
 void chessboardVideoCalibration(VideoCapture capture, int itersCount= 10, double delay= 3,
                                 double squareSize= 23.0, Size boardSize= Size(7, 7),
-                                const char* pathToXML= "./config/cameraMatrix.xml");
+                                const char* pathToXML= CALIBRATION_PATH);
 /**
  * Chessboard calibration from photos.
  *
@@ -56,7 +57,7 @@ void chessboardVideoCalibration(VideoCapture capture, int itersCount= 10, double
  */
 void chessboardPhotosCalibration(std::vector<String>& fileNames, int itersCount= 10,
                                 double squareSize= 23.0, Size boardSize= Size(7, 7),
-                                const char* pathToXML= "./config/cameraMatrix.xml");
+                                const char* pathToXML= CALIBRATION_PATH);
 
 /**
  * Function for saving matrix.

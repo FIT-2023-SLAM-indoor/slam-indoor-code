@@ -1,48 +1,44 @@
-#include <iostream>
-#define _USE_MATH_DEFINES
-
 #include "cameraCalibration.h"
-#include "reportCycleForTwoFramesPair.h"
+#include "photosProcessingCycle.h"
 #include "videoProcessingCycle.h"
 
+#include "main_config.h"
+
 using namespace cv;
-
-#define ESC_KEY 27
-#define FEATURE_EXTRACTING_THRESHOLD 10
-#define FEATURE_TRACKING_BARRIER 10
-#define FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE 10000
-
-
-#define FRAMES_GAP 2
-#define REQUIRED_EXTRACTED_POINTS_COUNT 10
-
-#define NDEBUG
-#define NCALIB
 
 int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./data/for_calib/roborock/plane_board_filtered/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 22);
-//    VideoCapture calibCapture("./data/for_calib/roborock/video2.mp4");
-//    chessboardVideoCalibration(calibCapture, 15);
+    glob("./docs/artifact/calibration/for_calib_1/*.JPG", files, false);
+    chessboardPhotosCalibration(files, 11);
     return 0;
 #endif
-#ifdef DEBUG
-    reportingCycleForFramesPairs(
-            FEATURE_EXTRACTING_THRESHOLD,
-            FEATURE_TRACKING_BARRIER,
-            FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE
-    );
+#ifdef PHOTOS_CYCLE
+    std::vector<String> photos;
+    glob(PHOTOS_PATH_PATTERN, photos, false);
+    char path[] = OUTPUT_DATA_DIR;
+    photosProcessingCycle(photos,
+                          FEATURE_TRACKING_BARRIER,
+                          FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE,
+                          FRAMES_BATCH_SIZE,
+                          REQUIRED_EXTRACTED_POINTS_COUNT,
+                          FEATURE_EXTRACTING_THRESHOLD,
+                          path);
 #else
-    VideoCapture cap("data/indoor_test.mp4");
+    VideoCapture cap(VIDEO_SOURCE_PATH);
 	if (!cap.isOpened()) {
 		std::cerr << "Camera wasn't opened" << std::endl;
 		return -1;
 	}
-	char path[] = "./data/video_report";
-	videoProcessingCycle(cap, 10, 10000, 3, 10, 20, path);
+	char path[] = OUTPUT_DATA_DIR;
+	videoProcessingCycle(cap,
+                         FEATURE_TRACKING_BARRIER,
+                         FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE,
+                         FRAMES_BATCH_SIZE,
+                         REQUIRED_EXTRACTED_POINTS_COUNT,
+                         FEATURE_EXTRACTING_THRESHOLD,
+                         path);
 #endif
     return 0;
 }

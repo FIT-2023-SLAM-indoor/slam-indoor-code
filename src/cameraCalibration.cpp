@@ -6,9 +6,10 @@
 #include <ctime>
 #include <iostream>
 
+#include "main_config.h"
 #include "cameraCalibration.h"
 
-#define VISUAL_CALIB
+#define MINIMAL_FOUND_FRAMES_COUNT 10
 
 using namespace cv;
 
@@ -89,11 +90,19 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             prevClock = clock();
         }
 #ifdef VISUAL_CALIB
-        imshow("Test", frame);
         char c = (char)waitKey(33);
+//        Mat resized;
+        namedWindow("Test", cv::WINDOW_NORMAL);
+        resizeWindow("Test", frame.rows / 32, frame.cols / 32);
+        imshow("Test", frame);
+//        imwrite("./test.jpg", frame);
         if (c == 27)
             break;
 #endif
+    }
+    if (imagePointsVector.size() < MINIMAL_FOUND_FRAMES_COUNT) {
+        std::cerr << "Cannot find enough chessboard frames" << std::endl;
+        exit(-1);
     }
 
     Mat cameraMatrixK, distortionCoeffs, R, T;
@@ -138,16 +147,23 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
 #endif
             imagePointsVector.push_back(imagePoints);
             objectPointsVector.push_back(objectPoints);
-        }
 #ifdef VISUAL_CALIB
-        imshow("Test", frame);
-        char c = (char)waitKey(500);
-        if (c == 27)
-            break;
+            imshow("Test", frame);
+            char c = (char)waitKey(500);
+            if (c == 27)
+                break;
 #endif
+        }
+        else {
+            std::cout << "Cannot find chessboard corners" << std::endl;
+        }
 
         if (imagePointsVector.size() >= itersCount)
             break;
+    }
+    if (imagePointsVector.size() < MINIMAL_FOUND_FRAMES_COUNT) {
+        std::cerr << "Cannot detect chessboard on enough count of photos" << std::endl;
+        exit(-1);
     }
 
     Mat cameraMatrixK, distortionCoeffs, R, T;

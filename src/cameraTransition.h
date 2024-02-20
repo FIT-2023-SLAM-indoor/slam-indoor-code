@@ -1,6 +1,8 @@
 #pragma once
 #include <opencv2/calib3d.hpp>
 
+using namespace cv;
+
 /**
  * Function for estimation projection matrix and its parts according to calibration data and two 2D points arrays which
  * are matrices with size Nx2.
@@ -15,7 +17,8 @@
  *     with positive Z
  */
 bool estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv::Mat& calibrationMatrix,
-                        cv::Mat& rotationMatrix, cv::Mat& translationVector, cv::Mat& projectionMatrix);
+                        cv::Mat& rotationMatrix, cv::Mat& translationVector, cv::Mat& projectionMatrix,
+                        cv::Mat& triangulatedPoints);
 /**
  * Refiner for world point nad world rotation.
  * In common case, updates any 3D point by rotation and translation
@@ -28,4 +31,14 @@ bool estimateProjection(cv::InputArray points1, cv::InputArray points2, const cv
  */
 void refineWorldCameraPose(cv::Mat& rotationMatrix, cv::Mat& translationVector,
                            cv::Mat& worldCameraPose, cv::Mat& worldCameraRotation);
+/**
+ * Transformer for adding "homogeneous" row.
+ * @param [in,out] m matrix for where will be added row contains zeros and 1 on the last position
+ */
+void addHomogeneousRow(Mat& m);
 
+/**
+ * Removes last row in matrix
+ * @param [in, out] m matrix where will be removed last row
+ */
+void removeHomogeneousRow(Mat& m);

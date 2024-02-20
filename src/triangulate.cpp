@@ -73,38 +73,34 @@ void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
     reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
 }
 
-void convertPointsFromHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Mat& euclideanPoints)
+void normalizeHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Mat& normalizedHomogeneous3DPoints)
 {
-    Mat homogeneous3DPoints = inputHomogeneous3DPoints.t();
+//    Mat homogeneous3DPoints = inputHomogeneous3DPoints.t();
 //    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
-    int euclidianRow = 0;
+    int normalizedColIndex = 0;
     double w;
-    Mat euclideanPoint = Mat::zeros(1, 3, CV_64F);
-    euclideanPoints.create(homogeneous3DPoints.rows, 3, CV_64F);
-    for (int row = 0; row < homogeneous3DPoints.rows; ++row) {
-        w = homogeneous3DPoints.at<double>(row, 3);
+    Mat pointCol = Mat::zeros(4, 1, CV_64F);
+    normalizedHomogeneous3DPoints.create(4, inputHomogeneous3DPoints.cols, CV_64F);
+    for (int col = 0; col < inputHomogeneous3DPoints.cols; ++col) {
+        w = inputHomogeneous3DPoints.at<double>(3, col);
         if (fabs(w) < 0.000000000001) {
             continue;
         }
-        euclideanPoint = homogeneous3DPoints.row(row).clone();
-        euclideanPoint /= w;
-        euclideanPoint
-            .colRange(0, homogeneous3DPoints.cols-1)
-            .copyTo(euclideanPoints.row(euclidianRow++));
+        pointCol = inputHomogeneous3DPoints.col(col).clone();
+        pointCol /= w;
+        pointCol.copyTo(normalizedHomogeneous3DPoints.col(normalizedColIndex++));
     }
-    euclideanPoints = euclideanPoints.rowRange(0, euclidianRow).clone();
+    normalizedHomogeneous3DPoints = normalizedHomogeneous3DPoints.colRange(0, normalizedColIndex).clone();
 }
 
 void placeEuclideanPointsInWorldSystem(Mat& points, Mat& worldCameraPose, Mat& worldCameraRotation)
 {
 //    worldEuclideanPoints.create(points.rows, points.cols, CV_64F);
-    Mat point, rotatedPoint;
-    for (int r = 0; r < points.rows; ++r) {
-        point = points.row(r).clone();
-        point = point.t();
-        rotatedPoint = worldCameraRotation * point;
-        rotatedPoint = rotatedPoint.t();
-        point = worldCameraPose + rotatedPoint;
-        points.row(r) = point.clone();
+    Mat point;
+    points = worldCameraRotation * points;
+    for (int column = 0; column < points.cols; ++column) {
+        point = points.col(column).clone();
+        point += worldCameraPose;
+        points.col(column) = point.clone();
     }
 }
