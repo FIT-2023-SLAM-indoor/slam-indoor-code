@@ -1,5 +1,4 @@
-/data/two_frames/*/*.txt
-/data/video_report/*
+data/
 
 roborock_*.mp4
 *.sfk
