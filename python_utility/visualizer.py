@@ -1,14 +1,15 @@
 import open3d as o3d
 
-import config
+import config as cfg
 
 
 def main():
-    visualize_points_from_file(config.VIZ_FILE_PATH, config.VIZ_PARSE_FORMAT)
+    visualize_points_from_file(cfg.VIZ_FILE_PATH, cfg.VIZ_PARSE_FORMAT)
 
 
 def visualize_points_from_file(file_path, parse_format="auto"):
-    geometry = o3d.io.read_point_cloud(file_path, format=parse_format)
+    geometry = o3d.io.read_point_cloud(cfg.PROJECT_PATH + file_path, 
+                                       format=parse_format)
     o3d.visualization.draw(geometry)
 
 
