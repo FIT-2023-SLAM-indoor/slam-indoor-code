@@ -4,10 +4,10 @@
 #include <opencv2/core/hal/hal.hpp>
 
 #include "cameraTransition.h"
+#include "main_config.h"
 
 using namespace cv;
 
-#define DISTANCE_THRESHOLD 100
 
 bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& points2, const Mat& calibrationMatrix,
 	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix, Mat& triangulatedPoints)
@@ -17,20 +17,26 @@ bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& poi
     double focal_length = 0.5*(calibrationMatrix.at<double>(0) + calibrationMatrix.at<double>(4));
     Point2d principle_point(calibrationMatrix.at<double>(2), calibrationMatrix.at<double>(5));
     Mat mask;
-	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC, 0.999, 1, mask);
-//    Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+#ifdef USE_RANSAC
+	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC,
+                                           RANSAC_PROB, RANSAC_THRESHOLD, mask);
+#else
+    Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+#endif
     if (essentialMatrix.empty())
         return false;
 
-//    double maskNonZeroElemsCnt = countNonZero(mask);
-//    std::cout << maskNonZeroElemsCnt << std::endl;
-//    if ((maskNonZeroElemsCnt / points1.size()) < 0.6)
-//        return false;
+#ifdef USE_RANSAC
+    double maskNonZeroElemsCnt = countNonZero(mask);
+    std::cout << maskNonZeroElemsCnt << std::endl;
+    if ((maskNonZeroElemsCnt / points1.size()) < 0.6)
+        return false;
+#endif
 
 	// Find P matrix using wrapped OpenCV SVD and triangulation
 	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,
                                         rotationMatrix, translationVector,
-                                        DISTANCE_THRESHOLD, noArray(), triangulatedPoints);
+                                        RECOVER_POSE_DISTANCE_THRESHOLD, noArray(), triangulatedPoints);
 	hconcat(rotationMatrix, translationVector, projectionMatrix);
 
 	return passedPointsCount > 0;

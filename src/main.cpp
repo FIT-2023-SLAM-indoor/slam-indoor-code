@@ -1,6 +1,7 @@
 #include "cameraCalibration.h"
 #include "photosProcessingCycle.h"
 #include "videoProcessingCycle.h"
+#include "IOmisc.h"
 
 #include "main_config.h"
 
@@ -17,6 +18,7 @@ int main(int argc, char** argv)
 #ifdef PHOTOS_CYCLE
     std::vector<String> photos;
     glob(PHOTOS_PATH_PATTERN, photos, false);
+    sortGlobs(photos);
     char path[] = OUTPUT_DATA_DIR;
     photosProcessingCycle(photos,
                           FT_BARRIER,

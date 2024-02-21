@@ -143,23 +143,22 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
                                currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
 
+            Mat newGlobalProjectionMatrix(4, 4, CV_64F);
+            addHomogeneousRow(previousProjectionMatrix);
+            addHomogeneousRow(currentProjectionMatrix);
+            newGlobalProjectionMatrix = previousProjectionMatrix * currentProjectionMatrix;
+            removeHomogeneousRow(newGlobalProjectionMatrix);
+            removeHomogeneousRow(previousProjectionMatrix);
+
             triangulate(previousFrameExtractedPointsMatrix,
-                        currentFrameTrackedPointsMatrix, calibrationMatrix * originProjection,
-                        calibrationMatrix * currentProjectionMatrix, homogeneous3DPoints);
+                        currentFrameTrackedPointsMatrix, calibrationMatrix * previousProjectionMatrix,
+                        calibrationMatrix * newGlobalProjectionMatrix, homogeneous3DPoints);
 
             reportStream << "3D points count: " << homogeneous3DPoints.cols << std::endl;
             Mat normalizedHomogeneous3DPointsFromTriangulation;
             normalizeHomogeneousWrapper(homogeneous3DPoints, normalizedHomogeneous3DPointsFromTriangulation);
+            Mat euclidean3DPointsFromTriangulationInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
 
-            Mat newGlobalProjectionMatrix(4, 4, CV_64F);
-            addHomogeneousRow(previousProjectionMatrix);
-            addHomogeneousRow(currentProjectionMatrix);
-//
-            newGlobalProjectionMatrix = previousProjectionMatrix * currentProjectionMatrix;
-//
-            removeHomogeneousRow(newGlobalProjectionMatrix);
-            removeHomogeneousRow(previousProjectionMatrix);
-//
             addHomogeneousRow(worldCameraPose);
             worldCameraPose = currentProjectionMatrix * worldCameraPose;
             removeHomogeneousRow(worldCameraPose);
@@ -170,9 +169,6 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             reportStream << "New world camera pose from multiply: " << worldCameraPose << std::endl << std::endl;
             poseStream << worldCameraPose.t() << std::endl << std::endl;
             reportStream << "New world camera projection: " << newGlobalProjectionMatrix << std::endl << std::endl;
-
-            Mat euclidean3DPointsFromTriangulationInWorldUsingRt = normalizedHomogeneous3DPointsFromTriangulation.rowRange(0, 3).clone();
-            placeEuclideanPointsInWorldSystem(euclidean3DPointsFromTriangulationInWorldUsingRt, worldCameraPoseFromHandCalc, worldCameraRotation);
 
             refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);
 
