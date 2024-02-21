@@ -35,8 +35,8 @@ int main(int argc, char** argv)
 	}
 	char path[] = OUTPUT_DATA_DIR;
 	videoProcessingCycle(cap,
-                         FEATURE_TRACKING_BARRIER,
-                         FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE,
+                         FT_BARRIER,
+                         FT_MAX_ACCEPTABLE_DIFFERENCE,
                          FRAMES_BATCH_SIZE,
                          REQUIRED_EXTRACTED_POINTS_COUNT,
                          FEATURE_EXTRACTING_THRESHOLD,

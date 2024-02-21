@@ -17,32 +17,39 @@
 static void setReportsPaths(
         char* path, std::ofstream& reportStream,
         std::ofstream& d3PointsStream,
-        std::ofstream& poseStream
+        std::ofstream& poseStream,
+        std::ofstream& poseStreamHandy,
+        std::ofstream& poseTestStream
 ) {
     char tmp[256] = "";
     sprintf(tmp, "%s/main.txt", path);
     reportStream.open(tmp);
-    sprintf(tmp, "%s/3DpointsTriangRt.txt", path);
+    sprintf(tmp, "%s/points.txt", path);
     d3PointsStream.open(tmp);
     sprintf(tmp, "%s/pose.txt", path);
     poseStream.open(tmp);
+    sprintf(tmp, "%s/pose_hand.txt", path);
+    poseStreamHandy.open(tmp);
+    sprintf(tmp, "%s/pose_test.txt", path);
+    poseTestStream.open(tmp);
 }
 
 int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingBarier, int featureTrackingMaxAcceptableDiff,
                          int framesBatchSize, int requiredExtractedPointsCount, int featureExtractingThreshold, char* reportsDirPath)
 {
-    Mat currentFrame, previousFrame, result, homogeneous3DPoints;
+    Mat preCurrentFrame, currentFrame, previousFrame, result, homogeneous3DPoints;
     std::vector<KeyPoint> currentFrameExtractedKeyPoints;
-
     std::vector<Point2f> currentFrameExtractedPoints;
     std::vector<Point2f> previousFrameExtractedPoints;
     std::vector<Point2f> previousFrameExtractedPointsTemp;
     std::vector<Point2f> currentFrameTrackedPoints;
-    std::ofstream reportStream;
-    std::ofstream d3PointsStream4;
-    std::ofstream poseStream;
-    setReportsPaths(reportsDirPath, reportStream, d3PointsStream4,poseStream);
 
+    std::ofstream reportStream;
+    std::ofstream pointsStream;
+    std::ofstream poseStream;
+    std::ofstream poseHandyStream;
+    std::ofstream poseTestStream;
+    setReportsPaths(reportsDirPath, reportStream, pointsStream, poseStream, poseHandyStream, poseTestStream);
 
     Mat originProjection = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
         previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0),
@@ -50,8 +57,9 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
         worldCameraPose = (Mat_<double>(3, 1) << 0, 0, 0),
         worldCameraPoseFromHandCalc = (Mat_<double>(3, 1) << 0, 0, 0),
         worldCameraRotation = (Mat_<double>(3, 3) << 1, 0, 0, 0, 1, 0, 0, 0, 1);
-    Mat calibrationMatrix(3, 3, CV_64F);
+    Mat calibrationMatrix(3, 3, CV_64F), distCoeffs(1, 5, CV_64F);
     calibration(calibrationMatrix, CalibrationOption::load);
+    loadMatrixFromXML(CALIBRATION_PATH, distCoeffs, "DC");
 
     std::vector<Mat> batch;
     std::vector<Mat> newBatch;
@@ -59,7 +67,11 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
     int countOfFrames = 0;
     bool first = true;
     for (auto photoPath : photosPaths) {
-        currentFrame = imread(photoPath);
+        preCurrentFrame = imread(photoPath);
+        // PART FOR UNDISTROTION
+        undistort(preCurrentFrame, currentFrame, calibrationMatrix, distCoeffs);
+        ////////////////////////
+
         fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
         if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
             continue;
@@ -132,16 +144,18 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
         reportStream << "Tracked points: " << currentFrameTrackedPoints.size() << std::endl;
 
 
-        Mat previousFrameExtractedPointsMatrix = Mat(previousFrameExtractedPointsTemp);
-        Mat currentFrameTrackedPointsMatrix = Mat(currentFrameTrackedPoints);
-        previousFrameExtractedPointsMatrix.reshape(1).convertTo(previousFrameExtractedPointsMatrix, CV_64F);
-        currentFrameTrackedPointsMatrix.reshape(1).convertTo(currentFrameTrackedPointsMatrix, CV_64F);
+
         Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
                 translationVector = Mat::zeros(3, 1, CV_64F),
                 triangulatedPointsFromRecoverPose;
         if (estimateProjection(previousFrameExtractedPointsTemp,
                                currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
+
+            Mat previousFrameExtractedPointsMatrix = Mat(previousFrameExtractedPointsTemp);
+            Mat currentFrameTrackedPointsMatrix = Mat(currentFrameTrackedPoints);
+            previousFrameExtractedPointsMatrix.reshape(1).convertTo(previousFrameExtractedPointsMatrix, CV_64F);
+            currentFrameTrackedPointsMatrix.reshape(1).convertTo(currentFrameTrackedPointsMatrix, CV_64F);
 
             Mat newGlobalProjectionMatrix(4, 4, CV_64F);
             addHomogeneousRow(previousProjectionMatrix);
@@ -172,9 +186,13 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
             refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);
 
-            d3PointsStream4 << euclidean3DPointsFromTriangulationInWorldUsingRt.t() << std::endl << std::endl;
+            pointsStream << euclidean3DPointsFromTriangulationInWorldUsingRt.t() << std::endl << std::endl;
             reportStream << "New world camera pose from handy calc: " << worldCameraPoseFromHandCalc << std::endl << std::endl;
+            poseHandyStream << worldCameraPoseFromHandCalc.t() << std::endl << std::endl;
             reportStream << "New world camera rotation from handy calc: " << worldCameraRotation << std::endl << std::endl;
+
+            Mat zeroPOose = (Mat_<double>(4, 1) << 0, 0, 0, 1);
+            poseTestStream << (newGlobalProjectionMatrix * zeroPOose).t() << std::endl << std::endl;
 
             previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }
@@ -205,7 +223,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
     }
 
     reportStream.close();
-    d3PointsStream4.close();
+    pointsStream.close();
     poseStream.close();
     return 0;
 }

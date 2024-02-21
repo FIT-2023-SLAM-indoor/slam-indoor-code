@@ -8,6 +8,16 @@
 
 using namespace cv;
 
+static void filterVectorByMask(std::vector<Point2f>& oldVector, const Mat& mask) {
+//    Mat mask;
+//    inputMask.convertTo(mask, CV_8U);
+    std::vector<Point2f> newVector;
+    for (int i = 0; i < mask.rows; ++i) {
+            if (mask.at<uchar>(i))
+                newVector.push_back(oldVector[i]);
+    }
+    oldVector = newVector;
+}
 
 bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& points2, const Mat& calibrationMatrix,
 	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix, Mat& triangulatedPoints)
@@ -28,17 +38,23 @@ bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& poi
 
 #ifdef USE_RANSAC
     double maskNonZeroElemsCnt = countNonZero(mask);
-    std::cout << maskNonZeroElemsCnt << std::endl;
-    if ((maskNonZeroElemsCnt / points1.size()) < 0.6)
-        return false;
+    std::cout << "Used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
+    filterVectorByMask(points1, mask);
+    filterVectorByMask(points2, mask);
+//    if ((maskNonZeroElemsCnt / points1.size()) < RANSAC_GOOD_POINTS_PERCENT)
+//        return false;
 #endif
 
 	// Find P matrix using wrapped OpenCV SVD and triangulation
+    Mat recoverMask;
 	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,
                                         rotationMatrix, translationVector,
-                                        RECOVER_POSE_DISTANCE_THRESHOLD, noArray(), triangulatedPoints);
+                                        RECOVER_POSE_DISTANCE_THRESHOLD, recoverMask, triangulatedPoints);
 	hconcat(rotationMatrix, translationVector, projectionMatrix);
-
+    maskNonZeroElemsCnt = countNonZero(recoverMask);
+    std::cout << "Passed cherality check cnt: " << maskNonZeroElemsCnt << std::endl;
+//    filterVectorByMask(points1, recoverMask);
+//    filterVectorByMask(points2, recoverMask);
 	return passedPointsCount > 0;
 }
 
