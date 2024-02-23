@@ -67,11 +67,14 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
     int countOfFrames = 0;
     bool first = true;
     for (auto photoPath : photosPaths) {
+#ifdef USE_UNDISTORTION
         preCurrentFrame = imread(photoPath);
         // PART FOR UNDISTROTION
         undistort(preCurrentFrame, currentFrame, calibrationMatrix, distCoeffs);
         ////////////////////////
-
+#else
+        currentFrame = imread(photoPath);
+#endif
         fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
         if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
             continue;
