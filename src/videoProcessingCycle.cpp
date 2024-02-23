@@ -83,7 +83,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			previousFrame = currentFrame.clone();
 			first = false;
 			currentFrameExtractedPoints.clear();
-			currentFrameExtractedKeyPoints.clear();
+			//currentFrameExtractedKeyPoints.clear();
 			continue;
 		}
 
@@ -102,8 +102,50 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
 			cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
 			previousFrameExtractedPointsTemp = previousFrameExtractedPoints;
+#ifdef FT_ACTIVATE
 			trackFeatures(previousFrameExtractedPointsTemp, previousFrame,
 				currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
+#else
+			
+			Mat descriptors1, descriptors2;
+			std::vector<KeyPoint> keypoints2;
+			fastExtractor(currentFrame, keypoints2, featureExtractingThreshold);
+
+
+
+
+			cv::Ptr<cv::DescriptorMatcher> matcher;
+			std::vector<std::vector<DMatch>> matches;
+            cv::Ptr<cv::DescriptorExtractor> extractor = cv::ORB::create();
+
+            extractor->compute(previousFrame, currentFrameExtractedKeyPoints, descriptors1);
+                extractor->compute(currentFrame, keypoints2, descriptors2);
+
+			matcher = cv::BFMatcher::create();
+			matcher->knnMatch(descriptors1, descriptors2, matches, 2);
+			Mat output_image;
+			std::vector<DMatch> good_matches;
+			const float ratio_thresh = 0.7f;
+			for (size_t i = 0; i < matches.size(); i++)
+			{
+				if (matches[i][0].distance < ratio_thresh * matches[i][1].distance)
+				{
+					good_matches.push_back(matches[i][0]);
+				}
+			}
+			
+			
+			cv::drawMatches(
+					previousFrame, currentFrameExtractedKeyPoints,
+					currentFrame, keypoints2,
+					good_matches,
+					output_image, Scalar::all(-1),
+                 Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+			imshow("ddd",output_image);
+			waitKey(10000);
+			
+
+#endif
 			if (currentFrameTrackedPoints.size() < requiredExtractedPointsCount) {
 				reportStream << "currentFrameTrackedPoints:" << currentFrameTrackedPoints.size() << std::endl;
 				currentFrameTrackedPoints.clear();
