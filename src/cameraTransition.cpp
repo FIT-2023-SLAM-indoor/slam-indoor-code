@@ -9,8 +9,6 @@
 using namespace cv;
 
 static void filterVectorByMask(std::vector<Point2f>& oldVector, const Mat& mask) {
-//    Mat mask;
-//    inputMask.convertTo(mask, CV_8U);
     std::vector<Point2f> newVector;
     for (int i = 0; i < mask.rows; ++i) {
             if (mask.at<uchar>(i))
@@ -39,8 +37,10 @@ bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& poi
 #ifdef USE_RANSAC
     double maskNonZeroElemsCnt = countNonZero(mask);
     std::cout << "Used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
+#ifdef USE_RANSAC_POINTS_FILTER
     filterVectorByMask(points1, mask);
     filterVectorByMask(points2, mask);
+#endif
 //    if ((maskNonZeroElemsCnt / points1.size()) < RANSAC_GOOD_POINTS_PERCENT)
 //        return false;
 #endif
@@ -53,8 +53,10 @@ bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& poi
 	hconcat(rotationMatrix, translationVector, projectionMatrix);
     maskNonZeroElemsCnt = countNonZero(recoverMask);
     std::cout << "Passed cherality check cnt: " << maskNonZeroElemsCnt << std::endl;
-//    filterVectorByMask(points1, recoverMask);
-//    filterVectorByMask(points2, recoverMask);
+#ifdef USE_RECOVER_POSE_POINTS_FILTER
+    filterVectorByMask(points1, recoverMask);
+    filterVectorByMask(points2, recoverMask);
+#endif
 	return passedPointsCount > 0;
 }
 

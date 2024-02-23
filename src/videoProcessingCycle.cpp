@@ -66,12 +66,12 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 	int findedIndex = 0;
 	int countOfFrames = 0;
 	bool first = true;
+#ifdef USE_UNDISTORTION
+	while (cap.read(preCurrentFrame)) {
+        undistort(preCurrentFrame, currentFrame, calibrationMatrix, distCoeffs);
+#else
     while (cap.read(currentFrame)) {
-//	while (cap.read(preCurrentFrame)) {
-        // PART FOR UNDISTROTION
-//        undistort(preCurrentFrame, currentFrame, calibrationMatrix, distCoeffs);
-        ////////////////////////
-
+#endif
 		fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
 		if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
 			continue;
