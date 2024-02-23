@@ -4,12 +4,18 @@ project(slam-indoor-code VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
+include(CPack)
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+
 find_package( OpenCV REQUIRED )
+find_package( Ceres REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
-#find_package( Ceres REQUIRED  )
 
 add_executable(
-        slam-indoor-code "src/main.cpp"
+        slam-indoor-code
+        "src/main.cpp"
+        "src/main_config.h"
         "src/fastExtractor.cpp" "src/fastExtractor.h"
         "src/cameraCalibration.cpp" "src/cameraCalibration.h"
         "src/cameraTransition.cpp" "src/cameraTransition.h"
@@ -17,11 +23,10 @@ add_executable(
         "src/triangulate.cpp" "src/triangulate.h"
         "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
         "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
-        "src/main_config.h" src/bundleAdjustment.cpp src/bundleAdjustment.h src/IOmisc.cpp src/IOmisc.h)
+        "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
+        "src/IOmisc.cpp" "src/IOmisc.h"
+)
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
-
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
+target_link_libraries( slam-indoor-code Ceres::ceres )
  
