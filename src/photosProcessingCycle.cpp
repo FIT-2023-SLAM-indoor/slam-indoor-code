@@ -10,6 +10,7 @@
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "triangulate.h"
+#include "bundleAdjustment.h"
 
 #include "photosProcessingCycle.h"
 
@@ -196,6 +197,19 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
             Mat zeroPOose = (Mat_<double>(4, 1) << 0, 0, 0, 1);
             poseTestStream << (newGlobalProjectionMatrix * zeroPOose).t() << std::endl << std::endl;
+
+#ifdef USE_BUNDLE_ADJUSTMENT
+            std::vector<Mat*> projections;
+            projections.push_back(&previousProjectionMatrix);
+            projections.push_back(&newGlobalProjectionMatrix);
+            std::vector<Mat*> points3dVector;
+            points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
+            points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
+            std::vector<Mat*> points2dVector;
+            points2dVector.push_back(&previousFrameExtractedPointsMatrix);
+            points2dVector.push_back(&currentFrameTrackedPointsMatrix);
+            bundleAdjustment(calibrationMatrix, projections, points3dVector, points2dVector);
+#endif
 
             previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }
