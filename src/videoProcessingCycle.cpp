@@ -38,6 +38,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 {
 	Mat preCurrentFrame, currentFrame, previousFrame, result, homogeneous3DPoints;
 	std::vector<KeyPoint> currentFrameExtractedKeyPoints;
+	std::vector<KeyPoint> previousFrameExtractedKeyPoints;
 	std::vector<Point2f> currentFrameExtractedPoints;
 	std::vector<Point2f> previousFrameExtractedPoints;
 	std::vector<Point2f> previousFrameExtractedPointsTemp;
@@ -80,10 +81,11 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
 			cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
 			previousFrameExtractedPoints = currentFrameExtractedPoints;
+			previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
 			previousFrame = currentFrame.clone();
 			first = false;
 			currentFrameExtractedPoints.clear();
-			//currentFrameExtractedKeyPoints.clear();
+			currentFrameExtractedKeyPoints.clear();
 			continue;
 		}
 
@@ -106,23 +108,17 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			trackFeatures(previousFrameExtractedPointsTemp, previousFrame,
 				currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
 #else
-			
-			Mat descriptors1, descriptors2;
-			std::vector<KeyPoint> keypoints2;
-			fastExtractor(currentFrame, keypoints2, featureExtractingThreshold);
-
-
-
-
+			previousFrameExtractedPointsTemp.clear();
+			Mat prevImgDesc, curImgDesc;
 			cv::Ptr<cv::DescriptorMatcher> matcher;
 			std::vector<std::vector<DMatch>> matches;
             cv::Ptr<cv::DescriptorExtractor> extractor = cv::ORB::create();
 
-            extractor->compute(previousFrame, currentFrameExtractedKeyPoints, descriptors1);
-                extractor->compute(currentFrame, keypoints2, descriptors2);
-
+            extractor->compute(previousFrame, previousFrameExtractedKeyPoints, prevImgDesc);
+            extractor->compute(currentFrame, currentFrameExtractedKeyPoints, curImgDesc);
+			
 			matcher = cv::BFMatcher::create();
-			matcher->knnMatch(descriptors1, descriptors2, matches, 2);
+			matcher->knnMatch(prevImgDesc, curImgDesc, matches, 2);
 			Mat output_image;
 			std::vector<DMatch> good_matches;
 			const float ratio_thresh = 0.7f;
@@ -130,20 +126,26 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			{
 				if (matches[i][0].distance < ratio_thresh * matches[i][1].distance)
 				{
+
 					good_matches.push_back(matches[i][0]);
+					//std::cout << currentFrameExtractedKeyPoints.size() << " 1 " << matches[i][0].trainIdx << std::endl;
+					//std::cout << previousFrameExtractedKeyPoints.size() << " 2 " << matches[i][0].queryIdx << std::endl;
+					currentFrameTrackedPoints.push_back(currentFrameExtractedKeyPoints.at(
+						matches[i][0].trainIdx).pt);
+					previousFrameExtractedPointsTemp.push_back(previousFrameExtractedKeyPoints.at(
+						matches[i][0].queryIdx).pt);
 				}
 			}
-			
-			
+#ifdef SHOW_TRACKED_POINTS
 			cv::drawMatches(
-					previousFrame, currentFrameExtractedKeyPoints,
-					currentFrame, keypoints2,
+					previousFrame, previousFrameExtractedKeyPoints,
+					currentFrame, currentFrameExtractedKeyPoints,
 					good_matches,
 					output_image, Scalar::all(-1),
                  Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 			imshow("ddd",output_image);
 			waitKey(10000);
-			
+#endif // SHOW_TRACKED_POINTS
 
 #endif
 			if (currentFrameTrackedPoints.size() < requiredExtractedPointsCount) {
