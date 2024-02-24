@@ -1,6 +1,7 @@
 #include "cameraCalibration.h"
 #include "photosProcessingCycle.h"
 #include "videoProcessingCycle.h"
+#include "IOmisc.h"
 
 #include "main_config.h"
 
@@ -10,13 +11,14 @@ int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("./docs/artifact/calibration/for_calib_1/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 11);
+    glob("../static/for_calib/samsung-horizontal-p/*.JPG", files, false);
+    chessboardPhotosCalibration(files, 14);
     return 0;
 #endif
 #ifdef PHOTOS_CYCLE
     std::vector<String> photos;
     glob(PHOTOS_PATH_PATTERN, photos, false);
+    sortGlobs(photos);
     char path[] = OUTPUT_DATA_DIR;
     photosProcessingCycle(photos,
                           FT_BARRIER,
@@ -33,8 +35,8 @@ int main(int argc, char** argv)
 	}
 	char path[] = OUTPUT_DATA_DIR;
 	videoProcessingCycle(cap,
-                         FEATURE_TRACKING_BARRIER,
-                         FEATURE_TRACKING_MAX_ACCEPTABLE_DIFFERENCE,
+                         FT_BARRIER,
+                         FT_MAX_ACCEPTABLE_DIFFERENCE,
                          FRAMES_BATCH_SIZE,
                          REQUIRED_EXTRACTED_POINTS_COUNT,
                          FEATURE_EXTRACTING_THRESHOLD,
