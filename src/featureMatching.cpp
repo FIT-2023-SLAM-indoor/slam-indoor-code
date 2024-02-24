@@ -13,14 +13,30 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 	std::vector<Point2f>& trackedFeatures, std::vector<Point2f>& newPreviousFeatures) {
 	
 	Mat prevImgDesc, curImgDesc;
-	cv::Ptr<cv::DescriptorMatcher> matcher;
+	cv::Ptr<cv::DescriptorExtractor> extractor;
 	std::vector<std::vector<DMatch>> matches;
-	cv::Ptr<cv::DescriptorExtractor> extractor = cv::ORB::create();
-
+	Ptr<DescriptorMatcher> matcher;
+#ifdef FM_SIFT_BF 
+	extractor = cv::SIFT::create();
+#endif 
+#ifdef FM_SIFT_FLANN 
+	extractor = cv::SIFT::create();
+#endif 
+#ifdef FM_ORB
+	extractor = cv::ORB::create();
+#endif // FM_ORB
 	extractor->compute(previousFrame, previousFeatures, prevImgDesc);
 	extractor->compute(currentFrame, currentFeatures, curImgDesc);
+#ifdef FM_SIFT_BF
+	matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE);
+#endif // FM_SIFT
+#ifdef FM_SIFT_FLANN 
+	matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+#endif 
 
-	matcher = cv::BFMatcher::create();
+#ifdef FM_ORB
+	matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE_HAMMING);
+#endif // FM_ORB
 	matcher->knnMatch(prevImgDesc, curImgDesc, matches, 2);
 	
 	std::vector<DMatch> good_matches;
@@ -42,8 +58,8 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 #ifdef SHOW_TRACKED_POINTS1
 	Mat output_image;
 	cv::drawMatches(
-		previousFrame, previousFrameExtractedKeyPoints,
-		currentFrame, currentFrameExtractedKeyPoints,
+		previousFrame, previousFeatures,
+		currentFrame, currentFeatures,
 		good_matches,
 		output_image, Scalar::all(-1),
 		Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
