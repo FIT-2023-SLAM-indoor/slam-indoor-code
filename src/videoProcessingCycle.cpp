@@ -8,6 +8,7 @@
 #include "fastExtractor.h"
 #include "featureTracking.h"
 #include "cameraCalibration.h"
+#include "featureMatching.h"
 #include "cameraTransition.h"
 #include "triangulate.h"
 #include "videoProcessingCycle.h"
@@ -110,44 +111,21 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 				currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
 #else
 			previousFrameExtractedPointsTemp.clear();
-			Mat prevImgDesc, curImgDesc;
-			cv::Ptr<cv::DescriptorMatcher> matcher;
-			std::vector<std::vector<DMatch>> matches;
-            cv::Ptr<cv::DescriptorExtractor> extractor = cv::ORB::create();
-			
-            extractor->compute(previousFrame, previousFrameExtractedKeyPoints, prevImgDesc);
-            extractor->compute(currentFrame, currentFrameExtractedKeyPoints, curImgDesc);
-			
-			matcher = cv::BFMatcher::create();
-			matcher->knnMatch(prevImgDesc, curImgDesc, matches, 2);
-			Mat output_image;
-			std::vector<DMatch> good_matches;
-			const float ratio_thresh = 0.7f;
-			for (size_t i = 0; i < matches.size(); i++)
-			{
-				if (matches[i][0].distance < ratio_thresh * matches[i][1].distance)
-				{
-
-					good_matches.push_back(matches[i][0]);
-					//std::cout << currentFrameExtractedKeyPoints.size() << " 1 " << matches[i][0].trainIdx << std::endl;
-					//std::cout << previousFrameExtractedKeyPoints.size() << " 2 " << matches[i][0].queryIdx << std::endl;
-					currentFrameTrackedPoints.push_back(currentFrameExtractedKeyPoints.at(
-						matches[i][0].trainIdx).pt);
-					previousFrameExtractedPointsTemp.push_back(previousFrameExtractedKeyPoints.at(
-						matches[i][0].queryIdx).pt);
-				}
+			featureMatching(previousFrame, currentFrame, previousFrameExtractedKeyPoints, currentFrameExtractedKeyPoints,
+				currentFrameTrackedPoints, previousFrameExtractedPointsTemp);
+#endif
+#ifdef SHOW_TRACKED_POINTS
+			Mat pointFrame = currentFrame.clone();
+			for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
+				Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
+				color[0] = 0;
+				color[1] = 0;
+				color[2] = 255;
+				pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
 			}
-#ifdef SHOW_TRACKED_POINTS1
-			cv::drawMatches(
-					previousFrame, previousFrameExtractedKeyPoints,
-					currentFrame, currentFrameExtractedKeyPoints,
-					good_matches,
-					output_image, Scalar::all(-1),
-                 Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-			imshow("ddd",output_image);
-			waitKey(10000);
-#endif // SHOW_TRACKED_POINTS
-
+			imshow("dd", pointFrame);
+			//        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
+			waitKey(1000);
 #endif
 			if (currentFrameTrackedPoints.size() < requiredExtractedPointsCount) {
 				reportStream << "currentFrameTrackedPoints:" << currentFrameTrackedPoints.size() << std::endl;
@@ -189,19 +167,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
         Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
                 translationVector = Mat::zeros(3, 1, CV_64F),
                 triangulatedPointsFromRecoverPose;
-#ifdef SHOW_TRACKED_POINTS
-		Mat pointFrame = currentFrame.clone();
-		for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
-			Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
-			color[0] = 0;
-			color[1] = 0;
-			color[2] = 255;
-			pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
-		}
-		imshow("dd", pointFrame);
-		//        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
-		waitKey(1000);
-#endif
+
         if (estimateProjection(previousFrameExtractedPointsTemp,
                                currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
