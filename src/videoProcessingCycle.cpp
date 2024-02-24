@@ -73,6 +73,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 #else
     while (cap.read(currentFrame)) {
 #endif
+
 		fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
 		if (currentFrameExtractedKeyPoints.size() < requiredExtractedPointsCount)
 			continue;
@@ -113,7 +114,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			cv::Ptr<cv::DescriptorMatcher> matcher;
 			std::vector<std::vector<DMatch>> matches;
             cv::Ptr<cv::DescriptorExtractor> extractor = cv::ORB::create();
-
+			
             extractor->compute(previousFrame, previousFrameExtractedKeyPoints, prevImgDesc);
             extractor->compute(currentFrame, currentFrameExtractedKeyPoints, curImgDesc);
 			
@@ -136,7 +137,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 						matches[i][0].queryIdx).pt);
 				}
 			}
-#ifdef SHOW_TRACKED_POINTS
+#ifdef SHOW_TRACKED_POINTS1
 			cv::drawMatches(
 					previousFrame, previousFrameExtractedKeyPoints,
 					currentFrame, currentFrameExtractedKeyPoints,
@@ -188,6 +189,19 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
         Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
                 translationVector = Mat::zeros(3, 1, CV_64F),
                 triangulatedPointsFromRecoverPose;
+#ifdef SHOW_TRACKED_POINTS
+		Mat pointFrame = currentFrame.clone();
+		for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
+			Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
+			color[0] = 0;
+			color[1] = 0;
+			color[2] = 255;
+			pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
+		}
+		imshow("dd", pointFrame);
+		//        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
+		waitKey(1000);
+#endif
         if (estimateProjection(previousFrameExtractedPointsTemp,
                                currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
@@ -237,19 +251,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
             previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }
 
-#ifdef SHOW_TRACKED_POINTS
-		Mat pointFrame = currentFrame.clone();
-		for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
-			Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
-			color[0] = 0;
-			color[1] = 0;
-			color[2] = 255;
-			pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
-		}
-		imshow("dd", pointFrame);
-		//        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
-		waitKey(1000);
-#endif
+
 		reportStream.flush();
         pointsStream.flush();
         poseStream.flush();
