@@ -1,7 +1,7 @@
 # Установка виртуального окружения
 ```shell
 #создаём в терминале виртуальное окружения с названием .venv
-...\python_utility> python -m venv .venv
+...\python_utility> python3 -m venv .venv
 
 #активация виртуального окружения на Windows
 ...\python_utility> .venv\Scripts\activate
@@ -9,7 +9,7 @@
 .../python_utility$ source .venv/bin/activate
 
 #установка необходимых библиотек и зависимостей
-(.venv) ...\python_utility> python -m pip install -r requirements.txt
+(.venv) ...\python_utility> python3 -m pip install -r requirements.txt
 
 #деактивация (при необходимости)
 (.venv) ...\python_utility> deactivate
@@ -18,7 +18,7 @@
 # Содержание config.py
 Пример config.py:
 ```python
-PROJECT_PATH = "C:/SLAM-code/"
+PROJECT_PATH = "~/Develop/slam-indoor-code"
 VIZ_FILE_PATH = "data/points.txt"
 VIZ_PARSE_FORMAT = "xyz"
 ```
@@ -38,6 +38,7 @@ VIZ_PARSE_FORMAT = "xyz"
 ```
 
 # Как работать с GUI Open3D
-
-
-# Мотивация по использованияю Open3D
+#### Открываем в GUI меню с настройками 
+![](../docs/artifact/open3d_readme/1.png)
+![](../docs/artifact/open3d_readme/2.png)
+#### Теперь можно играться с параметрами и режимами. В режиме `Fly` можно управлять камерой клавиатурой
