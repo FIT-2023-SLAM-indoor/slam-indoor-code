@@ -42,4 +42,4 @@ void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, c
  * @param [out] matrix Matrix for loading.
  * @param [in] matrixKey Tag name of block with desired matirx.
  */
-void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey= "K");
+void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey="K");

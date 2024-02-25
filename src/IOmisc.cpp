@@ -5,6 +5,7 @@
 #include <opencv2/imgproc.hpp>
 #include <ctime>
 #include <iostream>
+#include <fstream>
 
 #include "main_config.h"
 #include "IOmisc.h"
@@ -60,4 +61,28 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String &matrixK
         exit(-1);
     }
     fs[matrixKey] >> matrix;
+}
+
+
+void rawOutput(const Mat &matrix, const String &path) {
+    // Try to open file with received path
+    std::ofstream file_stream(path);
+    if (!file_stream.is_open()) {
+        std::cerr << "Failed to open or create file with path: " << path << std::endl;
+        exit(-1);
+    }
+
+    // Write into file every matrix element
+    for (int row_id = 0; row_id < matrix.rows; row_id++) {
+        for (int col_id = 0; col_id < matrix.cols; col_id++) {
+            file_stream << matrix.at<double>(row_id, col_id);
+            // If it wasn't the last element in a current row
+            if (col_id < matrix.cols - 1) {
+                file_stream << " ";
+            }
+        }
+        file_stream << "\n";
+    }
+    
+    file_stream.close();
 }

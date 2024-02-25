@@ -10,9 +10,13 @@
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "triangulate.h"
+#include "IOmisc.h"
 
 #include "photosProcessingCycle.h"
 
+///////////////
+// NEED CHANGE
+///////////////
 
 static void setReportsPaths(
         char* path, std::ofstream& reportStream,
