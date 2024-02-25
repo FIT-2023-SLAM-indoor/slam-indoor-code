@@ -197,19 +197,19 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
 #ifdef USE_BUNDLE_ADJUSTMENT
             std::vector<Mat*> projections;
-            projections.push_back(&previousProjectionMatrix);
+//            projections.push_back(&previousProjectionMatrix);
             std::vector<Mat*> points3dVector;
             euclidean3DPointsFromTriangulationInWorldUsingRt = euclidean3DPointsFromTriangulationInWorldUsingRt.t();
-            points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
+//            points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
             std::vector<Mat*> points2dVector;
-            points2dVector.push_back(&previousFrameExtractedPointsMatrix);
-            bundleAdjustment(calibrationMatrix, projections, points3dVector, points2dVector);
+//            points2dVector.push_back(&previousFrameExtractedPointsMatrix);
+//            bundleAdjustment(calibrationMatrix, projections, points3dVector, points2dVector);
 
-            projections.clear();
+//            projections.clear();
             projections.push_back(&newGlobalProjectionMatrix);
-            points3dVector.clear();
+//            points3dVector.clear();
             points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
-            points2dVector.clear();
+//            points2dVector.clear();
             points2dVector.push_back(&currentFrameTrackedPointsMatrix);
             bundleAdjustment(calibrationMatrix, projections, points3dVector, points2dVector);
 
