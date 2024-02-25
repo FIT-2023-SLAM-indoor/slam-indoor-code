@@ -11,8 +11,8 @@ int main(int argc, char** argv)
 {
 #ifdef CALIB
     std::vector<String> files;
-    glob("../static/for_calib/samsung-horizontal-p/*.JPG", files, false);
-    chessboardPhotosCalibration(files, 14);
+    glob("../static/for_calib/samsung-hv/*.png", files, false);
+    chessboardPhotosCalibration(files, 13);
     return 0;
 #endif
 #ifdef PHOTOS_CYCLE
