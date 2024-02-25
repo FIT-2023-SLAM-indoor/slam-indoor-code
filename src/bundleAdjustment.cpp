@@ -65,13 +65,13 @@ void bundleAdjustment(
 
         cv::Mat *points3d = points3dVector.at(i);
         cv::Mat *points2d = points2dVector.at(i);
-        for (int j = 0; j < points3d->cols; ++j) {
-            cv::Point2d point2d(points2d->col(j).at<double>(0), points2d->col(j).at<double>(1));
+        for (int j = 0; j < points3d->rows; ++j) {
+            cv::Point2d point2d(points2d->at<double>(j, 0), points2d->at<double>(j, 1));
             ceres::CostFunction *costFunction = ProjectionCostFunctor::createFunctor(point2d);
             std::vector<const double*> parameters;
             problem.AddResidualBlock(
                     costFunction, lossFunction,
-                    calibrationArray, rotation, transition, points3d->col(i).ptr<double>()
+                    calibrationArray, rotation, transition, points3d->row(j).ptr<double>()
             );
         }
     }

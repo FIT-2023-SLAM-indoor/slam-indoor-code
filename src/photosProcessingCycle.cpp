@@ -190,26 +190,35 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
             refineWorldCameraPose(rotationMatrix, translationVector, worldCameraPoseFromHandCalc, worldCameraRotation);
 
-            pointsStream << euclidean3DPointsFromTriangulationInWorldUsingRt.t() << std::endl << std::endl;
             reportStream << "New world camera pose from handy calc: " << worldCameraPoseFromHandCalc << std::endl << std::endl;
             poseHandyStream << worldCameraPoseFromHandCalc.t() << std::endl << std::endl;
             reportStream << "New world camera rotation from handy calc: " << worldCameraRotation << std::endl << std::endl;
 
-            Mat zeroPOose = (Mat_<double>(4, 1) << 0, 0, 0, 1);
-            poseTestStream << (newGlobalProjectionMatrix * zeroPOose).t() << std::endl << std::endl;
 
 #ifdef USE_BUNDLE_ADJUSTMENT
             std::vector<Mat*> projections;
             projections.push_back(&previousProjectionMatrix);
-            projections.push_back(&newGlobalProjectionMatrix);
             std::vector<Mat*> points3dVector;
-            points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
+            euclidean3DPointsFromTriangulationInWorldUsingRt = euclidean3DPointsFromTriangulationInWorldUsingRt.t();
             points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
             std::vector<Mat*> points2dVector;
             points2dVector.push_back(&previousFrameExtractedPointsMatrix);
+            bundleAdjustment(calibrationMatrix, projections, points3dVector, points2dVector);
+
+            projections.clear();
+            projections.push_back(&newGlobalProjectionMatrix);
+            points3dVector.clear();
+            points3dVector.push_back(&euclidean3DPointsFromTriangulationInWorldUsingRt);
+            points2dVector.clear();
             points2dVector.push_back(&currentFrameTrackedPointsMatrix);
             bundleAdjustment(calibrationMatrix, projections, points3dVector, points2dVector);
+
+            reportStream << "Projection after BA: " << newGlobalProjectionMatrix << std::endl << std::endl;
 #endif
+
+            pointsStream << euclidean3DPointsFromTriangulationInWorldUsingRt << std::endl << std::endl;
+            Mat zeroPOose = (Mat_<double>(4, 1) << 0, 0, 0, 1);
+            poseTestStream << (newGlobalProjectionMatrix * zeroPOose).t() << std::endl << std::endl;
 
             previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }

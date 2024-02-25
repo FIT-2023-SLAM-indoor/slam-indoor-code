@@ -2,13 +2,14 @@
 #include "photosProcessingCycle.h"
 #include "videoProcessingCycle.h"
 #include "IOmisc.h"
+#include "ceres/ceres.h"
 
 #include "main_config.h"
 
 using namespace cv;
 
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
+    google::InitGoogleLogging("BA");
 #ifdef CALIB
     std::vector<String> files;
     glob("../static/for_calib/samsung-horizontal-p/*.JPG", files, false);
