@@ -18,7 +18,7 @@
 # Содержание config.py
 Пример config.py:
 ```python
-PROJECT_PATH = "~/Develop/slam-indoor-code"
+PROJECT_PATH = "/home/anton/Develop/slam-indoor-code"
 VIZ_FILE_PATH = "data/points.txt"
 VIZ_PARSE_FORMAT = "xyz"
 ```
