@@ -36,7 +36,7 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 	matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE_HAMMING);
 #else
 	const float ratio_thresh = 0.5f;
-	throw std::exception("MM is not choosen");
+	throw std::exception("MM is not chosen");
 #endif // FM_ORB
 	matcher->knnMatch(prevImgDesc, curImgDesc, matches, 2);
 	std::vector<DMatch> good_matches;
