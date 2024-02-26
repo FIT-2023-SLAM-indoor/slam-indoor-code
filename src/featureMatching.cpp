@@ -17,30 +17,30 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 	std::vector<std::vector<DMatch>> matches;
 	Ptr<DescriptorMatcher> matcher;
 #ifdef FM_SIFT_BF 
+	const float ratio_thresh = 0.6f;
 	extractor = cv::SIFT::create();
-#endif 
-#ifdef FM_SIFT_FLANN 
-	extractor = cv::SIFT::create();
-#endif 
-#ifdef FM_ORB
-	extractor = cv::ORB::create();
-#endif // FM_ORB
 	extractor->compute(previousFrame, previousFeatures, prevImgDesc);
 	extractor->compute(currentFrame, currentFeatures, curImgDesc);
-#ifdef FM_SIFT_BF
 	matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE);
-#endif // FM_SIFT
-#ifdef FM_SIFT_FLANN 
+#elif defined  FM_SIFT_FLANN 
+	const float ratio_thresh = 0.5f;
+	extractor = cv::SIFT::create();
+	extractor->compute(previousFrame, previousFeatures, prevImgDesc);
+	extractor->compute(currentFrame, currentFeatures, curImgDesc);
 	matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
-#endif 
-
-#ifdef FM_ORB
+#elif defined FM_ORB
+	const float ratio_thresh = 0.7f;
+	extractor = cv::ORB::create();
+	extractor->compute(previousFrame, previousFeatures, prevImgDesc);
+	extractor->compute(currentFrame, currentFeatures, curImgDesc);
 	matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE_HAMMING);
+#else
+	const float ratio_thresh = 0.5f;
+	throw std::exception("MM is not choosen");
 #endif // FM_ORB
 	matcher->knnMatch(prevImgDesc, curImgDesc, matches, 2);
-	
 	std::vector<DMatch> good_matches;
-	const float ratio_thresh = 0.7f;
+	
 	for (size_t i = 0; i < matches.size(); i++)
 	{
 		if (matches[i][0].distance < ratio_thresh * matches[i][1].distance)
@@ -55,6 +55,7 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 				matches[i][0].queryIdx).pt);
 		}
 	}
+
 #ifdef SHOW_TRACKED_POINTS1
 	Mat output_image;
 	cv::drawMatches(
@@ -64,7 +65,8 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 		output_image, Scalar::all(-1),
 		Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 	imshow("ddd", output_image);
-	waitKey(10000);
+	waitKey(3000);
 #endif // SHOW_TRACKED_POINTS
-
-}
+	previousFeatures.clear();
+	currentFeatures.clear();
+;}

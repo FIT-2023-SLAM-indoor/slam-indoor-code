@@ -103,10 +103,11 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 
 		for (int batchIndex = batch.size() - 1;batchIndex >= 0;batchIndex--) {
 			currentFrame = batch.at(batchIndex);
-			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
-			cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
+
 			previousFrameExtractedPointsTemp = previousFrameExtractedPoints;
 #ifdef FT_ACTIVATE
+			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
+			cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
 			trackFeatures(previousFrameExtractedPointsTemp, previousFrame,
 				currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
 #else
