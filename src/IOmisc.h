@@ -43,3 +43,14 @@ void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, c
  * @param [in] matrixKey Tag name of block with desired matirx.
  */
 void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey="K");
+
+/**
+ * Writes the elements of a given matrix to a file at the specified path.
+ *
+ * @param matrix The input matrix.
+ * @param path The path to the file where the matrix will be written.
+ * @param mode The mode of writing to a file. 'w' - overwriting the file, 'a' - writing to the end
+ *
+ * @throws std::runtime_error if the file cannot be opened or created.
+ */
+void rawOutput(const Mat &matrix, const String &path, const char mode='a');

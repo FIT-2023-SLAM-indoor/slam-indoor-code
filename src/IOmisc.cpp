@@ -64,9 +64,14 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String &matrixK
 }
 
 
-void rawOutput(const Mat &matrix, const String &path) {
+void rawOutput(const Mat &matrix, const String &path, const char mode) {
     // Try to open file with received path
-    std::ofstream file_stream(path);
+    std::ofstream file_stream;
+    if (mode == 'a') {
+        file_stream.open(path, std::ios_base::app);
+    } else if (mode == 'w') {
+        file_stream.open(path);
+    }
     if (!file_stream.is_open()) {
         std::cerr << "Failed to open or create file with path: " << path << std::endl;
         exit(-1);
