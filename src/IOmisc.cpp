@@ -65,6 +65,7 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String &matrixK
 
 
 void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
+    // Check if the file stream is opened
     if (!fileStream.is_open()) {
         std::cerr << "Error: stream of file is not opened" << std::endl;
         exit(-1);
@@ -81,10 +82,12 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
         }
         fileStream << "\n";
         
+        // Check if an error occurred during writing
         if (fileStream.bad()) {
-            std::cerr << "Something went wrong during writting in stream" << std::endl;
+            std::cerr << "Something went wrong during writing in stream" << std::endl;
             exit(-1);
         }
+        // Flush the stream to ensure data is written immediately
         fileStream.flush();
     }
 }
