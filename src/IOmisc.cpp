@@ -24,7 +24,7 @@ void sortGlobs(std::vector<String> &paths) {
             p *= 10;
             startDigitIndex++;
         }
-        return a < b; 
+        return a < b;
     });
 }
 
@@ -64,30 +64,46 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String &matrixK
 }
 
 
-void rawOutput(const Mat &matrix, const String &path, const char mode) {
-    // Try to open file with received path
-    std::ofstream file_stream;
-    if (mode == 'a') {
-        file_stream.open(path, std::ios_base::app);
-    } else if (mode == 'w') {
-        file_stream.open(path);
-    }
-    if (!file_stream.is_open()) {
-        std::cerr << "Failed to open or create file with path: " << path << std::endl;
+void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
+    if (!fileStream.is_open()) {
+        std::cerr << "Error: stream of file is not opened" << std::endl;
         exit(-1);
     }
 
     // Write into file every matrix element
     for (int row_id = 0; row_id < matrix.rows; row_id++) {
         for (int col_id = 0; col_id < matrix.cols; col_id++) {
-            file_stream << matrix.at<double>(row_id, col_id);
+            fileStream << matrix.at<double>(row_id, col_id);
             // If it wasn't the last element in a current row
             if (col_id < matrix.cols - 1) {
-                file_stream << " ";
+                fileStream << " ";
             }
         }
-        file_stream << "\n";
+        fileStream << "\n";
+        
+        if (fileStream.bad()) {
+            std::cerr << "Something went wrong during writting in stream" << std::endl;
+            exit(-1);
+        }
+        fileStream.flush();
     }
     
-    file_stream.close();
+    fileStream.close();
+}
+
+void rawOutput(const Mat &matrix, const String &path, const char mode) {
+    // Try to open file with received path
+    std::ofstream fileStream;
+    if (mode == 'a') {
+        fileStream.open(path, std::ios_base::app);
+    } else if (mode == 'w') {
+        fileStream.open(path);
+    }
+    if (!fileStream.is_open()) {
+        std::cerr << "Failed to open or create file with path: " << path << std::endl;
+        exit(-1);
+    }
+
+    // Write into file every matrix element
+    rawOutput(matrix, fileStream);
 }

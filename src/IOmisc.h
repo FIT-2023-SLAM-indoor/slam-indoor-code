@@ -22,7 +22,7 @@ void sortGlobs(std::vector<String>& paths);
  * @param [in] matrixKey Tag name for saving block.
  */
 void saveMatrixToXML(const char *pathToXML, const Mat &matrix, const String& matrixKey= "K",
-                     FileStorage::Mode mode= FileStorage::WRITE);
+                     FileStorage::Mode mode=FileStorage::WRITE);
 /**
  * Save all camera parameters to specified XML.
  *
@@ -43,6 +43,11 @@ void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, c
  * @param [in] matrixKey Tag name of block with desired matirx.
  */
 void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey="K");
+
+/**
+ * 
+*/
+void rawOutput(const Mat &matrix, std::ofstream &fileStream);
 
 /**
  * Writes the elements of a given matrix to a file at the specified path.
