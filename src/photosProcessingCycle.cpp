@@ -10,6 +10,7 @@
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "triangulate.h"
+#include "IOmisc.h"
 
 #include "photosProcessingCycle.h"
 
