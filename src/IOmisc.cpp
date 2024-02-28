@@ -87,8 +87,6 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
         }
         fileStream.flush();
     }
-    
-    fileStream.close();
 }
 
 void rawOutput(const Mat &matrix, const String &path, const char mode) {
@@ -106,4 +104,6 @@ void rawOutput(const Mat &matrix, const String &path, const char mode) {
 
     // Write into file every matrix element
     rawOutput(matrix, fileStream);
+
+    fileStream.close();
 }
