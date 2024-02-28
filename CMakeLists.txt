@@ -17,7 +17,7 @@ add_executable(
         "src/triangulate.cpp" "src/triangulate.h"
         "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
         "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
-        "src/main_config.h" src/bundleAdjustment.cpp src/bundleAdjustment.h src/IOmisc.cpp src/IOmisc.h)
+        "src/main_config.h" src/bundleAdjustment.cpp src/bundleAdjustment.h src/IOmisc.cpp src/IOmisc.h src/mainCycle.cpp src/mainCycle.h)
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
 
