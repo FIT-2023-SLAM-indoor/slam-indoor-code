@@ -16,26 +16,6 @@ typedef struct LogFilesStreams {
     std::ofstream poseGlobalMltStream;
 } LogFilesStreams;
 
-/**
- *
- */
-typedef struct MainData {
-	// TEMP PART FOR capacity FRAMES
-	int maxSize; // Максимальная размерность векторов
-	int currentSize;
-	std::vector<std::vector<KeyPoint>> allExtractedFeatures; // Все заэкстратенные фичи i-го кадра
-	std::vector<std::vector<Vec3b>> colorsForAllExtractedFeatures; // цвета j-й фичи i-го кадра
-	std::vector<std::vector<DMatch>> allMatches; // Матчи между фичами кадров i и i+1
-	std::vector<Mat> rotations; // Вращения между кадрами i-1 и i
-	std::vector<Mat> motions; // Сдвиги между кадрами i-1 и i
-	std::vector<std::vector<int>> correspondSpatialPointIdx; // Поле меток для трёхмерных точек (см. ниже)
-
-	// GLOBAL PART
-	std::vector<Point3f> spatialPoints;
-	std::vector<Vec3b> spatialPointsColors;
-	std::vector<Mat> spatialCameraPositions; // Эта штука может быть нужна как раз для того, чтобы мы могли часть с данными о фичах держать в определённом пределе и при этом не терять данных о положении камеры
-} MainDataStructure;
-
 typedef struct TemporalImageData {
 	std::vector<KeyPoint> allExtractedFeatures; // Все заэкстратенные фичи i-го кадра
 	std::vector<Vec3b> colorsForAllExtractedFeatures; // цвета j-й фичи i-го кадра
