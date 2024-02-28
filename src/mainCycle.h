@@ -20,15 +20,16 @@ typedef struct LogFilesStreams {
  *
  */
 typedef struct MainData {
-    int capacity; // Максимальная размерность векторов
-    int size; /// количество кадров, инфа о которых есть сейчас
+	int capacity; // Максимальная размерность векторов
+	int size; // количество кадров, инфа о которых есть сейчас
+	std::vector<std::vector<KeyPoint>> allFeatures; // Все заэкстратенные фичи i-го кадра
+	std::vector<std::vector<Vec3b>> colorsForFeatures; // цвета j-й фичи i-го кадра
+	std::vector<std::vector<DMatch>> allMatches; // Матчи между фичами кадров i и i+1
+	std::vector<Mat> rotations; // Вращения между кадрами i-1 и i
+	std::vector<Mat> motions; // Сдвиги между кадрами i-1 и i
 
-    std::vector<std::vector<KeyPoint>> allFeatures; // Все заэкстратенные фичи i-го кадра
-    std::vector<std::vector<Vec3b>> colorsForFeatures; // цвета j-й фичи i-го кадра
-    std::vector<std::vector<DMatch>> allMatches; // Матчи между фичами кадров i и i+1
-    std::vector<Point3f> worldPoints; // Трёхмерные точки
-    std::vector<Vec3b> colors; // Цвета трёхмерных точек
-    std::vector<std::vector<int>> correspondWorldPointIdx; // Поле меток для трёхмерных точек (см. ниже)
-    std::vector<Mat> rotations; // Вращения между кадрами i-1 и i
-    std::vector<Mat> motions; // Сдвиги между кадрами i-1 и i
+	std::vector<Point3f> worldPoints; // Трёхмерные точки
+	std::vector<Vec3b> colors; // Цвета трёхмерных точек
+	std::vector<std::vector<int>> correspondWorldPointIdx; // Поле меток для трёхмерных точек (см. ниже)
+	std::vector<Mat> cameraPositions; // Эта штука может быть нужна как раз для того, чтобы мы могли часть с данными о фичах держать в определённом пределе и при этом не терять данных о положении камеры
 } MainDataStructure;
