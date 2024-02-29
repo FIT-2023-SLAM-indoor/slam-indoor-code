@@ -12,6 +12,7 @@
 #include "cameraTransition.h"
 #include "featureMatching.h"
 #include "triangulate.h"
+#include "IOmisc.h"
 
 #include "photosProcessingCycle.h"
 

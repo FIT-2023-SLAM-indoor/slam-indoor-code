@@ -9,7 +9,9 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 #find_package( Ceres REQUIRED  )
 
 add_executable(
-        slam-indoor-code "src/main.cpp"
+        slam-indoor-code
+        "src/main.cpp"
+        "src/main_config.h"
         "src/fastExtractor.cpp" "src/fastExtractor.h"
         "src/cameraCalibration.cpp" "src/cameraCalibration.h"
         "src/cameraTransition.cpp" "src/cameraTransition.h"
@@ -18,8 +20,10 @@ add_executable(
         "src/triangulate.cpp" "src/triangulate.h"
         "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
         "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
-        "src/main_config.h" "src/bundleAdjustment.cpp" "src/bundleAdjustment.h" 
-        "src/IOmisc.cpp" "src/IOmisc.h")
+        "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
+        "src/IOmisc.cpp" "src/IOmisc.h"
+)
+
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
 

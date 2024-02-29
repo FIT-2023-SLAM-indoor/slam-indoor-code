@@ -13,6 +13,7 @@
 #include "triangulate.h"
 #include "videoProcessingCycle.h"
 #include "main_config.h"
+#include "IOmisc.h"
 
 static void setReportsPaths(
         char* path, std::ofstream& reportStream,
