@@ -38,14 +38,13 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 	const float ratio_thresh = 0.5f;
 	throw std::exception("MM is not chosen");
 #endif // FM_ORB
-	matcher->knnMatch(prevImgDesc, curImgDesc, matches, 2);
+	matcher->radiusMatch(prevImgDesc, curImgDesc, matches, FM_SEARCH_RADIUS);
 	std::vector<DMatch> good_matches;
 	
 	for (size_t i = 0; i < matches.size(); i++)
 	{
-		if (matches[i][0].distance < ratio_thresh * matches[i][1].distance)
+		if (matches[i].size() > 0)
 		{
-
 			good_matches.push_back(matches[i][0]);
 			//std::cout << currentFrameExtractedKeyPoints.size() << " 1 " << matches[i][0].trainIdx << std::endl;
 			//std::cout << previousFrameExtractedKeyPoints.size() << " 2 " << matches[i][0].queryIdx << std::endl;
@@ -67,6 +66,7 @@ void featureMatching(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint
 	imshow("ddd", output_image);
 	waitKey(3000);
 #endif // SHOW_TRACKED_POINTS
+
 	previousFeatures.clear();
 	currentFeatures.clear();
 ;}
