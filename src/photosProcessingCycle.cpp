@@ -143,6 +143,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
                 fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
                 KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
                 previousFrameExtractedPoints = currentFrameExtractedPoints;
+                previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
                 break;
             }
 
@@ -160,6 +161,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 //			previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
             currentFrameTrackedPoints.clear();
             currentFrameExtractedPoints.clear();
+            currentFrameExtractedKeyPoints.clear();
             previousFrameExtractedPoints.clear();
             currentFrameExtractedPoints.clear();
             continue;

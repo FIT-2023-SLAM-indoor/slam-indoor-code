@@ -140,6 +140,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 				fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
 				KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
 				previousFrameExtractedPoints = currentFrameExtractedPoints;
+				previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
 				break;
 			}
 
@@ -155,6 +156,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			first = true;
 			countOfFrames = 0;
 			currentFrameTrackedPoints.clear();
+			currentFrameExtractedKeyPoints.clear();
 			currentFrameExtractedPoints.clear();
 			previousFrameExtractedPoints.clear();
 			currentFrameExtractedPoints.clear();
