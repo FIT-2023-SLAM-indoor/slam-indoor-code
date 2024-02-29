@@ -228,7 +228,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
             previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }
-        reportStream.flush();
+		mainReportStream.flush();
         countOfFrames = newBatch.size();
         currentFrameTrackedPoints.clear();
         currentFrameExtractedPoints.clear();
