@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+
 #include <cstdio>
 #include <fstream>
 #include <iostream>
@@ -9,6 +10,7 @@
 #include "featureTracking.h"
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
+#include "featureMatching.h"
 #include "triangulate.h"
 #include "IOmisc.h"
 
@@ -40,6 +42,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 {
     Mat preCurrentFrame, currentFrame, previousFrame, result, homogeneous3DPoints;
     std::vector<KeyPoint> currentFrameExtractedKeyPoints;
+    std::vector<KeyPoint> previousFrameExtractedKeyPoints;
     std::vector<Point2f> currentFrameExtractedPoints;
     std::vector<Point2f> previousFrameExtractedPoints;
     std::vector<Point2f> previousFrameExtractedPointsTemp;
@@ -81,9 +84,12 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             continue;
         if (first) {
             KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
+#ifdef FT_ACTIVATE
             cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
             cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
+#endif
             previousFrameExtractedPoints = currentFrameExtractedPoints;
+            previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
             previousFrame = currentFrame.clone();
             first = false;
             currentFrameExtractedPoints.clear();
@@ -104,12 +110,30 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
         for (int batchIndex = batch.size() - 1;batchIndex >= 0;batchIndex--) {
             currentFrame = batch.at(batchIndex);
+            previousFrameExtractedPointsTemp = previousFrameExtractedPoints;
+#ifdef FT_ACTIVATE
             cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
             cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
-            previousFrameExtractedPointsTemp = previousFrameExtractedPoints;
-
-            trackFeatures(previousFrameExtractedPointsTemp, previousFrame,
-                          currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
+			trackFeatures(previousFrameExtractedPointsTemp, previousFrame,
+				currentFrame, currentFrameTrackedPoints, featureTrackingBarier, featureTrackingMaxAcceptableDiff);
+#else
+            previousFrameExtractedPointsTemp.clear();
+            featureMatching(previousFrame, currentFrame, previousFrameExtractedKeyPoints, currentFrameExtractedKeyPoints,
+                currentFrameTrackedPoints, previousFrameExtractedPointsTemp);
+#endif
+#ifdef SHOW_TRACKED_POINTS
+            Mat pointFrame = currentFrame.clone();
+            for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
+                Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
+                color[0] = 0;
+                color[1] = 0;
+                color[2] = 255;
+                pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
+            }
+            imshow("dd", pointFrame);
+            //        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
+            waitKey(1000);
+#endif
             if (currentFrameTrackedPoints.size() < requiredExtractedPointsCount) {
                 reportStream << "currentFrameTrackedPoints:" << currentFrameTrackedPoints.size() << std::endl;
                 currentFrameTrackedPoints.clear();
@@ -122,6 +146,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
                 fastExtractor(currentFrame, currentFrameExtractedKeyPoints, featureExtractingThreshold);
                 KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
                 previousFrameExtractedPoints = currentFrameExtractedPoints;
+                previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
                 break;
             }
 
@@ -139,6 +164,8 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 //			previousProjectionMatrix = (Mat_<double>(3, 4) << 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0);
             currentFrameTrackedPoints.clear();
             currentFrameExtractedPoints.clear();
+            currentFrameExtractedKeyPoints.clear();
+            previousFrameExtractedKeyPoints.clear();
             previousFrameExtractedPoints.clear();
             currentFrameExtractedPoints.clear();
             continue;
@@ -152,6 +179,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
         Mat rotationMatrix = Mat::zeros(3, 3, CV_64F),
                 translationVector = Mat::zeros(3, 1, CV_64F),
                 triangulatedPointsFromRecoverPose;
+
         if (estimateProjection(previousFrameExtractedPointsTemp,
                                currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
@@ -200,20 +228,6 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
 
             previousProjectionMatrix = newGlobalProjectionMatrix.clone();
         }
-
-#ifdef SHOW_TRACKED_POINTS
-        Mat pointFrame = currentFrame.clone();
-        for (int i = 0;i < currentFrameTrackedPoints.size();i++) {
-            Vec3b& color = pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i));;
-            color[0] = 0;
-            color[1] = 0;
-            color[2] = 255;
-            pointFrame.at<Vec3b>(currentFrameTrackedPoints.at(i)) = color;
-        }
-        imshow("dd", pointFrame);
-        //        resizeWindow("dd", pointFrame.cols/4, pointFrame.rows/4);
-        waitKey(1000);
-#endif
         reportStream.flush();
         countOfFrames = newBatch.size();
         currentFrameTrackedPoints.clear();

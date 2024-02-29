@@ -16,12 +16,14 @@ add_executable(
         "src/cameraCalibration.cpp" "src/cameraCalibration.h"
         "src/cameraTransition.cpp" "src/cameraTransition.h"
         "src/featureTracking.cpp" "src/featureTracking.h"
+        "src/featureMatching.cpp" "src/featureMatching.h"
         "src/triangulate.cpp" "src/triangulate.h"
         "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
         "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
         "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
         "src/IOmisc.cpp" "src/IOmisc.h"
 )
+
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
 
