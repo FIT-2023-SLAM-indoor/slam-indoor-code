@@ -4,33 +4,59 @@
 #include <opencv2/core/hal/hal.hpp>
 
 #include "cameraTransition.h"
+#include "main_config.h"
 
 using namespace cv;
 
-#define DISTANCE_THRESHOLD 100
+static void filterVectorByMask(std::vector<Point2f>& oldVector, const Mat& mask) {
+    std::vector<Point2f> newVector;
+    for (int i = 0; i < mask.rows; ++i) {
+            if (mask.at<uchar>(i))
+                newVector.push_back(oldVector[i]);
+    }
+    oldVector = newVector;
+}
 
-bool estimateProjection(InputArray points1, InputArray points2, const Mat& calibrationMatrix,
+bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& points2, const Mat& calibrationMatrix,
 	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix, Mat& triangulatedPoints)
 {
 
 	// Maybe it's have sense to undistort points and matrix K
+    double focal_length = 0.5*(calibrationMatrix.at<double>(0) + calibrationMatrix.at<double>(4));
+    Point2d principle_point(calibrationMatrix.at<double>(2), calibrationMatrix.at<double>(5));
+    Mat mask;
+#ifdef USE_RANSAC
+	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC,
+                                           RANSAC_PROB, RANSAC_THRESHOLD, mask);
+#else
+    Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+#endif
+    if (essentialMatrix.empty())
+        return false;
 
-	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
-
-    // Choose one random corresponding points pair
-    int randomPointIndex = rand() % points1.rows();
-    Mat p1(1, 2, CV_64F), p2(1, 2, CV_64F);
-    points1.getMat().row(randomPointIndex).copyTo(p1.row(0));
-    points2.getMat().row(randomPointIndex).copyTo(p2.row(0));
+#ifdef USE_RANSAC
+    double maskNonZeroElemsCnt = countNonZero(mask);
+    std::cout << "Used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
+#ifdef USE_RANSAC_POINTS_FILTER
+    filterVectorByMask(points1, mask);
+    filterVectorByMask(points2, mask);
+#endif
+//    if ((maskNonZeroElemsCnt / points1.size()) < RANSAC_GOOD_POINTS_PERCENT)
+//        return false;
+#endif
 
 	// Find P matrix using wrapped OpenCV SVD and triangulation
+    Mat recoverMask;
 	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,
                                         rotationMatrix, translationVector,
-                                        DISTANCE_THRESHOLD, noArray(), triangulatedPoints);
+                                        RECOVER_POSE_DISTANCE_THRESHOLD, recoverMask, triangulatedPoints);
 	hconcat(rotationMatrix, translationVector, projectionMatrix);
-
-    // Here bundle adjustment can be implemented
-
+    maskNonZeroElemsCnt = countNonZero(recoverMask);
+    std::cout << "Passed cherality check cnt: " << maskNonZeroElemsCnt << std::endl;
+#ifdef USE_RECOVER_POSE_POINTS_FILTER
+    filterVectorByMask(points1, recoverMask);
+    filterVectorByMask(points2, recoverMask);
+#endif
 	return passedPointsCount > 0;
 }
 
@@ -38,7 +64,7 @@ void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
                            Mat& worldCameraPose, Mat& worldCameraRotation)
 {
 //    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
-    worldCameraRotation *= rotationMatrix;
+    worldCameraRotation = rotationMatrix * worldCameraRotation;
     worldCameraPose += worldCameraRotation * translationVector;
 }
 

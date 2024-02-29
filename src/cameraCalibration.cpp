@@ -8,6 +8,7 @@
 
 #include "main_config.h"
 #include "cameraCalibration.h"
+#include "IOmisc.h"
 
 #define MINIMAL_FOUND_FRAMES_COUNT 10
 
@@ -174,33 +175,4 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
 
     if (pathToXML != nullptr)
         saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
-}
-
-void saveMatrixToXML(const char *pathToXML, const Mat &matrix, const String& matrixKey, FileStorage::Mode mode) {
-    if (mode != FileStorage::WRITE && mode != FileStorage::APPEND)
-        std::cerr << "Only WRITE or APPEND mode can be used for save function" << std::endl;
-    FileStorage fs;
-    if (!fs.open(pathToXML, mode)) {
-        std::cerr << format("Cannot open %s", pathToXML) << std::endl;
-        exit(-1);
-    }
-    fs << matrixKey << matrix;
-}
-
-void saveCalibParametersToXML(const char *pathToXML, const Mat& cameraMatrixK, const Mat& distortionCoeffs,
-                              const Mat& R, const Mat& T) {
-    saveMatrixToXML(pathToXML, cameraMatrixK);
-    saveMatrixToXML(pathToXML, distortionCoeffs, "DC", FileStorage::APPEND);
-    saveMatrixToXML(pathToXML, R, "R", FileStorage::APPEND);
-    saveMatrixToXML(pathToXML, T, "T", FileStorage::APPEND);
-}
-
-
-void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixKey) {
-    FileStorage fs;
-    if (!fs.open(pathToXML, FileStorage::READ)) {
-        std::cerr << format("Cannot open %s", pathToXML) << std::endl;
-        exit(-1);
-    }
-    fs[matrixKey] >> matrix;
 }
