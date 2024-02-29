@@ -80,8 +80,10 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			continue;
 		if (first) {
 			KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
+#ifdef FT_ACTIVATE
 			cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
 			cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
+#endif
 			previousFrameExtractedPoints = currentFrameExtractedPoints;
 			previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
 			previousFrame = currentFrame.clone();
@@ -157,6 +159,7 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
 			countOfFrames = 0;
 			currentFrameTrackedPoints.clear();
 			currentFrameExtractedKeyPoints.clear();
+			previousFrameExtractedKeyPoints.clear();
 			currentFrameExtractedPoints.clear();
 			previousFrameExtractedPoints.clear();
 			currentFrameExtractedPoints.clear();

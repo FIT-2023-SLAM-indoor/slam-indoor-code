@@ -83,8 +83,10 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             continue;
         if (first) {
             KeyPoint::convert(currentFrameExtractedKeyPoints, currentFrameExtractedPoints);
+#ifdef FT_ACTIVATE
             cvtColor(currentFrame, currentFrame, COLOR_BGR2GRAY);
             cvtColor(currentFrame, currentFrame, COLOR_GRAY2BGR);
+#endif
             previousFrameExtractedPoints = currentFrameExtractedPoints;
             previousFrameExtractedKeyPoints = currentFrameExtractedKeyPoints;
             previousFrame = currentFrame.clone();
@@ -162,6 +164,7 @@ int photosProcessingCycle(std::vector<String> &photosPaths, int featureTrackingB
             currentFrameTrackedPoints.clear();
             currentFrameExtractedPoints.clear();
             currentFrameExtractedKeyPoints.clear();
+            previousFrameExtractedKeyPoints.clear();
             previousFrameExtractedPoints.clear();
             currentFrameExtractedPoints.clear();
             continue;
