@@ -175,7 +175,8 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
                 translationVector = Mat::zeros(3, 1, CV_64F),
                 triangulatedPointsFromRecoverPose;
 
-        if (estimateProjection(previousFrameExtractedPointsTemp,
+		// TODO: Пока что выглядит так, будто вызывая вместо estimateProjection и triangulationWrapper estimateTransformation и reconstruct мы можем избавиться почти от всего содержимого этого ифа. В нём останется лишь сохранять полученные данные.
+		if (estimateProjection(previousFrameExtractedPointsTemp,
                                currentFrameTrackedPoints, calibrationMatrix, rotationMatrix,
                                translationVector, currentProjectionMatrix, triangulatedPointsFromRecoverPose)) {
 
@@ -191,9 +192,9 @@ int videoProcessingCycle(VideoCapture& cap, int featureTrackingBarier, int featu
             removeHomogeneousRow(newGlobalProjectionMatrix);
             removeHomogeneousRow(previousProjectionMatrix);
 
-            triangulate(previousFrameExtractedPointsMatrix,
-                        currentFrameTrackedPointsMatrix, calibrationMatrix * previousProjectionMatrix,
-                        calibrationMatrix * newGlobalProjectionMatrix, homogeneous3DPoints);
+			triangulationWrapper(previousFrameExtractedPointsMatrix,
+								 currentFrameTrackedPointsMatrix, calibrationMatrix * previousProjectionMatrix,
+								 calibrationMatrix * newGlobalProjectionMatrix, homogeneous3DPoints);
 
             mainReportStream << "3D points count: " << homogeneous3DPoints.cols << std::endl;
             Mat normalizedHomogeneous3DPointsFromTriangulation;

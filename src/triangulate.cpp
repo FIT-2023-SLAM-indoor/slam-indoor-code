@@ -21,10 +21,10 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
     int numPoints = projPoints1.rows;
 
     // Preallocate SVD matrices on stack.
-    cv::Matx<double, 4, 4> matrA;
-    cv::Matx<double, 4, 4> matrU;
-    cv::Matx<double, 4, 1> matrW;
-    cv::Matx<double, 4, 4> matrV;
+    Matx<double, 4, 4> matrA;
+    Matx<double, 4, 4> matrU;
+    Matx<double, 4, 1> matrW;
+    Matx<double, 4, 4> matrV;
 
     CvMat* projPoints[2] = { &projPoints1, &projPoints2 };
     CvMat* projMatrs[2] = { &projMatr1, &projMatr2 };
@@ -45,7 +45,7 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
             }
         }
         // Solve system for current point.
-        cv::SVD::compute(matrA, matrW, matrU, matrV);
+        SVD::compute(matrA, matrW, matrU, matrV);
 
         // Write computed point into points array.
         cvmSet(&points4D, 0, p, matrV(3, 0)); /* X */
@@ -56,27 +56,70 @@ static void reconstructPointsFor3D(CvMat& projMatr1, CvMat& projMatr2, CvMat& pr
     }
 }
 
-void triangulate(cv::InputArray projPoints1, cv::InputArray projPoints2,
-    const cv::Mat& matr1, const cv::Mat& matr2,
-    cv::OutputArray points4D)
+void triangulationWrapper(InputArray projPoints1, InputArray projPoints2,
+						  const Mat& matr1, const Mat& matr2,
+						  OutputArray points4D)
 {
-    cv::Mat points1 = projPoints1.getMat(), points2 = projPoints2.getMat();
+    Mat points1 = projPoints1.getMat(), points2 = projPoints2.getMat();
 
     CvMat cvMatr1 = cvMat(matr1), cvMatr2 = cvMat(matr2);
     CvMat cvPoints1 = cvMat(points1), cvPoints2 = cvMat(points2);
 
     // Create the array for our 3D points. 
     points4D.create(4, points1.rows, points1.type());   // Four rows because we have additional parameter W for coords.
-    cv::Mat matPoints4D = points4D.getMat();
+    Mat matPoints4D = points4D.getMat();
     CvMat cvPoints4D = cvMat(matPoints4D);
 
     reconstructPointsFor3D(cvMatr1, cvMatr2, cvPoints1, cvPoints2, cvPoints4D);
 }
 
-void normalizeHomogeneousWrapper(const cv::Mat& inputHomogeneous3DPoints, cv::Mat& normalizedHomogeneous3DPoints)
+void reconstruct(
+	const Mat& calibration,
+	const Mat& rotation1, const Mat& transition1,
+	const Mat& rotation2, const Mat& transition2,
+	const std::vector<Point2f>& points1, const std::vector<Point2f>& points2,
+	std::vector<Point3f>& spatialPoints
+) {
+	Mat projection1(3, 4, CV_64F);
+	Mat projection2(3, 4, CV_64F);
+	hconcat(rotation1, transition1, projection1);
+	hconcat(rotation2, transition2, projection2);
+
+	projection1 = calibration * projection1;
+	projection2 = calibration * projection2;
+
+	Mat homogeneousSpatialPoints;
+	// If there will be types' errors, convert vectors to matrices manually
+//	Mat matrix = Mat(vector);
+//	matrix.reshape(1).convertTo(matrix, CV_64F);
+	triangulationWrapper(points1, points2, projection1, projection2, homogeneousSpatialPoints);
+
+	convertHomogeneousPointsMatrixToSpatialPointsVector(homogeneousSpatialPoints, spatialPoints);
+}
+
+void convertHomogeneousPointsMatrixToSpatialPointsVector(
+	const Mat& homogeneous3DPoints, std::vector<Point3f>& spatialPoints
+)
+{
+	spatialPoints.clear();
+	float w;
+	Mat pointCol = Mat::zeros(4, 1, CV_64F);
+	for (int col = 0; col < homogeneous3DPoints.cols; ++col) {
+		w = homogeneous3DPoints.at<float>(3, col);
+		pointCol = homogeneous3DPoints.col(col);
+		pointCol /= w;
+		spatialPoints.emplace_back(
+			pointCol.at<float>(0),
+			pointCol.at<float>(1),
+			pointCol.at<float>(2)
+		);
+	}
+}
+
+void normalizeHomogeneousWrapper(const Mat& inputHomogeneous3DPoints, Mat& normalizedHomogeneous3DPoints)
 {
 //    Mat homogeneous3DPoints = inputHomogeneous3DPoints.t();
-//    cv::convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
+//    convertPointsFromHomogeneous(homogeneous3DPoints, euclideanPoints); OpenCV version with strange matrix sizes
     int normalizedColIndex = 0;
     double w;
     Mat pointCol = Mat::zeros(4, 1, CV_64F);
