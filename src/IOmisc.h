@@ -47,8 +47,8 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixK
 /**
  * Writes the elements of a given matrix to an output file stream.
  *
- * @param matrix The input matrix.
- * @param fileStream The output file stream to write the matrix elements to.
+ * @param [in] matrix The input matrix.
+ * @param [in] fileStream The output file stream to write the matrix elements to.
  *
  * @throws std::runtime_error if the file stream is not opened or if an error occurs during writing.
  */
@@ -57,9 +57,9 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream);
 /**
  * Writes the elements of a given matrix to a file at the specified path.
  *
- * @param matrix The input matrix.
- * @param path The path to the file where the matrix will be written.
- * @param mode The mode of writing to a file. 'w' - overwriting the file, 'a' - writing to the end.
+ * @param [in] matrix The input matrix.
+ * @param [in] path The path to the file where the matrix will be written.
+ * @param [in] mode The mode of writing to a file. 'w' - overwriting the file, 'a' - writing to the end.
  *
  * @throws std::runtime_error if the file cannot be opened or created.
  */
