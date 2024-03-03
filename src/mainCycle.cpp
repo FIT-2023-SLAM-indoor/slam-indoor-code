@@ -22,11 +22,10 @@ void findFirstGoodVideoFrameAndFeatures(
     std::vector<KeyPoint> &goodFrameFeatures) 
 {
     Mat candidateFrame;
-    Mat featureDescriptors;
-
     while (frameSequence.read(candidateFrame)) {
         undistort(candidateFrame, goodFrame, calibrationMatrix, distCoeffs);
         fastExtractor(goodFrame, goodFrameFeatures, featureExtractingThreshold);
+        
         if (goodFrameFeatures.size() >= requiredExtractedPointsCount) {
             break;
         }
@@ -34,8 +33,22 @@ void findFirstGoodVideoFrameAndFeatures(
 }
 
 
+void createVideoFrameBatch(
+    VideoCapture &frameSequence,
+    int frameBatchSize,
+    std::vector<Mat> &frameBatch)
+{
+    int currentFrameBatchSize = 0;
+    Mat nextFrame;
+    while (currentFrameBatchSize < frameBatchSize && frameSequence.read(nextFrame)) {
+        frameBatch.push_back(nextFrame.clone());
+        currentFrameBatchSize++;
+    }
+}
+
+
 void findGoodVideoFrameFromBatch(
     )
 {
-
+    
 }
