@@ -2,24 +2,40 @@
 #include <opencv2/core.hpp>
 
 #include "mainCycle.h"
+#include "fastExtractor.h"
 
-void findFirstGoodVideoFrame(
+
+/*
+Список того, на что я решил забить:
+1) Сохранение цветов фич
+2) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
+
+*/
+
+
+void findFirstGoodVideoFrameAndFeatures(
     VideoCapture &frameSequence, 
-    Mat calibrationMatrix, Mat distCoeffs,
-    cv::Ptr<cv::DescriptorExtractor> extractor,
-    int requiredExtractedPointsCount) 
+    Mat &calibrationMatrix, Mat &distCoeffs,
+    int featureExtractingThreshold,
+    int requiredExtractedPointsCount,
+    Mat &goodFrame,
+    std::vector<KeyPoint> &goodFrameFeatures) 
 {
-    Mat originalFrame;
-    Mat compensatedFrame;
+    Mat candidateFrame;
     Mat featureDescriptors;
-    std::vector<KeyPoint> extractedFrameFeatures;
 
-    while (frameSequence.read(originalFrame)) {
-        undistort(originalFrame, compensatedFrame, calibrationMatrix, distCoeffs);
-        extractor->compute(compensatedFrame, extractedFrameFeatures, featureDescriptors);
-        if (extractedFrameFeatures.size() >= requiredExtractedPointsCount) {
-            // тут мы сохраняем важные данные об этом первом подходящем кадре
-            // пока не знаю, какие это данные: фичи или сам по себе кадр
+    while (frameSequence.read(candidateFrame)) {
+        undistort(candidateFrame, goodFrame, calibrationMatrix, distCoeffs);
+        fastExtractor(goodFrame, goodFrameFeatures, featureExtractingThreshold);
+        if (goodFrameFeatures.size() >= requiredExtractedPointsCount) {
+            break;
         }
     }
+}
+
+
+void findGoodVideoFrameFromBatch(
+    )
+{
+
 }
