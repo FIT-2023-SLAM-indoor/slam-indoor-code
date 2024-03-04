@@ -1,9 +1,9 @@
 data/
 
-roborock_*.mp4
 *.sfk
 config.py
 /src/main_config.h
+config.json
 
 .idea
 
