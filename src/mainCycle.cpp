@@ -1,19 +1,22 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include "mainCycle.h"
+#include "cameraCalibration.h"
 #include "fastExtractor.h"
 #include "featureMatching.h"
+#include "IOmisc.h"
+#include "mainCycle.h"
 
 
 using namespace cv;
 
 /*
 Список того, на что я решил забить:
-1) Сохранение цветов фич
+1) Сохранение цветов фич - надо немного переписать Extractor (ну или добавить это в функции поиска frame-ов)
 2) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
 3) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
-4) Гыы.
+4) Надо ли постоянно вызывать .clear() при создании новых объектов?
+5) 
 */
 
 bool findFirstGoodVideoFrameAndFeatures(
@@ -46,7 +49,7 @@ void createVideoFrameBatch(
     int currentFrameBatchSize = 0;
     Mat nextFrame;
     while (currentFrameBatchSize < frameBatchSize && frameSequence.read(nextFrame)) {
-        frameBatch.push_back(nextFrame.clone());
+        frameBatch.push_back(nextFrame);  // мб тут нужен .clone(), но вроде не нужен - я проверял
         currentFrameBatchSize++;
     }
 }
@@ -75,7 +78,8 @@ bool findGoodVideoFrameFromBatch(
         fastExtractor(newGoodFrame, newFeatures, featureExtractingThreshold);
         featureMatching(
             previousFrame, newGoodFrame, previousFeatures, newFeatures,
-            newMatchedFeatures, previousMatchedFeatures);
+            newMatchedFeatures, previousMatchedFeatures
+        );
         if (newMatchedFeatures.size() >= requiredMatchedPointsCount) {
             return true;
         }
@@ -85,6 +89,24 @@ bool findGoodVideoFrameFromBatch(
 }
 
 
-void videoCycle() {
-    
+void videoCycle(
+    VideoCapture &frameSequence,
+    int featureExtractingThreshold,
+    int requiredExtractedPointsCount)
+{
+    Mat calibrationMatrix(3, 3, CV_64F);
+    Mat distCoeffs(1, 5, CV_64F);
+	calibration(calibrationMatrix, CalibrationOption::load);
+    loadMatrixFromXML(CALIBRATION_PATH, distCoeffs, "DC");
+
+    Mat firstFrame;
+    std::vector<TemporalImageData> temporalImageDataQueue(8);
+    findFirstGoodVideoFrameAndFeatures(
+        frameSequence,
+        calibrationMatrix, distCoeffs,
+        featureExtractingThreshold,
+        requiredExtractedPointsCount,
+        firstFrame,
+        temporalImageDataQueue.at(0).allExtractedFeatures
+    );
 }

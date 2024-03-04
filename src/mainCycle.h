@@ -19,7 +19,7 @@ typedef struct LogFilesStreams {
 typedef struct TemporalImageData {
 	std::vector<KeyPoint> allExtractedFeatures; // Все заэкстратенные фичи i-го кадра
 	std::vector<Vec3b> colorsForAllExtractedFeatures; // цвета j-й фичи i-го кадра
-	std::vector<DMatch> allMatches; // Матчи между фичами кадров i и i+1
+	std::vector<DMatch> allMatches; // Матчи между фичами кадров i-1 и i
 	Mat rotation; // Вращения между кадрами i-1 и i
 	Mat motion; // Сдвиги между кадрами i-1 и i
 	std::vector<int> correspondSpatialPointIdx; // Поле меток для трёхмерных точек (см. ниже)
