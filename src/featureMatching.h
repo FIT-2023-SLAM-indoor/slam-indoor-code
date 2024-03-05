@@ -71,8 +71,8 @@ void showMatchedPointsInTwoFrames(
  * and then matches the descriptors using a specified matcher type and radius.
  *
  * @param [in] firstFrame The first input frame.
- * @param [in] firstFeatures The key points of the first input frame.
  * @param [in] secondFrame The second input frame.
+ * @param [in] firstFeatures The key points of the first input frame.
  * @param [in] secondFeatures The key points of the second input frame.
  * @param [in] matcherType The type of descriptor matcher to use.
  * @param [in] radius The matching radius.
@@ -80,8 +80,8 @@ void showMatchedPointsInTwoFrames(
  */
 void matchFramesPairFeatures(
     Mat& firstFrame,
-    std::vector<KeyPoint>& firstFeatures,
     Mat& secondFrame,
+	std::vector<KeyPoint>& firstFeatures,
     std::vector<KeyPoint>& secondFeatures,
     int matcherType,
     float radius,

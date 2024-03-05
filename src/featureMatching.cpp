@@ -117,8 +117,8 @@ void showMatchedPointsInTwoFrames(
 
 void matchFramesPairFeatures(
 	Mat& firstFrame,
-	std::vector<KeyPoint>& firstFeatures,
 	Mat& secondFrame,
+	std::vector<KeyPoint>& firstFeatures,
 	std::vector<KeyPoint>& secondFeatures,
 	int matcherType,
 	float radius,

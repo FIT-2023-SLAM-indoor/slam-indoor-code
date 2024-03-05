@@ -20,13 +20,18 @@ using namespace cv;
 5) Указывать числам тип в виде uint32_t вместо int
 */
 
+/*
+Уже нужно рефакторить этот код.
+Нужна структура под данные камеры и соответственно функция для их инициализации.
+Аналогично можно поступить с другими данными, которые встречаются часто вместе.
+Ещё надо в качестве параметров передавать не отдельные поля структуры, а структуру целиком,
+если куда-то нужно передать 2 или более более из структуры.
+*/
+
 bool findFirstGoodVideoFrameAndFeatures(
-    VideoCapture &frameSequence,
-    Mat &calibrationMatrix, Mat &distCoeffs,
-    int featureExtractingThreshold,
-    int requiredExtractedPointsCount,
-    Mat &goodFrame,
-    std::vector<KeyPoint> &goodFrameFeatures)
+    VideoCapture &frameSequence, Mat &calibrationMatrix, Mat &distCoeffs,
+    int featureExtractingThreshold, int requiredExtractedPointsCount,
+    Mat &goodFrame, std::vector<KeyPoint> &goodFrameFeatures)
 {
     Mat candidateFrame;
     while (frameSequence.read(candidateFrame))
@@ -44,9 +49,7 @@ bool findFirstGoodVideoFrameAndFeatures(
 }
 
 void createVideoFrameBatch(
-    VideoCapture &frameSequence,
-    int frameBatchSize,
-    std::vector<Mat> &frameBatch)
+    VideoCapture &frameSequence, int frameBatchSize, std::vector<Mat> &frameBatch)
 {
     int currentFrameBatchSize = 0;
     Mat nextFrame;
@@ -58,17 +61,11 @@ void createVideoFrameBatch(
 }
 
 bool findGoodVideoFrameFromBatch(
-    VideoCapture &frameSequence,
-    Mat &calibrationMatrix, Mat &distCoeffs,
-    int frameBatchSize,
-    int featureExtractingThreshold,
-    int requiredMatchedPointsCount,
-    Mat &previousFrame,
-    std::vector<KeyPoint> &previousFeatures,
-    std::vector<Point2f> &previousMatchedFeatures,
-    Mat &newGoodFrame,
-    std::vector<cv::KeyPoint> &newFeatures,
-    std::vector<Point2f> &newMatchedFeatures)
+    VideoCapture &frameSequence, Mat &calibrationMatrix, Mat &distCoeffs,
+    int frameBatchSize, int featureExtractingThreshold, int requiredMatchedPointsCount,
+    int matcherType, float radius, Mat &previousFrame, Mat &newGoodFrame,
+    std::vector<KeyPoint> &previousFeatures, std::vector<KeyPoint> &newFeatures,
+    std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
     createVideoFrameBatch(frameSequence, frameBatchSize, frameBatch);
@@ -79,10 +76,10 @@ bool findGoodVideoFrameFromBatch(
         candidateFrame = frameBatch.at(frameIndex);
         undistort(candidateFrame, newGoodFrame, calibrationMatrix, distCoeffs);
         fastExtractor(newGoodFrame, newFeatures, featureExtractingThreshold);
-        featureMatching(
+        matchFramesPairFeatures(
             previousFrame, newGoodFrame, previousFeatures, newFeatures,
-            newMatchedFeatures, previousMatchedFeatures);
-        if (newMatchedFeatures.size() >= requiredMatchedPointsCount)
+            matcherType, radius, matches);
+        if (matches.size() >= requiredMatchedPointsCount)
         {
             return true;
         }
@@ -92,22 +89,16 @@ bool findGoodVideoFrameFromBatch(
 }
 
 bool processingFirstPairFrames(
-    VideoCapture &frameSequence,
-    Mat &calibrationMatrix, Mat &distCoeffs,
-    int featureExtractingThreshold,
-    int requiredExtractedPointsCount,
-    int frameBatchSize,
+    VideoCapture &frameSequence, Mat &calibrationMatrix, Mat &distCoeffs,
+    int featureExtractingThreshold, int requiredExtractedPointsCount,
+    int frameBatchSize, int matcherType, float radius,
     std::deque<TemporalImageData> &temporalImageDataDeque) 
 {
-
     Mat firstFrame;
     if (!findFirstGoodVideoFrameAndFeatures(
-            frameSequence,
-            calibrationMatrix, distCoeffs,
-            featureExtractingThreshold,
-            requiredExtractedPointsCount,
-            firstFrame,
-            temporalImageDataDeque.at(0).allExtractedFeatures))
+            frameSequence, calibrationMatrix, distCoeffs,
+            featureExtractingThreshold, requiredExtractedPointsCount,
+            firstFrame, temporalImageDataDeque.at(0).allExtractedFeatures))
     {
         return false;
     }
@@ -115,28 +106,39 @@ bool processingFirstPairFrames(
     temporalImageDataDeque.at(0).motion = Mat::zeros(3, 1, CV_64FC1);
 
     Mat secondFrame;
-    /*
-    findGoodVideoFrameFromBatch(
+    if (!findGoodVideoFrameFromBatch(
         frameSequence, calibrationMatrix, distCoeffs, frameBatchSize, 
-        featureExtractingThreshold, 
-        requiredExtractedPointsCount, 
-        firstFrame, 
+        featureExtractingThreshold, requiredExtractedPointsCount, 
+        matcherType, radius,firstFrame, secondFrame,
         temporalImageDataDeque.at(0).allExtractedFeatures,
-        )
-    */
+        temporalImageDataDeque.at(1).allExtractedFeatures,
+        temporalImageDataDeque.at(0).allMatches))
+    {
+        return false;
+    }
+
+    return true;
 }
 
 void videoCycle(
-    VideoCapture &frameSequence,
-    int featureExtractingThreshold,
-    int requiredExtractedPointsCount)
+    VideoCapture &frameSequence, 
+    int featureExtractingThreshold, int requiredExtractedPointsCount,
+    int frameBatchSize, int matcherType, float radius)
 {
     Mat calibrationMatrix(3, 3, CV_64F);
-    Mat distCoeffs(1, 5, CV_64F);
     calibration(calibrationMatrix, CalibrationOption::load);
+    Mat distCoeffs(1, 5, CV_64F);
     loadMatrixFromXML(CALIBRATION_PATH, distCoeffs, "DC");
 
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMIZE_DEQUE_SIZE);
+    if(!processingFirstPairFrames(
+        frameSequence, calibrationMatrix, distCoeffs,
+        featureExtractingThreshold, requiredExtractedPointsCount,
+        frameBatchSize, matcherType, radius, temporalImageDataDeque))
+    {
+        std::cerr << "Couldn't find at least to good frames in video" << std::endl;
+        exit(-1);
+    }
     
-    
+
 }
