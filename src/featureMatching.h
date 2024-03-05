@@ -6,24 +6,20 @@ using namespace cv;
 * @param currentFeatures [in]
 * @param matches [in]
 * @param matchedFeatures [out]
-* @param newPreviousFeatures [out]
-* @param matcherType [in]
-* @param radius [in]
+* @param newPreviousFeatures [out] 
 */
 void getMatchedPoints(
 	std::vector<KeyPoint>& previousFeatures,
 	std::vector<KeyPoint>& currentFeatures,
 	std::vector<DMatch> matches,
 	std::vector<Point2f>& matchedFeatures,
-	std::vector<Point2f>& newPreviousFeatures,
-	int matcherType,
-	float radius
+	std::vector<Point2f>& newPreviousFeatures
 );
 /*
 * @param prevDesc [in]
 * @param curDesc [in]
 * @param matches [out]
-* @param matcherType [in]
+* @param matcherType [in] matcher type: 0 - sift_bf, 1 - sift_flann, 2 - orb_bf
 * @param radius [in]
 */
 void matchFeatures(
@@ -44,13 +40,13 @@ void getGoodMatches(
 /*
 * @param frame [in]
 * @param features [in]
-* @param matcherType [in]
+* @param extractorType [in] extractor type: 0 - sift_bf, 1 - sift_flann, 2 - orb_bf
 * @param desc [out]
 */
 void extractDescriptor(
 	Mat& frame,
 	std::vector<KeyPoint>& features,
-	int matcherType,
+	int extractorType,
 	Mat& desc
 );
 /*

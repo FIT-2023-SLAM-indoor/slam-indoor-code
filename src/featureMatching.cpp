@@ -12,17 +12,13 @@ using namespace cv;
 const int SIFT_BF = 0;
 const int SIFT_FLANN = 1;
 const int ORB_BF = 2;
-/*
-* Main function for feature matching, matcher type: 0 - sift_bf, 1 - sift_flann, 2 - orb_bf.
-*/
+
 void getMatchedPoints(
 	std::vector<KeyPoint>& previousFeatures,
 	std::vector<KeyPoint>& currentFeatures,
 	std::vector<DMatch> matches,
 	std::vector<Point2f>& matchedFeatures,
-	std::vector<Point2f>& newPreviousFeatures,
-	int matcherType,
-	float radius
+	std::vector<Point2f>& newPreviousFeatures
 ) {
 	matchedFeatures.clear();
 	newPreviousFeatures.clear();
@@ -37,7 +33,7 @@ void matchFeatures(
 	Mat& prevDesc, 
 	Mat& curDesc, 
 	std::vector<DMatch>& matches,
-	int matcherType,
+	int extractorType,
 	float radius
 ) {
 
@@ -45,7 +41,7 @@ void matchFeatures(
 	cv::Ptr<cv::DescriptorExtractor> extractor;
 
 	Ptr<DescriptorMatcher> matcher;
-	switch (matcherType) {
+	switch (extractorType) {
 	case SIFT_BF:
 		matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE);
 		break;
@@ -68,7 +64,7 @@ void getGoodMatches(
 	std::vector<DMatch>& matches
 ){
 
-	for (size_t i = 0; i < matches.size(); i++)
+	for (size_t i = 0; i < allMatches.size(); i++)
 	{
 		if (allMatches[i].size() > 0)
 		{
