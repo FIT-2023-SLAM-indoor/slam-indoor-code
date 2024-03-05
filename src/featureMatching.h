@@ -42,22 +42,16 @@ void getGoodMatches(
 	std::vector<DMatch>& matches
 );
 /*
-* @param previousFrame [in]
-* @param currentFrame [in]
-* @param previousFeatures [in]
-* @param currentFeatures [in]
+* @param frame [in]
+* @param features [in]
 * @param matcherType [in]
-* @param prevImgDesc [out]
-* @param curImgDesc [out]
+* @param desc [out]
 */
-void extractDescriptors(
-	Mat& previousFrame,
-	Mat& currentFrame,
-	std::vector<KeyPoint>& previousFeatures,
-	std::vector<KeyPoint>& currentFeatures,
+void extractDescriptor(
+	Mat& frame,
+	std::vector<KeyPoint>& features,
 	int matcherType,
-	Mat& prevImgDesc,
-	Mat& curImgDesc
+	Mat& desc
 );
 /*
 * @param previousFeatures [in]

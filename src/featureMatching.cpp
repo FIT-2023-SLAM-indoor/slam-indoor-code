@@ -77,15 +77,11 @@ void getGoodMatches(
 	}
 }
 
-void extractDescriptors(
-	Mat& previousFrame,
-	Mat& currentFrame,
-	std::vector<KeyPoint>& previousFeatures,
-	std::vector<KeyPoint>& currentFeatures,
+void extractDescriptor(
+	Mat& frame,
+	std::vector<KeyPoint>& features,
 	int matcherType,
-	Mat& prevImgDesc,
-	Mat& curImgDesc
-
+	Mat& desc
 )
 {
 	cv::Ptr<cv::DescriptorExtractor> extractor;
@@ -102,8 +98,7 @@ void extractDescriptors(
 	default:
 		throw std::exception();
 	}
-	extractor->compute(previousFrame, previousFeatures, prevImgDesc);
-	extractor->compute(currentFrame, currentFeatures, curImgDesc);
+	extractor->compute(frame, features, desc);
 }
 
 void showMatchedPointsInTwoFrames(
