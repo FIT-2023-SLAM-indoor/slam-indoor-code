@@ -15,78 +15,111 @@ const int ORB_BF = 2;
 /*
 * Main function for feature matching, matcher type: 0 - sift_bf, 1 - sift_flann, 2 - orb_bf.
 */
-void getMatchedPoints(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint>& previousFeatures, std::vector<KeyPoint>& currentFeatures,
-	std::vector<Point2f>& matchedFeatures, std::vector<Point2f>& newPreviousFeatures, int matcherType, int radius, bool showMatchedPoints) {
-
-	Mat prevDesc, curDesc;
-	std::vector<std::vector<DMatch>> matches;
-	extractDescriptorsAndMatch(previousFrame, currentFrame, previousFeatures, currentFeatures, 
-		prevDesc, curDesc, matcherType, matches, radius);
-	getGoodMatches(previousFeatures, currentFeatures, matchedFeatures, newPreviousFeatures, matches);
-	if (showMatchedPoints) {
-		showMatchedPointsInTwoFrames(previousFeatures, currentFeatures,
-			previousFrame, currentFrame, matches);
+void getMatchedPoints(
+	std::vector<KeyPoint>& previousFeatures,
+	std::vector<KeyPoint>& currentFeatures,
+	std::vector<DMatch> matches,
+	std::vector<Point2f>& matchedFeatures,
+	std::vector<Point2f>& newPreviousFeatures,
+	int matcherType,
+	float radius
+) {
+	matchedFeatures.clear();
+	newPreviousFeatures.clear();
+	for (int i = 0;i < matches.size();i++) {
+		matchedFeatures.push_back(currentFeatures.at(
+			matches[i].trainIdx).pt);
+		newPreviousFeatures.push_back(previousFeatures.at(
+			matches[i].queryIdx).pt);
 	}
+}
+void matchFeatures(
+	Mat& prevDesc, 
+	Mat& curDesc, 
+	std::vector<DMatch>& matches,
+	int matcherType,
+	float radius
+) {
+
+	std::vector<std::vector<DMatch>> allMatches;
+	cv::Ptr<cv::DescriptorExtractor> extractor;
+
+	Ptr<DescriptorMatcher> matcher;
+	switch (matcherType) {
+	case SIFT_BF:
+		matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE);
+		break;
+	case SIFT_FLANN:
+		matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
+		break;
+	case ORB_BF:
+		matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE_HAMMING);
+		break;
+	default:
+		throw std::exception();
+	}
+	matcher->radiusMatch(prevDesc, curDesc, allMatches, radius);
+	getGoodMatches(allMatches,matches);
 
 }
 
-void getGoodMatches(std::vector<KeyPoint>& previousFeatures, std::vector<KeyPoint>& currentFeatures,
-	std::vector<Point2f>& matchedFeatures, std::vector<Point2f>& newPreviousFeatures, std::vector<std::vector<DMatch>>& matches) {
+void getGoodMatches(
+	std::vector<std::vector<DMatch>>& allMatches,
+	std::vector<DMatch>& matches
+){
+
 	for (size_t i = 0; i < matches.size(); i++)
 	{
-		if (matches[i].size() > 0)
+		if (allMatches[i].size() > 0)
 		{
-			matchedFeatures.push_back(currentFeatures.at(
-				matches[i][0].trainIdx).pt);
-			newPreviousFeatures.push_back(previousFeatures.at(
-				matches[i][0].queryIdx).pt);
+			matches.push_back(allMatches[i][0]);
 		}
 	}
 }
 
-void extractDescriptorsAndMatch(Mat& previousFrame, Mat& currentFrame, std::vector<KeyPoint>& previousFeatures, std::vector<KeyPoint>& currentFeatures,
-	Mat& prevImgDesc, Mat& curImgDesc,int matcherType, std::vector<std::vector<DMatch>>& matches, int radius) {
+void extractDescriptors(
+	Mat& previousFrame,
+	Mat& currentFrame,
+	std::vector<KeyPoint>& previousFeatures,
+	std::vector<KeyPoint>& currentFeatures,
+	int matcherType,
+	Mat& prevImgDesc,
+	Mat& curImgDesc
+
+)
+{
 	cv::Ptr<cv::DescriptorExtractor> extractor;
-	Ptr<DescriptorMatcher> matcher;
 	switch (matcherType) {
-		case SIFT_BF:
-			matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE);
-			extractor = cv::SIFT::create();
-			break;
-		case SIFT_FLANN:
-			matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
-			extractor = cv::SIFT::create();
-			break;
-		case ORB_BF:
-			extractor = cv::ORB::create();
-			matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE_HAMMING);
-			break;
-		default:
-			throw std::exception("No such type");
+	case SIFT_BF:
+		extractor = cv::SIFT::create();
+		break;
+	case SIFT_FLANN:
+		extractor = cv::SIFT::create();
+		break;
+	case ORB_BF:
+		extractor = cv::ORB::create();
+		break;
+	default:
+		throw std::exception();
 	}
 	extractor->compute(previousFrame, previousFeatures, prevImgDesc);
 	extractor->compute(currentFrame, currentFeatures, curImgDesc);
-	matcher->radiusMatch(prevImgDesc, curImgDesc, matches, radius);
 }
 
-void showMatchedPointsInTwoFrames(std::vector<KeyPoint>& previousFeatures, std::vector<KeyPoint>& currentFeatures,
-	Mat& previousFrame, Mat& currentFrame, std::vector<std::vector<DMatch>>& matches) {
+void showMatchedPointsInTwoFrames(
+	std::vector<KeyPoint>& previousFeatures,
+	std::vector<KeyPoint>& currentFeatures,
+	Mat& previousFrame,
+	Mat& currentFrame,
+	std::vector<DMatch>& matches
+) {
 	Mat output_image;
-	std::vector<DMatch> goodMatches;
-	for (size_t i = 0; i < matches.size(); i++)
-	{
-		if (matches[i].size() > 0)
-		{
-			goodMatches.push_back(matches[i].at(0));
-		}
-	}
 	cv::drawMatches(
 		previousFrame, previousFeatures,
 		currentFrame, currentFeatures,
-		goodMatches,
+		matches,
 		output_image, Scalar::all(-1),
 		Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 	imshow("matches", output_image);
 	waitKey(3000);
-	goodMatches.clear();
 }
