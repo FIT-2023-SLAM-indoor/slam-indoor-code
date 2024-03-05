@@ -11,11 +11,11 @@ void ConfigService::setConfigFile(const std::string &pathToJSON) {
 		exit(2);
 	}
 	try {
-		config = json::parse(jsonStream);
+		config = json::parse(jsonStream, nullptr, true, true);
 	}
 	catch (json::parse_error& error) {
 		std::cerr << "Failed to parse JSON config" << std::endl
-				<< "Make suer you specified path to JSON with correct semantics" << std::endl;
+				<< "Make sure you specified path to JSON with correct semantics" << std::endl;
 		exit(2);
 	}
 	checkJSON();
