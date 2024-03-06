@@ -6,6 +6,19 @@
 using namespace cv;
 
 /**
+/**
+ * Struct containing conditions for data processing.
+ */
+typedef struct DataProcessingConditions {
+    Mat calibrationMatrix;             // Calibration matrix for camera.
+    Mat distanceCoeffs;                // Distortion coefficients for camera.
+    int featureExtractingThreshold;    // Threshold for feature extraction.
+    int requiredExtractedPointsCount;  // Required number of extracted points.
+    int matcherType;                   // Type of descriptor matcher to use.
+    float radius;                      // Matching radius.
+} DataProcessingConditions;
+
+/**
  *
  */
 typedef struct LogFilesStreams {
