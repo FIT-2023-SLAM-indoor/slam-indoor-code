@@ -114,19 +114,3 @@ void showMatchedPointsInTwoFrames(
 	imshow("matches", output_image);
 	waitKey(3000);
 }
-
-void matchFramesPairFeatures(
-	Mat& firstFrame,
-	Mat& secondFrame,
-	std::vector<KeyPoint>& firstFeatures,
-	std::vector<KeyPoint>& secondFeatures,
-	int matcherType,
-	float radius,
-	std::vector<DMatch>& matches
-) {
-	Mat firstDescriptor;
-	extractDescriptor(firstFrame, firstFeatures, matcherType, firstDescriptor);
-	Mat secondDescriptor;
-	extractDescriptor(secondFrame,secondFeatures, matcherType, secondDescriptor);
-	matchFeatures(firstDescriptor, secondDescriptor, matches, matcherType, radius);
-}

@@ -63,27 +63,3 @@ void showMatchedPointsInTwoFrames(
 	Mat& currentFrame,
 	std::vector<DMatch>& matches
 );
-
-/**
- * Matches features between two frames.
- *
- * This function extracts descriptors from the key points of two input frames,
- * and then matches the descriptors using a specified matcher type and radius.
- *
- * @param [in] firstFrame The first input frame.
- * @param [in] secondFrame The second input frame.
- * @param [in] firstFeatures The key points of the first input frame.
- * @param [in] secondFeatures The key points of the second input frame.
- * @param [in] matcherType The type of descriptor matcher to use.
- * @param [in] radius The matching radius.
- * @param [out] matches The output vector of DMatch objects containing the matches.
- */
-void matchFramesPairFeatures(
-    Mat& firstFrame,
-    Mat& secondFrame,
-	std::vector<KeyPoint>& firstFeatures,
-    std::vector<KeyPoint>& secondFeatures,
-    int matcherType,
-    float radius,
-    std::vector<DMatch>& matches
-);
