@@ -2,7 +2,7 @@
 #include "nlohmann/json.hpp"
 #include "configData.h"
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 class ConfigService {
 private:
