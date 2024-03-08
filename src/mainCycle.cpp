@@ -2,8 +2,10 @@
 #include <opencv2/core.hpp>
 
 #include "cameraCalibration.h"
+#include "cameraTransition.h"
 #include "fastExtractor.h"
 #include "featureMatching.h"
+#include "triangulate.h"
 #include "IOmisc.h"
 #include "mainCycle.h"
 
@@ -137,10 +139,24 @@ bool findGoodVideoFrameFromBatch(
 }
 
 
+// Почти полностью скопировал эту функцию из китайских исходников
+void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints) {
+	std::vector<Point2f> pointsCopy = extractedPoints;
+	extractedPoints.clear();
+
+	for (int i = 0; i < chiralityMask.rows; ++i) {
+		if (chiralityMask.at<uchar>(i) > 0) {
+			extractedPoints.push_back(pointsCopy[i]);
+        }
+	}
+}
+
+
 bool processingFirstPairFrames(
     VideoCapture &frameSequence, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
-    std::deque<TemporalImageData> &temporalImageDataDeque) 
+    std::deque<TemporalImageData> &temporalImageDataDeque,
+    std::vector<Point3f> &spatialPoints) 
 {
     Mat firstFrame;
     if (!findFirstGoodVideoFrameAndFeatures(
@@ -166,6 +182,25 @@ bool processingFirstPairFrames(
         return false;
     }
 
+    // Это часть надо в отдельную функцию засунуть
+    std::vector<Point2f> extractedPointCoords1;
+    KeyPoint::convert(temporalImageDataDeque.at(0).allExtractedFeatures, extractedPointCoords1);
+    std::vector<Point2f> extractedPointCoords2;
+    KeyPoint::convert(temporalImageDataDeque.at(1).allExtractedFeatures, extractedPointCoords2);
+    // Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
+    Mat chiralityMask;
+    // Насколько я понял для вычисления матрицы вращения и вектора смещения мне надо использовать эту функцию
+    estimateTransformation(
+        extractedPointCoords1, extractedPointCoords2, dataProcessingConditions.calibrationMatrix,
+        temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion, chiralityMask);
+    maskoutPoints(chiralityMask, extractedPointCoords1);
+    maskoutPoints(chiralityMask, extractedPointCoords2);
+    reconstruct(
+        dataProcessingConditions.calibrationMatrix, 
+        temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
+        temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
+        extractedPointCoords1, extractedPointCoords2, spatialPoints);
+
     return true;
 }
 
@@ -188,10 +223,12 @@ void videoCycle(
     
 
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMIZE_DEQUE_SIZE);
+    std::vector<Point3f> firstPairSpatialPoints;
     if (!processingFirstPairFrames(
             frameSequence, frameBatchSize,
             dataProcessingConditions,
-            temporalImageDataDeque)
+            temporalImageDataDeque,
+            firstPairSpatialPoints)
         )
     {
         std::cerr << "Couldn't find at least to good frames in video" << std::endl;
