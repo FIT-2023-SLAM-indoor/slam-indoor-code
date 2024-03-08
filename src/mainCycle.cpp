@@ -17,13 +17,30 @@ const int OPTIMIZE_DEQUE_SIZE = 8;
 2) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
 3) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
 4) Надо ли постоянно вызывать .clear() при создании новых объектов?
-5) Указывать числам тип в виде uint32_t вместо int
 */
 
-/*
-Уже нужно рефакторить этот код. Нужна структура под данные камеры.
-Аналогично можно поступить с другими данными, которые встречаются часто вместе.
-*/
+void defineProcessingConditions(
+    int featureExtractingThreshold, 
+    int requiredExtractedPointsCount,
+    int requiredMatchedPointsCount,
+    int matcherType, float radius,
+    DataProcessingConditions &dataProcessingConditions)
+{
+    Mat calibMatrixTemplate(3, 3, CV_64F);
+    dataProcessingConditions.calibrationMatrix = calibMatrixTemplate.clone();
+    calibration(dataProcessingConditions.calibrationMatrix, CalibrationOption::load);
+
+    Mat distVectorTemplate(1, 5, CV_64F);
+    dataProcessingConditions.distortionCoeffs = distVectorTemplate.clone();
+    loadMatrixFromXML(CALIBRATION_PATH, dataProcessingConditions.distortionCoeffs, "DC");
+
+    dataProcessingConditions.featureExtractingThreshold = featureExtractingThreshold;
+    dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
+    dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
+    dataProcessingConditions.matcherType = matcherType;
+    dataProcessingConditions.radius = radius;
+}
+
 
 bool findFirstGoodVideoFrameAndFeatures(
     VideoCapture &frameSequence, 
@@ -55,8 +72,8 @@ void matchFramesPairFeatures(
 	std::vector<KeyPoint>& firstFeatures,
 	std::vector<KeyPoint>& secondFeatures,
 	DataProcessingConditions &dataProcessingConditions,
-	std::vector<DMatch>& matches
-) {
+	std::vector<DMatch>& matches) 
+{
 	Mat firstDescriptor;
 	extractDescriptor(
         firstFrame, firstFeatures, 
@@ -85,9 +102,8 @@ void createVideoFrameBatch(
 
 
 bool findGoodVideoFrameFromBatch(
-    VideoCapture &frameSequence,
+    VideoCapture &frameSequence, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
-    int frameBatchSize,
     Mat &previousFrame, Mat &newGoodFrame,
     std::vector<KeyPoint> &previousFeatures, 
     std::vector<KeyPoint> &newFeatures,
@@ -122,9 +138,8 @@ bool findGoodVideoFrameFromBatch(
 
 
 bool processingFirstPairFrames(
-    VideoCapture &frameSequence,
+    VideoCapture &frameSequence, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
-    int frameBatchSize,
     std::deque<TemporalImageData> &temporalImageDataDeque) 
 {
     Mat firstFrame;
@@ -140,8 +155,9 @@ bool processingFirstPairFrames(
 
     Mat secondFrame;
     if (!findGoodVideoFrameFromBatch(
-            frameSequence, dataProcessingConditions, 
-            frameBatchSize,firstFrame, secondFrame,
+            frameSequence, frameBatchSize,
+            dataProcessingConditions, 
+            firstFrame, secondFrame,
             temporalImageDataDeque.at(0).allExtractedFeatures,
             temporalImageDataDeque.at(1).allExtractedFeatures,
             temporalImageDataDeque.at(0).allMatches)
@@ -151,29 +167,6 @@ bool processingFirstPairFrames(
     }
 
     return true;
-}
-
-
-void defineProcessingConditions(
-    int featureExtractingThreshold, 
-    int requiredExtractedPointsCount,
-    int requiredMatchedPointsCount,
-    int matcherType, float radius,
-    DataProcessingConditions &dataProcessingConditions)
-{
-    Mat calibMatrixTemplate(3, 3, CV_64F);
-    dataProcessingConditions.calibrationMatrix = calibMatrixTemplate;
-    calibration(dataProcessingConditions.calibrationMatrix, CalibrationOption::load);
-
-    Mat distVectorTemplate(1, 5, CV_64F);
-    dataProcessingConditions.distortionCoeffs = distVectorTemplate;
-    loadMatrixFromXML(CALIBRATION_PATH, dataProcessingConditions.distortionCoeffs, "DC");
-
-    dataProcessingConditions.featureExtractingThreshold = featureExtractingThreshold;
-    dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
-    dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
-    dataProcessingConditions.matcherType = matcherType;
-    dataProcessingConditions.radius = radius;
 }
 
 
@@ -196,13 +189,14 @@ void videoCycle(
 
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMIZE_DEQUE_SIZE);
     if (!processingFirstPairFrames(
-            frameSequence, dataProcessingConditions,
-            frameBatchSize, temporalImageDataDeque)
+            frameSequence, frameBatchSize,
+            dataProcessingConditions,
+            temporalImageDataDeque)
         )
     {
         std::cerr << "Couldn't find at least to good frames in video" << std::endl;
         exit(-1);
     }
     
-    
+
 }
