@@ -43,7 +43,7 @@ void defineProcessingConditions(
 
 
 bool findFirstGoodVideoFrameAndFeatures(
-    VideoCapture &frameSequence, 
+    VideoCapture &frameSequence,
     DataProcessingConditions &dataProcessingConditions,
     Mat &goodFrame, std::vector<KeyPoint> &goodFrameFeatures)
 {
