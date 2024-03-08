@@ -16,9 +16,10 @@ const int OPTIMIZE_DEQUE_SIZE = 8;
 /*
 Список того, на что я пока решил забить:
 1) Сохранение цветов фич - надо немного переписать Extractor (ну или добавить это в функции поиска frame-ов)
-2) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
-3) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
-4) Надо ли постоянно вызывать .clear() при создании новых объектов?
+2) Режим обработки последовательности фотографий
+3) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
+4) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
+5) Надо ли постоянно вызывать .clear() при создании новых объектов?
 */
 
 void defineProcessingConditions(
@@ -176,7 +177,7 @@ bool processingFirstPairFrames(
             firstFrame, secondFrame,
             temporalImageDataDeque.at(0).allExtractedFeatures,
             temporalImageDataDeque.at(1).allExtractedFeatures,
-            temporalImageDataDeque.at(0).allMatches)
+            temporalImageDataDeque.at(1).allMatches)
         )
     {
         return false;
@@ -210,17 +211,59 @@ bool processingFirstPairFrames(
     }
     // Хз, что тут происходит, скопировал из статьи
     int newMatchIdx = 0;
-    for (int matchIdx = 0; matchIdx < temporalImageDataDeque.at(0).allMatches.size(); matchIdx++) {
+    for (int matchIdx = 0; matchIdx < temporalImageDataDeque.at(1).allMatches.size(); matchIdx++) {
         if (chiralityMask.at<uchar>(matchIdx) > 0) {
             temporalImageDataDeque.at(0).correspondSpatialPointIdx[
-                temporalImageDataDeque.at(0).allMatches[matchIdx].queryIdx] = newMatchIdx;
+                temporalImageDataDeque.at(1).allMatches[matchIdx].queryIdx] = newMatchIdx;
             temporalImageDataDeque.at(1).correspondSpatialPointIdx[
-                temporalImageDataDeque.at(0).allMatches[matchIdx].trainIdx] = newMatchIdx;
+                temporalImageDataDeque.at(1).allMatches[matchIdx].trainIdx] = newMatchIdx;
             newMatchIdx++;
         }
     }
 
     return true;
+}
+
+// Получаем те из имеющихся трехмерных точек, которые были заматчены на новом кадре 
+void getObjAndImgPoints(
+    std::vector<DMatch> &matches,
+    std::vector<int> &correspondSpatialPointIdx, 
+    std::vector<Point3f> &spatialPoints, 
+    std::vector<KeyPoint> &extractedFeatures,
+    std::vector<Point3f> &objPoints,
+    std::vector<Point2f> &imgPoints)
+{
+    objPoints.clear();
+    imgPoints.clear();
+ 
+    for (int i = 0; i < matches.size(); ++i)
+    {
+        int query_idx = matches[i].queryIdx;
+        int train_idx = matches[i].trainIdx;
+ 
+        int struct_idx = correspondSpatialPointIdx[query_idx];
+        if (struct_idx >= 0) {
+            objPoints.push_back(spatialPoints[struct_idx]);
+            imgPoints.push_back(extractedFeatures[train_idx].pt);
+        }
+    }
+}
+
+
+// У функции и её параметров плохие имена/названия
+void getMatchedPoints(
+	std::vector<KeyPoint> &firstExtractedFeatures, 
+	std::vector<KeyPoint> &secondExtractedFeatures, 
+	std::vector<DMatch> &matches, 
+	std::vector<Point2f> &firstMatchedPoints, 
+	std::vector<Point2f> &secondMatchedPoints)
+{
+	firstMatchedPoints.clear();
+	secondMatchedPoints.clear();
+	for (int i = 0; i < matches.size(); i++) {
+		firstMatchedPoints.push_back(firstExtractedFeatures[matches[i].queryIdx].pt);
+		secondMatchedPoints.push_back(secondExtractedFeatures[matches[i].trainIdx].pt);
+	}
 }
 
 
@@ -256,18 +299,57 @@ void videoCycle(
         exit(-1);
     }
     
+    bool hasVideoGoodFrames;
     int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
     while (true) {
-        findGoodVideoFrameFromBatch(
-            frameSequence, frameBatchSize,
-            dataProcessingConditions,
-            lastGoodFrame, nextGoodFrame,
-            temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+        bool hasVideoGoodFrames = findGoodVideoFrameFromBatch(
+                            frameSequence, frameBatchSize,
+                            dataProcessingConditions,
+                            lastGoodFrame, nextGoodFrame,
+                            temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+                            temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
+                            temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches);
+        if (!hasVideoGoodFrames) {
+            std::cerr << "No good frames in batch. Stop video processing" << std::endl;
+            break;  // Может не брейк, а что-то другое
+        }
+        
+        std::vector<Point3f> objPoints;
+        std::vector<Point2f> imgPoints;
+        getObjAndImgPoints(
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
+            temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
+            globalDataStruct.spatialPoints,
             temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
-            temporalImageDataDeque.at(lastGoodFrameIdx).allMatches);
+            objPoints, imgPoints);
         
-        
-        lastGoodFrameIdx++;
+        // Решаем матрицу преобразования
+        Mat rotationVector;
+        solvePnPRansac(
+            objPoints, imgPoints, 
+            dataProcessingConditions.calibrationMatrix, 
+            noArray(), rotationVector, 
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).motion);
+        // Преобразуем вектор вращения в матрицу вращения
+        Rodrigues(rotationVector, temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation);
+        // 3D-реконструкция на основе полученных ранее значений R и T
+        std::vector<Point2f> matchedPointCoords1;
+        std::vector<Point2f> matchedPointCoords2;
+        std::vector<Point3f> newSpatialPoints;
+        reconstruct(
+            dataProcessingConditions.calibrationMatrix,
+            temporalImageDataDeque.at(lastGoodFrameIdx).rotation,
+            temporalImageDataDeque.at(lastGoodFrameIdx).motion,
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation,
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).motion, 
+            matchedPointCoords1, matchedPointCoords2, newSpatialPoints);
+
+
+        if (lastGoodFrameIdx == OPTIMIZE_DEQUE_SIZE - 2) {
+            temporalImageDataDeque.pop_front();
+        } else {
+            lastGoodFrameIdx++;
+        }
     }
 }
