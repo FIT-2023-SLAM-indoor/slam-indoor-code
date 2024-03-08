@@ -8,23 +8,55 @@
 
 using namespace cv;
 
-static void filterVectorByMask(std::vector<Point2f>& oldVector, const Mat& mask) {
+void filterVectorByMask(std::vector<Point2f>& vector, const Mat& mask) {
     std::vector<Point2f> newVector;
-    for (int i = 0; i < mask.rows; ++i) {
-            if (mask.at<uchar>(i))
-                newVector.push_back(oldVector[i]);
+	Mat filterMask = mask;
+	if (filterMask.rows == 1 && filterMask.cols != 1)
+		filterMask = filterMask.t();
+    for (int i = 0; i < filterMask.rows; ++i) {
+            if (filterMask.at<uchar>(i))
+                newVector.push_back(vector[i]);
     }
-    oldVector = newVector;
+	vector = newVector;
+}
+
+bool estimateTransformation(
+		const std::vector<Point2f>& points1, const std::vector<Point2f>& points2, const Mat& calibrationMatrix,
+		Mat& rotationMatrix, Mat& translationVector, Mat& chiralityMask
+) {
+	Mat mask;
+	double maskNonZeroElemsCnt = 0;
+#ifdef USE_RANSAC
+	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC,
+										   RANSAC_PROB, RANSAC_THRESHOLD, mask);
+#else
+	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix);
+#endif
+	if (essentialMatrix.empty())
+		return false;
+
+#ifdef USE_RANSAC
+	maskNonZeroElemsCnt = countNonZero(mask);
+	std::cout << "Used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
+//    if ((maskNonZeroElemsCnt / points1.size()) < RANSAC_GOOD_POINTS_PERCENT)
+//        return false;
+#endif
+
+	// Find P matrix using wrapped OpenCV SVD and triangulation
+	int passedPointsCount = recoverPose(essentialMatrix, points1, points2, calibrationMatrix,
+										rotationMatrix, translationVector,
+										RECOVER_POSE_DISTANCE_THRESHOLD, chiralityMask);
+	maskNonZeroElemsCnt = countNonZero(chiralityMask);
+	std::cout << "Passed chirality check cnt: " << maskNonZeroElemsCnt << std::endl;
+	return passedPointsCount > 0;
 }
 
 bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& points2, const Mat& calibrationMatrix,
 	Mat& rotationMatrix, Mat& translationVector, Mat& projectionMatrix, Mat& triangulatedPoints)
 {
 
-	// Maybe it's have sense to undistort points and matrix K
-    double focal_length = 0.5*(calibrationMatrix.at<double>(0) + calibrationMatrix.at<double>(4));
-    Point2d principle_point(calibrationMatrix.at<double>(2), calibrationMatrix.at<double>(5));
     Mat mask;
+	double maskNonZeroElemsCnt = 0;
 #ifdef USE_RANSAC
 	Mat essentialMatrix = findEssentialMat(points1, points2, calibrationMatrix, RANSAC,
                                            RANSAC_PROB, RANSAC_THRESHOLD, mask);
@@ -35,7 +67,7 @@ bool estimateProjection(std::vector<Point2f>& points1, std::vector<Point2f>& poi
         return false;
 
 #ifdef USE_RANSAC
-    double maskNonZeroElemsCnt = countNonZero(mask);
+    maskNonZeroElemsCnt = countNonZero(mask);
     std::cout << "Used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
 #ifdef USE_RANSAC_POINTS_FILTER
     filterVectorByMask(points1, mask);

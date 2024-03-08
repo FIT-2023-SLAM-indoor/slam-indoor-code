@@ -7,6 +7,7 @@ enable_testing()
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 #find_package( Ceres REQUIRED  )
+find_package(nlohmann_json 3.10.0 REQUIRED)
 
 add_executable(
         slam-indoor-code
@@ -22,10 +23,11 @@ add_executable(
         "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
         "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
         "src/IOmisc.cpp" "src/IOmisc.h"
-)
+        src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h)
 
 
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
+target_link_libraries( slam-indoor-code nlohmann_json::nlohmann_json )
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
