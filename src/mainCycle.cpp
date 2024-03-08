@@ -156,7 +156,7 @@ bool processingFirstPairFrames(
     VideoCapture &frameSequence, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
     std::deque<TemporalImageData> &temporalImageDataDeque,
-    std::vector<Point3f> &spatialPoints) 
+    Mat &secondFrame, std::vector<Point3f> &spatialPoints)
 {
     Mat firstFrame;
     if (!findFirstGoodVideoFrameAndFeatures(
@@ -242,11 +242,13 @@ void videoCycle(
     
 
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMIZE_DEQUE_SIZE);
+    Mat lastGoodFrame;
     GlobalData globalDataStruct;
     if (!processingFirstPairFrames(
             frameSequence, frameBatchSize,
             dataProcessingConditions,
             temporalImageDataDeque,
+            lastGoodFrame,
             globalDataStruct.spatialPoints)
         )
     {
@@ -254,5 +256,18 @@ void videoCycle(
         exit(-1);
     }
     
-    while ()
+    int lastGoodFrameIdx = 1;
+    Mat nextGoodFrame;
+    while (true) {
+        findGoodVideoFrameFromBatch(
+            frameSequence, frameBatchSize,
+            dataProcessingConditions,
+            lastGoodFrame, nextGoodFrame,
+            temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
+            temporalImageDataDeque.at(lastGoodFrameIdx).allMatches);
+        
+        
+        lastGoodFrameIdx++;
+    }
 }
