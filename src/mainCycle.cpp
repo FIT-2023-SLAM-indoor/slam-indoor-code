@@ -182,7 +182,7 @@ bool processingFirstPairFrames(
         return false;
     }
 
-    // Это часть надо в отдельную функцию засунуть
+    /* Эту часть надо в отдельную функцию засунуть */
     std::vector<Point2f> extractedPointCoords1;
     KeyPoint::convert(temporalImageDataDeque.at(0).allExtractedFeatures, extractedPointCoords1);
     std::vector<Point2f> extractedPointCoords2;
@@ -200,6 +200,25 @@ bool processingFirstPairFrames(
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
+
+    /* Эту часть надо в отдельную функцию засунуть */
+    temporalImageDataDeque.at(0).correspondSpatialPointIdx.clear();
+    for (int frameIdx = 0; frameIdx < 2; frameIdx++) {
+        temporalImageDataDeque.at(frameIdx).correspondSpatialPointIdx.clear();
+        temporalImageDataDeque.at(frameIdx).correspondSpatialPointIdx.resize(
+            temporalImageDataDeque.at(frameIdx).allExtractedFeatures.size(), -1);
+    }
+    // Хз, что тут происходит, скопировал из статьи
+    int newMatchIdx = 0;
+    for (int matchIdx = 0; matchIdx < temporalImageDataDeque.at(0).allMatches.size(); matchIdx++) {
+        if (chiralityMask.at<uchar>(matchIdx) > 0) {
+            temporalImageDataDeque.at(0).correspondSpatialPointIdx[
+                temporalImageDataDeque.at(0).allMatches[matchIdx].queryIdx] = newMatchIdx;
+            temporalImageDataDeque.at(1).correspondSpatialPointIdx[
+                temporalImageDataDeque.at(0).allMatches[matchIdx].trainIdx] = newMatchIdx;
+            newMatchIdx++;
+        }
+    }
 
     return true;
 }
@@ -223,17 +242,17 @@ void videoCycle(
     
 
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMIZE_DEQUE_SIZE);
-    std::vector<Point3f> firstPairSpatialPoints;
+    GlobalData globalDataStruct;
     if (!processingFirstPairFrames(
             frameSequence, frameBatchSize,
             dataProcessingConditions,
             temporalImageDataDeque,
-            firstPairSpatialPoints)
+            globalDataStruct.spatialPoints)
         )
     {
         std::cerr << "Couldn't find at least to good frames in video" << std::endl;
         exit(-1);
     }
     
-
+    while ()
 }
