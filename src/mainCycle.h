@@ -223,11 +223,11 @@ void getObjAndImgPoints(
  * This function extracts the coordinates of matched keypoints from two sets of keypoints,
  * based on the provided matches between them.
  *
- * @param firstExtractedFeatures The keypoints from the first image.
- * @param secondExtractedFeatures The keypoints from the second image.
- * @param matches The matches between the keypoints.
- * @param firstMatchedPoints Output vector to store the matched keypoints' coordinates from the first image.
- * @param secondMatchedPoints Output vector to store the matched keypoints' coordinates from the second image.
+ * @param [in] firstExtractedFeatures The keypoints from the first image.
+ * @param [in] secondExtractedFeatures The keypoints from the second image.
+ * @param [in] matches The matches between the keypoints.
+ * @param [out] firstMatchedPoints Output vector to store the matched keypoints' coordinates from the first image.
+ * @param [out] secondMatchedPoints Output vector to store the matched keypoints' coordinates from the second image.
  */
 void getMatchedPointCoords(
 	std::vector<KeyPoint> &firstExtractedFeatures, 
@@ -245,13 +245,13 @@ void getMatchedPointCoords(
  * estimates transformation matrices, and performs motion analysis to track objects
  * or patterns throughout the video sequence.
  * 
- * @param frameSequence VideoCapture object representing the video frame sequence.
- * @param frameBatchSize The size of the frame batch to process.
- * @param featureExtractingThreshold Threshold for feature extraction.
- * @param requiredExtractedPointsCount Number of required extracted points.
- * @param requiredMatchedPointsCount Number of required matched points.
- * @param matcherType Type of feature matcher.
- * @param radius Radius parameter for feature matching.
+ * @param [in] frameSequence VideoCapture object representing the video frame sequence.
+ * @param [in] frameBatchSize The size of the frame batch to process.
+ * @param [in] featureExtractingThreshold Threshold for feature extraction.
+ * @param [in] requiredExtractedPointsCount Number of required extracted points.
+ * @param [in] requiredMatchedPointsCount Number of required matched points.
+ * @param [in] matcherType Type of feature matcher.
+ * @param [in] radius Radius parameter for feature matching.
  */
 void videoCycle(
     VideoCapture &frameSequence,
