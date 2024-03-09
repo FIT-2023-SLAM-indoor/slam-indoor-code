@@ -165,3 +165,21 @@ bool findGoodVideoFrameFromBatch(
  *                        Upon completion, this vector will contain only the retained points.
  */
 void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints);
+
+
+/**
+ * Computes the rotation matrix and translation vector between two frames and applies a mask
+ * to keep only the points with positive values in the chirality mask.
+ * 
+ * @param [in] dataProcessingConditions Data processing conditions including calibration parameters.
+ * @param [in] prevFrameData Data of the previous frame containing keypoints and other information.
+ * @param [in] newFrameData Data of the new frame to which the mask is applied and which will be updated with the computation results.
+ * @param [out] extractedPointCoords1 Coordinates of keypoints from the previous frame.
+ * @param [out] extractedPointCoords2 Coordinates of keypoints from the new frame.
+ */
+void computeTransformationAndMaskPoints(
+    DataProcessingConditions &dataProcessingConditions,
+    TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
+    std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2
+);
+
