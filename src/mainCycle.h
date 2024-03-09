@@ -170,7 +170,7 @@ void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoin
 /**
  * Computes the rotation matrix and translation vector between two frames and applies a mask
  * to keep only the points with positive values in the chirality mask.
- * 
+ *
  * @param [in] dataProcessingConditions Data processing conditions including calibration parameters.
  * @param [in] prevFrameData Data of the previous frame containing keypoints and other information.
  * @param [in] newFrameData Data of the new frame to which the mask is applied and which will be updated with the computation results.
@@ -186,7 +186,7 @@ void computeTransformationAndMaskPoints(
 
 /**
  * Defines correspondence indices between keypoints in two consecutive frames.
- * 
+ *
  * @param [in] dataProcessingConditions Reference to the data processing conditions.
  * @param [in] chiralityMask Matrix representing the chirality mask.
  * @param [out] prevFrameData TemporalImageData object containing data of the previous frame.
@@ -195,4 +195,69 @@ void computeTransformationAndMaskPoints(
 void defineCorrespondenceIndices(
     DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData
+);
+
+
+/**
+ * Extracts corresponding spatial points and image points based on matches and key points.
+ *
+ * @param [in] matches The matches between images.
+ * @param [in] correspondSpatialPointIdx Corresponding indices of spatial points.
+ * @param [in] spatialPoints Spatial points.
+ * @param [in] extractedFeatures Extracted key points.
+ * @param [out] objPoints Corresponding spatial points.
+ * @param [out] imgPoints Corresponding image key points.
+ */
+void getObjAndImgPoints(
+    std::vector<DMatch> &matches,
+    std::vector<int> &correspondSpatialPointIdx,
+    std::vector<Point3f> &spatialPoints,
+    std::vector<KeyPoint> &extractedFeatures,
+    std::vector<Point3f> &objPoints,
+    std::vector<Point2f> &imgPoints
+);
+
+
+/**
+ * Extracts matched keypoint coordinates from two sets of keypoints and matches.
+ * This function extracts the coordinates of matched keypoints from two sets of keypoints,
+ * based on the provided matches between them.
+ *
+ * @param firstExtractedFeatures The keypoints from the first image.
+ * @param secondExtractedFeatures The keypoints from the second image.
+ * @param matches The matches between the keypoints.
+ * @param firstMatchedPoints Output vector to store the matched keypoints' coordinates from the first image.
+ * @param secondMatchedPoints Output vector to store the matched keypoints' coordinates from the second image.
+ */
+void getMatchedPointCoords(
+	std::vector<KeyPoint> &firstExtractedFeatures, 
+	std::vector<KeyPoint> &secondExtractedFeatures, 
+	std::vector<DMatch> &matches, 
+	std::vector<Point2f> &firstMatchedPoints, 
+	std::vector<Point2f> &secondMatchedPoints
+);
+
+
+/**
+ * Processes a sequence of frames from a video source, extracting features,
+ * and performing motion analysis. This function processes a sequence of frames
+ * from the provided video source. It extracts features, matches points,
+ * estimates transformation matrices, and performs motion analysis to track objects
+ * or patterns throughout the video sequence.
+ * 
+ * @param frameSequence VideoCapture object representing the video frame sequence.
+ * @param frameBatchSize The size of the frame batch to process.
+ * @param featureExtractingThreshold Threshold for feature extraction.
+ * @param requiredExtractedPointsCount Number of required extracted points.
+ * @param requiredMatchedPointsCount Number of required matched points.
+ * @param matcherType Type of feature matcher.
+ * @param radius Radius parameter for feature matching.
+ */
+void videoCycle(
+    VideoCapture &frameSequence,
+    int frameBatchSize, 
+    int featureExtractingThreshold, 
+    int requiredExtractedPointsCount,
+    int requiredMatchedPointsCount,
+    int matcherType, float radius
 );
