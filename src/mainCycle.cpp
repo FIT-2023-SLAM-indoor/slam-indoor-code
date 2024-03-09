@@ -22,6 +22,21 @@ const int OPTIMIZE_DEQUE_SIZE = 8;
 5) Надо ли постоянно вызывать .clear() при создании новых объектов?
 */
 
+
+void defineCalibrationMatrix(Mat &calibrationMatrix) {
+    // Сreating a new matrix or changing the type and size of an existing one
+    calibrationMatrix.create(3, 3, CV_64F);
+    calibration(calibrationMatrix, CalibrationOption::load);
+}
+
+
+void defineDistortionCoeffs(Mat &distortionCoeffs) {
+    // Сreating a new matrix or changing the type and size of an existing one
+    distortionCoeffs.create(1, 5, CV_64F);
+    loadMatrixFromXML(CALIBRATION_PATH, distortionCoeffs, "DC");
+}
+
+
 void defineProcessingConditions(
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
@@ -29,13 +44,8 @@ void defineProcessingConditions(
     int matcherType, float radius,
     DataProcessingConditions &dataProcessingConditions)
 {
-    Mat calibMatrixTemplate(3, 3, CV_64F);
-    dataProcessingConditions.calibrationMatrix = calibMatrixTemplate.clone();
-    calibration(dataProcessingConditions.calibrationMatrix, CalibrationOption::load);
-
-    Mat distVectorTemplate(1, 5, CV_64F);
-    dataProcessingConditions.distortionCoeffs = distVectorTemplate.clone();
-    loadMatrixFromXML(CALIBRATION_PATH, dataProcessingConditions.distortionCoeffs, "DC");
+    defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
+    defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
     dataProcessingConditions.featureExtractingThreshold = featureExtractingThreshold;
     dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
@@ -48,48 +58,62 @@ void defineProcessingConditions(
 bool findFirstGoodVideoFrameAndFeatures(
     VideoCapture &frameSequence,
     DataProcessingConditions &dataProcessingConditions,
-    Mat &goodFrame, std::vector<KeyPoint> &goodFrameFeatures)
+    Mat &goodFrame,
+    std::vector<KeyPoint> &goodFrameFeatures)
 {
     Mat candidateFrame;
     while (frameSequence.read(candidateFrame)) {
-        undistort(
-            candidateFrame, goodFrame, 
-            dataProcessingConditions.calibrationMatrix, 
+        undistort(candidateFrame, goodFrame, 
+            dataProcessingConditions.calibrationMatrix,
             dataProcessingConditions.distortionCoeffs);
-        fastExtractor(
-            goodFrame, goodFrameFeatures, 
+        fastExtractor(goodFrame, goodFrameFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
-
+        // Check if enough features are extracted
         if (goodFrameFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
             return true;
         }
     }
 
+    // No good frame found
     return false;
 }
 
 
-void matchFramesPairFeatures(
-	Mat& firstFrame,
-	Mat& secondFrame,
-	std::vector<KeyPoint>& firstFeatures,
-	std::vector<KeyPoint>& secondFeatures,
-	DataProcessingConditions &dataProcessingConditions,
-	std::vector<DMatch>& matches) 
+/**
+ * Matches features between two frames.
+ *
+ * This function extracts descriptors from the key points of the input frames,
+ * and then matches the descriptors using the specified matcher type and radius
+ * from the data processing conditions.
+ *
+ * @param firstFrame The first input frame.
+ * @param secondFrame The second input frame.
+ * @param firstFeatures The key points of the first input frame.
+ * @param secondFeatures The key points of the second input frame.
+ * @param dataProcessingConditions The data processing conditions including matcher type and matching radius.
+ * @param matches Output vector to store the matches between the features of the two frames.
+ */
+void matchFramesPairFeatures( // Вот здесь похоже херня какая-то творится в функции
+    Mat& firstFrame,
+    Mat& secondFrame,
+    std::vector<KeyPoint>& firstFeatures,
+    std::vector<KeyPoint>& secondFeatures,
+    DataProcessingConditions &dataProcessingConditions,
+    std::vector<DMatch>& matches) 
 {
-	Mat firstDescriptor;
-	extractDescriptor(
-        firstFrame, firstFeatures, 
+    // Extract descriptors from the key points of the input frames
+    Mat firstDescriptor;
+    extractDescriptor(firstFrame, firstFeatures, 
         dataProcessingConditions.matcherType, firstDescriptor);
-
-	Mat secondDescriptor;
-	extractDescriptor(secondFrame,secondFeatures, 
+    Mat secondDescriptor;
+    extractDescriptor(secondFrame, secondFeatures, 
         dataProcessingConditions.matcherType, secondDescriptor);
 
-	matchFeatures(
-        firstDescriptor, secondDescriptor, matches, 
+    // Match the descriptors using the specified matcher type and radius
+    matchFeatures(firstDescriptor, secondDescriptor, matches, 
         dataProcessingConditions.matcherType, dataProcessingConditions.radius);
 }
+
 
 
 void createVideoFrameBatch(
@@ -128,8 +152,7 @@ bool findGoodVideoFrameFromBatch(
         matchFramesPairFeatures(
             previousFrame, newGoodFrame, 
             previousFeatures, newFeatures,
-            dataProcessingConditions.matcherType, 
-            dataProcessingConditions.radius, 
+            dataProcessingConditions, 
             matches);
         if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
             return true;
