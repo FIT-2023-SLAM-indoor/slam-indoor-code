@@ -114,4 +114,54 @@ void matchFramesPairFeatures(
     std::vector<KeyPoint>& secondFeatures,
     DataProcessingConditions &dataProcessingConditions,
     std::vector<DMatch>& matches
-); 
+);
+
+
+/**
+ * Finds a good video frame from a batch of frames for feature matching.
+ *
+ * This function retrieves a batch of frames from the video sequence captured by the provided
+ * VideoCapture object and selects the most recent frame that meets the required criteria for
+ * feature matching. It undistorts each frame, extracts features, matches them with features
+ * from the previous frame, and checks if the number of matches meets the specified threshold.
+ * If a frame with enough matches is found, it returns true and stores the undistorted frame,
+ * its features, and the matches in the output parameters. Otherwise, it continues searching
+ * through the batch of frames until a suitable frame is found or the end of the batch is reached.
+ *
+ * @param [in] frameSequence The video capture object representing the sequence of frames.
+ * @param [in] frameBatchSize The number of frames to retrieve in each batch.
+ * @param [in] dataProcessingConditions The data processing conditions including calibration matrix,
+ *                                 distortion coefficients, feature extracting threshold, and
+ *                                 required matched points count.
+ * @param [in] previousFrame The previous frame used as a reference for feature matching.
+ * @param [out] newGoodFrame Output parameter to store the undistorted good frame.
+ * @param [in] previousFeatures The features extracted from the previous frame.
+ * @param [out] newFeatures Output parameter to store the features extracted from the new frame.
+ * @param [out] matches Output vector to store the matches between the features of the previous and new frames.
+ * @return True if a good frame with sufficient matches is found, false otherwise.
+ */
+bool findGoodVideoFrameFromBatch(
+    VideoCapture &frameSequence, int frameBatchSize,
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &previousFrame, Mat &newGoodFrame,
+    std::vector<KeyPoint> &previousFeatures, 
+    std::vector<KeyPoint> &newFeatures,
+    std::vector<DMatch> &matches
+);
+
+
+/**
+ * Masks out points based on the chirality mask.
+ *
+ * This function filters out points from the provided vector of 2D points based on the chirality mask.
+ * The chirality mask is a binary mask where non-zero values indicate valid points to keep, and zero
+ * values indicate points to remove. The function ensures that the sizes of the chirality mask and the
+ * points vector match. It then creates a copy of the input points vector, clears the original vector,
+ * and iterates through the chirality mask. For each non-zero value in the mask, the corresponding
+ * point from the copy vector is added to the original points vector.
+ *
+ * @param [in] chiralityMask The chirality mask specifying which points to retain (non-zero) and which to discard (zero).
+ * @param [out] extractedPoints The vector of 2D points to be filtered based on the chirality mask.
+ *                        Upon completion, this vector will contain only the retained points.
+ */
+void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints);

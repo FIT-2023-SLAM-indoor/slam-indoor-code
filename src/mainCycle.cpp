@@ -11,7 +11,7 @@
 
 using namespace cv;
 
-const int OPTIMIZE_DEQUE_SIZE = 8;
+const int OPTIMAL_DEQUE_SIZE = 8;
 
 /*
 Список того, на что я пока решил забить:
@@ -79,27 +79,13 @@ bool findFirstGoodVideoFrameAndFeatures(
 }
 
 
-/**
- * Matches features between two frames.
- *
- * This function extracts descriptors from the key points of the input frames,
- * and then matches the descriptors using the specified matcher type and radius
- * from the data processing conditions.
- *
- * @param firstFrame The first input frame.
- * @param secondFrame The second input frame.
- * @param firstFeatures The key points of the first input frame.
- * @param secondFeatures The key points of the second input frame.
- * @param dataProcessingConditions The data processing conditions including matcher type and matching radius.
- * @param matches Output vector to store the matches between the features of the two frames.
- */
-void matchFramesPairFeatures( // Вот здесь похоже херня какая-то творится в функции
+void matchFramesPairFeatures(
     Mat& firstFrame,
     Mat& secondFrame,
     std::vector<KeyPoint>& firstFeatures,
     std::vector<KeyPoint>& secondFeatures,
     DataProcessingConditions &dataProcessingConditions,
-    std::vector<DMatch>& matches) 
+    std::vector<DMatch>& matches)
 {
     // Extract descriptors from the key points of the input frames
     Mat firstDescriptor;
@@ -116,7 +102,7 @@ void matchFramesPairFeatures( // Вот здесь похоже херня ка�
 
 
 
-void createVideoFrameBatch(
+void fillVideoFrameBatch(
     VideoCapture &frameSequence, int frameBatchSize, std::vector<Mat> &frameBatch)
 {
     int currentFrameBatchSize = 0;
@@ -137,43 +123,48 @@ bool findGoodVideoFrameFromBatch(
     std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
-    createVideoFrameBatch(frameSequence, frameBatchSize, frameBatch);
+    fillVideoFrameBatch(frameSequence, frameBatchSize, frameBatch);
 
     Mat candidateFrame;
     for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
         candidateFrame = frameBatch.at(frameIndex);
-        undistort(
-            candidateFrame, newGoodFrame, 
-            dataProcessingConditions.calibrationMatrix, 
-            dataProcessingConditions.distortionCoeffs);
-        fastExtractor(
-            newGoodFrame, newFeatures, 
-            dataProcessingConditions.featureExtractingThreshold);
-        matchFramesPairFeatures(
-            previousFrame, newGoodFrame, 
-            previousFeatures, newFeatures,
-            dataProcessingConditions, 
-            matches);
+        undistort(candidateFrame, newGoodFrame, 
+                  dataProcessingConditions.calibrationMatrix,
+                  dataProcessingConditions.distortionCoeffs);
+        fastExtractor(newGoodFrame, newFeatures, 
+                      dataProcessingConditions.featureExtractingThreshold);
+        // Match features between the previous frame and the new frame
+        matchFramesPairFeatures(previousFrame, newGoodFrame, 
+                                previousFeatures, newFeatures,
+                                dataProcessingConditions, matches);
+        // Check if enough matches are found
         if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
             return true;
         }
     }
 
+    // No good frame found in the batch
     return false;
 }
 
 
-// Почти полностью скопировал эту функцию из китайских исходников
 void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints) {
-	std::vector<Point2f> pointsCopy = extractedPoints;
-	extractedPoints.clear();
+    // Ensure that the sizes of the chirality mask and points vector match
+    if (chiralityMask.rows != extractedPoints.size()) {
+        std::cerr << "Chirality mask size does not match points vector size" << std::endl;
+        exit(-1);
+    }
 
-	for (int i = 0; i < chiralityMask.rows; ++i) {
-		if (chiralityMask.at<uchar>(i) > 0) {
-			extractedPoints.push_back(pointsCopy[i]);
+    std::vector<Point2f> pointsCopy = extractedPoints;
+    extractedPoints.clear();
+
+    for (int i = 0; i < chiralityMask.rows; i++) {
+        if (chiralityMask.at<uchar>(i) > 0) {
+            extractedPoints.push_back(pointsCopy[i]);
         }
-	}
+    }
 }
+
 
 
 bool processingFirstPairFrames(
@@ -307,7 +298,7 @@ void videoCycle(
         dataProcessingConditions);
     
 
-    std::deque<TemporalImageData> temporalImageDataDeque(OPTIMIZE_DEQUE_SIZE);
+    std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
     Mat lastGoodFrame;
     GlobalData globalDataStruct;
     if (!processingFirstPairFrames(
@@ -369,7 +360,7 @@ void videoCycle(
             matchedPointCoords1, matchedPointCoords2, newSpatialPoints);
 
 
-        if (lastGoodFrameIdx == OPTIMIZE_DEQUE_SIZE - 2) {
+        if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
         } else {
             lastGoodFrameIdx++;
