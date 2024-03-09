@@ -19,7 +19,6 @@ const int OPTIMAL_DEQUE_SIZE = 8;
 2) Режим обработки последовательности фотографий
 3) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
 4) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
-5) Надо ли постоянно вызывать .clear() при создании новых объектов?
 */
 
 
@@ -102,7 +101,6 @@ void matchFramesPairFeatures(
 }
 
 
-
 void fillVideoFrameBatch(
     VideoCapture &frameSequence, int frameBatchSize, std::vector<Mat> &frameBatch)
 {
@@ -176,7 +174,7 @@ void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoin
 
 
 void computeTransformationAndMaskPoints(
-    DataProcessingConditions &dataProcessingConditions,
+    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
     std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
 {
@@ -184,8 +182,6 @@ void computeTransformationAndMaskPoints(
     KeyPoint::convert(prevFrameData.allExtractedFeatures, extractedPointCoords1);
     KeyPoint::convert(newFrameData.allExtractedFeatures, extractedPointCoords2);
 
-    // Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
-    Mat chiralityMask;
     // Насколько я понял для вычисления матрицы вращения, вектора смещения - мне нужна эта функция
     estimateTransformation(
         extractedPointCoords1, extractedPointCoords2, dataProcessingConditions.calibrationMatrix,
@@ -194,6 +190,31 @@ void computeTransformationAndMaskPoints(
     // Apply the chirality mask to the points from the frames
     maskoutPoints(chiralityMask, extractedPointCoords1);
     maskoutPoints(chiralityMask, extractedPointCoords2);
+}
+
+
+void defineCorrespondenceIndices(
+    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
+    TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
+{
+    // Resize the correspondence spatial point indices vectors for the previous and new frames
+    prevFrameData.correspondSpatialPointIdx.resize(
+        prevFrameData.allExtractedFeatures.size(), -1);
+    newFrameData.correspondSpatialPointIdx.resize(
+        newFrameData.allExtractedFeatures.size(), -1);
+
+    int newMatchIdx = 0;
+    for (int matchIdx = 0; matchIdx < newFrameData.allMatches.size(); matchIdx++) {
+        // Check if the match is valid based on the chirality mask
+        if (chiralityMask.at<uchar>(matchIdx) > 0) {
+            // Update correspondence indices for keypoints in the previous and new frames
+            prevFrameData.correspondSpatialPointIdx.at(
+                newFrameData.allMatches[matchIdx].queryIdx) = newMatchIdx;
+            newFrameData.correspondSpatialPointIdx.at(
+                newFrameData.allMatches[matchIdx].trainIdx) = newMatchIdx;
+            newMatchIdx++;
+        }
+    }
 }
 
 
@@ -221,33 +242,19 @@ bool processingFirstPairFrames(
         return false;
     }
 
+    // Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
+    Mat chiralityMask;
     std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
-    computeTransformationAndMaskPoints(dataProcessingConditions, temporalImageDataDeque.at(0),
-        temporalImageDataDeque.at(1), extractedPointCoords1, extractedPointCoords2);
+    computeTransformationAndMaskPoints(dataProcessingConditions, chiralityMask,
+        temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
+        extractedPointCoords1, extractedPointCoords2);
 
     reconstruct(dataProcessingConditions.calibrationMatrix, 
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
-
-    /* Эту часть надо в отдельную функцию засунуть */
-    temporalImageDataDeque.at(0).correspondSpatialPointIdx.clear();
-    for (int frameIdx = 0; frameIdx < 2; frameIdx++) {
-        temporalImageDataDeque.at(frameIdx).correspondSpatialPointIdx.clear();
-        temporalImageDataDeque.at(frameIdx).correspondSpatialPointIdx.resize(
-            temporalImageDataDeque.at(frameIdx).allExtractedFeatures.size(), -1);
-    }
-    // Хз, что тут происходит, скопировал из статьи
-    int newMatchIdx = 0;
-    for (int matchIdx = 0; matchIdx < temporalImageDataDeque.at(1).allMatches.size(); matchIdx++) {
-        if (chiralityMask.at<uchar>(matchIdx) > 0) {
-            temporalImageDataDeque.at(0).correspondSpatialPointIdx[
-                temporalImageDataDeque.at(1).allMatches[matchIdx].queryIdx] = newMatchIdx;
-            temporalImageDataDeque.at(1).correspondSpatialPointIdx[
-                temporalImageDataDeque.at(1).allMatches[matchIdx].trainIdx] = newMatchIdx;
-            newMatchIdx++;
-        }
-    }
+    defineCorrespondenceIndices(dataProcessingConditions, chiralityMask,
+        temporalImageDataDeque.at(0), temporalImageDataDeque.at(1));
 
     return true;
 }
@@ -279,7 +286,7 @@ void getObjAndImgPoints(
 
 
 // У функции и её параметров плохие имена/названия
-void getMatchedPoints(
+void getMatchedPointCoords(
 	std::vector<KeyPoint> &firstExtractedFeatures, 
 	std::vector<KeyPoint> &secondExtractedFeatures, 
 	std::vector<DMatch> &matches, 
@@ -295,6 +302,7 @@ void getMatchedPoints(
 }
 
 
+/* НАДО ЧИСТИТЬ ВСЕ СТРУКТУРЫ СРАЗУ ПОСЛЕ ИХ ОБЪЯВЛЕНИЯ */
 void videoCycle(
     VideoCapture &frameSequence,
     int frameBatchSize, 
@@ -354,6 +362,10 @@ void videoCycle(
         std::vector<Point2f> matchedPointCoords1;
         std::vector<Point2f> matchedPointCoords2;
         std::vector<Point3f> newSpatialPoints;
+        getMatchedPointCoords(temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
+            temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
+            matchedPointCoords1, matchedPointCoords2);
         reconstruct(dataProcessingConditions.calibrationMatrix,
             temporalImageDataDeque.at(lastGoodFrameIdx).rotation,
             temporalImageDataDeque.at(lastGoodFrameIdx).motion,

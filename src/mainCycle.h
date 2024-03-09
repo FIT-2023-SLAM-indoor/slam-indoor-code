@@ -183,3 +183,16 @@ void computeTransformationAndMaskPoints(
     std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2
 );
 
+
+/**
+ * Defines correspondence indices between keypoints in two consecutive frames.
+ * 
+ * @param [in] dataProcessingConditions Reference to the data processing conditions.
+ * @param [in] chiralityMask Matrix representing the chirality mask.
+ * @param [out] prevFrameData TemporalImageData object containing data of the previous frame.
+ * @param [out] newFrameData TemporalImageData object containing data of the new frame.
+ */
+void defineCorrespondenceIndices(
+    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
+    TemporalImageData &prevFrameData, TemporalImageData &newFrameData
+);
