@@ -62,9 +62,10 @@ bool findFirstGoodVideoFrameAndFeatures(
 {
     Mat candidateFrame;
     while (frameSequence.read(candidateFrame)) {
-        undistort(candidateFrame, goodFrame, 
-            dataProcessingConditions.calibrationMatrix,
-            dataProcessingConditions.distortionCoeffs);
+//        undistort(candidateFrame, goodFrame,
+//            dataProcessingConditions.calibrationMatrix,
+//            dataProcessingConditions.distortionCoeffs);
+		goodFrame = candidateFrame;
         fastExtractor(goodFrame, goodFrameFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
         
@@ -126,18 +127,21 @@ bool findGoodVideoFrameFromBatch(
 
     Mat candidateFrame;
     for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
-        candidateFrame = frameBatch.at(frameIndex);
-        undistort(candidateFrame, newGoodFrame, 
-                  dataProcessingConditions.calibrationMatrix,
-                  dataProcessingConditions.distortionCoeffs);
-        fastExtractor(newGoodFrame, newFeatures, 
+//        candidateFrame = frameBatch.at(frameIndex);
+//        undistort(candidateFrame, newGoodFrame,
+//                  dataProcessingConditions.calibrationMatrix,
+//                  dataProcessingConditions.distortionCoeffs);
+		newGoodFrame = frameBatch.at(frameIndex).clone();
+		fastExtractor(newGoodFrame, newFeatures,
                       dataProcessingConditions.featureExtractingThreshold);
         
         // Match features between the previous frame and the new frame
         matchFramesPairFeatures(previousFrame, newGoodFrame, 
                                 previousFeatures, newFeatures,
                                 dataProcessingConditions, matches);
-        
+
+		std::cout << "Batch index: " << frameIndex << "; prev. extracted - curr. extracted: " <<
+			previousFeatures.size() << " - " << newFeatures.size() << "; matched " << matches.size() << std::endl;
         // Check if enough matches are found
         if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
             return true;
@@ -149,7 +153,7 @@ bool findGoodVideoFrameFromBatch(
 }
 
 
-void defineInitialCameraPosition(TemporalImageData initialFrame) {
+void defineInitialCameraPosition(TemporalImageData& initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
     initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
 }
@@ -178,9 +182,8 @@ void computeTransformationAndMaskPoints(
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
     std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
 {
-    // Convert keypoints from the previous frame into coordinates
-    KeyPoint::convert(prevFrameData.allExtractedFeatures, extractedPointCoords1);
-    KeyPoint::convert(newFrameData.allExtractedFeatures, extractedPointCoords2);
+	getMatchedPointCoords(prevFrameData.allExtractedFeatures, newFrameData.allExtractedFeatures,
+						  newFrameData.allMatches, extractedPointCoords1, extractedPointCoords2);
 
     // Насколько я понял для вычисления матрицы вращения, вектора смещения - мне нужна эта функция
     estimateTransformation(
@@ -302,6 +305,40 @@ void initTemporalImageDataDeque(std::deque<TemporalImageData> temporalImageDataD
     }
 }
 
+/**
+ * Merges new spatial points and marks them in corresponding indices tables.
+ *
+ * @param matches [in]
+ * @param prevFrameCorrespondingIndices [in,out]
+ * @param currFrameCorrespondingIndices [out]
+ * @param newSpatialPoints [in]
+ * @param allSpatialPoints [out]
+ */
+static void pushNewSpatialPoints(
+	const std::vector<DMatch> &matches,
+	std::vector<int> &prevFrameCorrespondingIndices,
+	std::vector<int> &currFrameCorrespondingIndices,
+	const std::vector<Point3f> &newSpatialPoints,
+	std::vector<Point3f> &allSpatialPoints
+) {
+	for (int i = 0; i < matches.size(); ++i)
+	{
+		int queryIdx = matches[i].queryIdx;
+		int trainIdx = matches[i].trainIdx;
+
+		int structIdx = prevFrameCorrespondingIndices[queryIdx];
+		if (structIdx >= 0) //If the point already exists in space, the space points corresponding to the pair of matching points should be the same, with the same index
+		{
+			currFrameCorrespondingIndices[trainIdx] = structIdx;
+			continue;
+		}
+
+		//If the point already exists in space, add the point to the structure, and the spatial point indexes of the pair of matching points are the indexes of the newly added points
+		allSpatialPoints.push_back(newSpatialPoints[i]);
+		prevFrameCorrespondingIndices[queryIdx] = allSpatialPoints.size() - 1;
+		currFrameCorrespondingIndices[trainIdx] = allSpatialPoints.size() - 1;
+	}
+}
 
 void videoCycle(
     VideoCapture &frameSequence,
@@ -378,10 +415,19 @@ void videoCycle(
             temporalImageDataDeque.at(lastGoodFrameIdx+1).motion, 
             matchedPointCoords1, matchedPointCoords2, newSpatialPoints);
 
+		temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx.resize(
+				temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures.size(), -1
+		);
+		pushNewSpatialPoints(temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
+							 temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
+							 temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx,
+							 newSpatialPoints, globalDataStruct.spatialPoints);
+
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();  // будет ли в будущем освобождаться от старых значений nextGoodFrame?
         if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
+			temporalImageDataDeque.push_back({});
         } else {
             lastGoodFrameIdx++;
         }

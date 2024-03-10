@@ -90,9 +90,11 @@ void reconstruct(
 
 	Mat homogeneousSpatialPoints;
 	// If there will be types' errors, convert vectors to matrices manually
-//	Mat matrix = Mat(vector);
-//	matrix.reshape(1).convertTo(matrix, CV_64F);
-	triangulationWrapper(points1, points2, projection1, projection2, homogeneousSpatialPoints);
+	Mat pointsMat1 = Mat(points1);
+	pointsMat1.reshape(1).convertTo(pointsMat1, CV_64F);
+	Mat pointsMat2 = Mat(points2);
+	pointsMat2.reshape(1).convertTo(pointsMat2, CV_64F);
+	triangulationWrapper(pointsMat1, pointsMat2, projection1, projection2, homogeneousSpatialPoints);
 
 	convertHomogeneousPointsMatrixToSpatialPointsVector(homogeneousSpatialPoints, spatialPoints);
 }

@@ -21,7 +21,6 @@ int main(int argc, char** argv)
 	}
 	configService.setConfigFile(argv[1]);
 
-	std::cout << configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
 		std::vector<String> files;
 		glob("../static/for_calib/samsung-hv/*.png", files, false);
