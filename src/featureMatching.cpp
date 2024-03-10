@@ -7,11 +7,18 @@
 
 #include "featureMatching.h"
 
+#include "config/config.h"
 #include "main_config.h"
 using namespace cv;
-const int SIFT_BF = 0;
-const int SIFT_FLANN = 1;
-const int ORB_BF = 2;
+
+MatcherType getMatcherTypeIndex() {
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_BF_))
+		return MatcherType::SIFT_BF;
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_FLANN_))
+		return MatcherType::SIFT_FLANN;
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_ORB_))
+		return MatcherType::ORB_BF;
+}
 
 void getMatchedPoints(
 	std::vector<KeyPoint>& previousFeatures,

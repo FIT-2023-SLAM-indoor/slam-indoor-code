@@ -13,7 +13,11 @@ void filterVectorByMask(std::vector<Point2f>& vector, const Mat& mask) {
 	Mat filterMask = mask;
 	if (filterMask.rows == 1 && filterMask.cols != 1)
 		filterMask = filterMask.t();
-    for (int i = 0; i < filterMask.rows; ++i) {
+	int maskSignificantSz = filterMask.rows;
+	if (maskSignificantSz != vector.size()) {
+		std::cerr << "Incorrect size of filtering mask" << std::endl;
+	}
+	for (int i = 0; i < filterMask.rows; ++i) {
             if (filterMask.at<uchar>(i))
                 newVector.push_back(vector[i]);
     }
