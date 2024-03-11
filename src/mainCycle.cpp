@@ -153,7 +153,7 @@ bool findGoodVideoFrameFromBatch(
 }
 
 
-void defineInitialCameraPosition(TemporalImageData& initialFrame) {
+void defineInitialCameraPosition(TemporalImageData &initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
     initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
 }
@@ -297,7 +297,7 @@ void getMatchedPointCoords(
 }
 
 
-void initTemporalImageDataDeque(std::deque<TemporalImageData> temporalImageDataDeque) {
+void initTemporalImageDataDeque(std::deque<TemporalImageData> &temporalImageDataDeque) {
     for (int imageDataIdx = 0; imageDataIdx < temporalImageDataDeque.size(); imageDataIdx++) {
         temporalImageDataDeque.at(imageDataIdx).allExtractedFeatures.clear();
         temporalImageDataDeque.at(imageDataIdx).allMatches.clear();
@@ -308,11 +308,11 @@ void initTemporalImageDataDeque(std::deque<TemporalImageData> temporalImageDataD
 /**
  * Merges new spatial points and marks them in corresponding indices tables.
  *
- * @param matches [in]
- * @param prevFrameCorrespondingIndices [in,out]
- * @param currFrameCorrespondingIndices [out]
- * @param newSpatialPoints [in]
- * @param allSpatialPoints [out]
+ * @param [in] matches
+ * @param [in, out] prevFrameCorrespondingIndices
+ * @param [out] currFrameCorrespondingIndices
+ * @param [in] newSpatialPoints
+ * @param [out] allSpatialPoints
  */
 static void pushNewSpatialPoints(
 	const std::vector<DMatch> &matches,
