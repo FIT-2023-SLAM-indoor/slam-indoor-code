@@ -2,13 +2,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
 #include "featureMatching.h"
 
 #include "config/config.h"
-#include "main_config.h"
 using namespace cv;
 
 MatcherType getMatcherTypeIndex() {

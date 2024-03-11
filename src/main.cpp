@@ -1,17 +1,16 @@
 #include "cameraCalibration.h"
 #include "IOmisc.h"
 #include "fstream"
-#include "nlohmann/json.hpp"
 
 #include "mainCycle.h"
 #include "config/config.h"
 #include "featureMatching.h"
 
-#include "main_config.h"
 
 using namespace cv;
 
 ConfigService configService;
+LogFilesStreams logStreams;
 
 int main(int argc, char** argv)
 {
@@ -20,10 +19,14 @@ int main(int argc, char** argv)
 		return 2;
 	}
 	configService.setConfigFile(argv[1]);
+	openLogsStreams();
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
 		std::vector<String> files;
-		glob("../static/for_calib/samsung-hv/*.png", files, false);
+		glob(
+			configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
+			files, false
+		);
 		chessboardPhotosCalibration(files, 13);
 		return 0;
 	}
@@ -56,5 +59,6 @@ int main(int argc, char** argv)
 			configService.getValue<float>(ConfigFieldEnum::FM_SEARCH_RADIUS_)
 	   );
 	}
+	closeLogsStreams();
     return 0;
 }

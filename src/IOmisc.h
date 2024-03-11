@@ -1,9 +1,27 @@
 #pragma once
 
-#include "main_config.h"
 #include <opencv2/videoio.hpp>
+#include "fstream"
 
 using namespace cv;
+
+typedef struct LogFilesStreams {
+	std::ofstream mainReportStream;
+	std::ofstream pointsStream;
+	std::ofstream poseStream;
+} LogFilesStreams;
+
+extern LogFilesStreams logStreams;
+
+/**
+ * Opens streams for fields of LogFilesStreams' global structure.
+ */
+void openLogsStreams();
+
+/**
+ * Closes streams for fields of LogFilesStreams' global structure.
+ */
+void closeLogsStreams();
 
 /**
  * Sorts files photos paths by its numbers.

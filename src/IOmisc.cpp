@@ -1,15 +1,26 @@
 #include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/calib3d.hpp>
-#include <opencv2/imgproc.hpp>
-#include <ctime>
 #include <iostream>
 #include <fstream>
 
-#include "main_config.h"
+#include "config/config.h"
 #include "IOmisc.h"
 
+void openLogsStreams() {
+	char tmp[256] = "";
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
+	sprintf(tmp, "%s/main.txt", path.c_str());
+	logStreams.mainReportStream.open(tmp);
+	sprintf(tmp, "%s/points.txt", path.c_str());
+	logStreams.pointsStream.open(tmp);
+	sprintf(tmp, "%s/pose.txt", path.c_str());
+	logStreams.poseStream.open(tmp);
+}
+
+void closeLogsStreams() {
+	logStreams.mainReportStream.close();
+	logStreams.pointsStream.close();
+	logStreams.poseStream.close();
+}
 
 void sortGlobs(std::vector<String> &paths) {
     std::sort(paths.begin(), paths.end(), [](const String &a, const String &b) {

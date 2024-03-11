@@ -18,14 +18,6 @@ typedef struct DataProcessingConditions {
     float radius;                     // Matching radius.
 } DataProcessingConditions;
 
-typedef struct LogFilesStreams {
-    std::ofstream mainReportStream;
-    std::ofstream pointsStream;
-    std::ofstream poseStream;
-    std::ofstream poseHandyStream;
-    std::ofstream poseGlobalMltStream;
-} LogFilesStreams;
-
 /**
  * Struct containing temporal image data.
  */
@@ -230,10 +222,10 @@ void getObjAndImgPoints(
  * @param [out] secondMatchedPoints Output vector to store the matched keypoints' coordinates from the second image.
  */
 void getMatchedPointCoords(
-	std::vector<KeyPoint> &firstExtractedFeatures, 
-	std::vector<KeyPoint> &secondExtractedFeatures, 
-	std::vector<DMatch> &matches, 
-	std::vector<Point2f> &firstMatchedPoints, 
+	std::vector<KeyPoint> &firstExtractedFeatures,
+	std::vector<KeyPoint> &secondExtractedFeatures,
+	std::vector<DMatch> &matches,
+	std::vector<Point2f> &firstMatchedPoints,
 	std::vector<Point2f> &secondMatchedPoints
 );
 
