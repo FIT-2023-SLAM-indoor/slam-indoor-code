@@ -16,6 +16,7 @@ MatcherType getMatcherTypeIndex() {
 		return MatcherType::SIFT_FLANN;
 	if (configService.getValue<bool>(ConfigFieldEnum::FM_ORB_))
 		return MatcherType::ORB_BF;
+	throw new std::exception();
 }
 
 void getMatchedPoints(
