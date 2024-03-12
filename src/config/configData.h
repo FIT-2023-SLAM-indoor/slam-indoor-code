@@ -15,6 +15,7 @@ typedef struct ConfigFieldPair {
 
 enum ConfigFieldEnum {
 	CALIBRATE,
+	VISUAL_CALIBRATION,
 	CALIBRATION_PATH_,
 
 	USE_PHOTOS_CYCLE,
@@ -56,6 +57,7 @@ enum ConfigFieldEnum {
 
 const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{CALIBRATE,{"calibrate", BOOL}},
+		{VISUAL_CALIBRATION,{"visualCalibration", BOOL}},
 		{CALIBRATION_PATH_,{"calibrationPath", STRING}},
 
 		{USE_PHOTOS_CYCLE,{"usePhotosCycle", BOOL}},
@@ -90,5 +92,5 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{RP_RANSAC_PROB,{"RPRANSACProb", FLOATING}},
 		{RP_RANSAC_THRESHOLD,{"RPRANSACThreshold", FLOATING}},
 		{RP_REQUIRED_GOOD_POINTS_PERCENT,{"RPRequiredGoodPointsPercent", FLOATING}},
-		{RP_DISTANCE_THRESHOLD,{"RPDistanceTreshold", INTEGER}},
+		{RP_DISTANCE_THRESHOLD,{"RPDistanceThreshold", FLOATING}},
 };

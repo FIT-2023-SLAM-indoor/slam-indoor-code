@@ -2,13 +2,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
 #include "featureMatching.h"
 
 #include "config/config.h"
-#include "main_config.h"
 using namespace cv;
 
 MatcherType getMatcherTypeIndex() {
@@ -18,6 +16,7 @@ MatcherType getMatcherTypeIndex() {
 		return MatcherType::SIFT_FLANN;
 	if (configService.getValue<bool>(ConfigFieldEnum::FM_ORB_))
 		return MatcherType::ORB_BF;
+	throw new std::exception();
 }
 
 void getMatchedPoints(

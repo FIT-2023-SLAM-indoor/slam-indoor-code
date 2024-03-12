@@ -7,6 +7,9 @@
 #include "featureMatching.h"
 #include "triangulate.h"
 #include "IOmisc.h"
+
+#include "config/config.h"
+
 #include "mainCycle.h"
 
 using namespace cv;
@@ -32,7 +35,10 @@ void defineCalibrationMatrix(Mat &calibrationMatrix) {
 void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
-    loadMatrixFromXML(CALIBRATION_PATH, distortionCoeffs, "DC");
+    loadMatrixFromXML(
+		configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
+		distortionCoeffs, "DC"
+	);
 }
 
 
@@ -140,7 +146,7 @@ bool findGoodVideoFrameFromBatch(
                                 previousFeatures, newFeatures,
                                 dataProcessingConditions, matches);
 
-		std::cout << "Batch index: " << frameIndex << "; prev. extracted - curr. extracted: " <<
+		logStreams.mainReportStream << "Batch index: " << frameIndex << "; prev. extracted - curr. extracted: " <<
 			previousFeatures.size() << " - " << newFeatures.size() << "; matched " << matches.size() << std::endl;
         // Check if enough matches are found
         if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
@@ -249,12 +255,18 @@ bool processingFirstPairFrames(
     computeTransformationAndMaskPoints(dataProcessingConditions, chiralityMask,
         temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
         extractedPointCoords1, extractedPointCoords2);
-    reconstruct(dataProcessingConditions.calibrationMatrix, 
+    reconstruct(dataProcessingConditions.calibrationMatrix,
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
     defineCorrespondenceIndices(dataProcessingConditions, chiralityMask,
         temporalImageDataDeque.at(0), temporalImageDataDeque.at(1));
+
+	logStreams.mainReportStream << "R0: " << temporalImageDataDeque.at(0).rotation << std::endl;
+	logStreams.mainReportStream << "t0: " << temporalImageDataDeque.at(0).motion << std::endl;
+	logStreams.mainReportStream << "R1: " << temporalImageDataDeque.at(1).rotation << std::endl;
+	logStreams.mainReportStream << "t1: " << temporalImageDataDeque.at(1).motion << std::endl;
+	logStreams.mainReportStream << "First pair points:\n" << spatialPoints << std::endl;
 
     return true;
 }
@@ -262,8 +274,8 @@ bool processingFirstPairFrames(
 
 void getObjAndImgPoints(
     std::vector<DMatch> &matches,
-    std::vector<int> &correspondSpatialPointIdx, 
-    std::vector<Point3f> &spatialPoints, 
+    std::vector<int> &correspondSpatialPointIdx,
+    std::vector<Point3f> &spatialPoints,
     std::vector<KeyPoint> &extractedFeatures,
     std::vector<Point3f> &objPoints,
     std::vector<Point2f> &imgPoints)
@@ -271,7 +283,7 @@ void getObjAndImgPoints(
     for (int i = 0; i < matches.size(); i++) {
         int query_idx = matches[i].queryIdx;
         int train_idx = matches[i].trainIdx;
- 
+
         int struct_idx = correspondSpatialPointIdx[query_idx];
         if (struct_idx >= 0) {
             objPoints.push_back(spatialPoints[struct_idx]);
@@ -282,10 +294,10 @@ void getObjAndImgPoints(
 
 
 void getMatchedPointCoords(
-	std::vector<KeyPoint> &firstExtractedFeatures, 
-	std::vector<KeyPoint> &secondExtractedFeatures, 
-	std::vector<DMatch> &matches, 
-	std::vector<Point2f> &firstMatchedPoints, 
+	std::vector<KeyPoint> &firstExtractedFeatures,
+	std::vector<KeyPoint> &secondExtractedFeatures,
+	std::vector<DMatch> &matches,
+	std::vector<Point2f> &firstMatchedPoints,
 	std::vector<Point2f> &secondMatchedPoints)
 {
 	firstMatchedPoints.clear();
@@ -342,8 +354,8 @@ static void pushNewSpatialPoints(
 
 void videoCycle(
     VideoCapture &frameSequence,
-    int frameBatchSize, 
-    int featureExtractingThreshold, 
+    int frameBatchSize,
+    int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
     int matcherType, float radius)
@@ -392,11 +404,18 @@ void videoCycle(
 
         // Find transformation matrix
         Mat rotationVector;
-        solvePnPRansac(objPoints, imgPoints, dataProcessingConditions.calibrationMatrix, 
+        solvePnPRansac(objPoints, imgPoints, dataProcessingConditions.calibrationMatrix,
             noArray(), rotationVector, temporalImageDataDeque.at(lastGoodFrameIdx+1).motion);
 
         // Convert rotation vector to rotation matrix
         Rodrigues(rotationVector, temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation);
+
+		logStreams.mainReportStream << "Used in solvePnP: " << objPoints.size() << std::endl;
+		logStreams.mainReportStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation << std::endl;
+		logStreams.mainReportStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t() << std::endl;
+		logStreams.mainReportStream.flush();
+		logStreams.poseStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t() << std::endl;
+		logStreams.poseStream.flush();
 
         // Get matched point coordinates for reconstruction
         std::vector<Point2f> matchedPointCoords1;
@@ -432,4 +451,6 @@ void videoCycle(
             lastGoodFrameIdx++;
         }
     }
+	logStreams.pointsStream << globalDataStruct.spatialPoints << std::endl;
+	logStreams.pointsStream.flush();
 }

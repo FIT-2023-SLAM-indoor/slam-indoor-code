@@ -1,6 +1,3 @@
-#include <iostream>
-
-#include "opencv2/calib3d.hpp"
 #include "opencv2/core/core_c.h"
 
 #include "triangulate.h"
@@ -104,16 +101,16 @@ void convertHomogeneousPointsMatrixToSpatialPointsVector(
 )
 {
 	spatialPoints.clear();
-	float w;
+	double w;
 	Mat pointCol = Mat::zeros(4, 1, CV_64F);
 	for (int col = 0; col < homogeneous3DPoints.cols; ++col) {
-		w = homogeneous3DPoints.at<float>(3, col);
+		w = homogeneous3DPoints.at<double>(3, col);
 		pointCol = homogeneous3DPoints.col(col);
 		pointCol /= w;
 		spatialPoints.emplace_back(
-			pointCol.at<float>(0),
-			pointCol.at<float>(1),
-			pointCol.at<float>(2)
+			pointCol.at<double>(0),
+			pointCol.at<double>(1),
+			pointCol.at<double>(2)
 		);
 	}
 }
