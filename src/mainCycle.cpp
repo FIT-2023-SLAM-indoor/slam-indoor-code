@@ -42,15 +42,21 @@ void defineDistortionCoeffs(Mat &distortionCoeffs) {
 
 
 void defineMediaSources(MediaSources &mediaInputStruct) {
-    mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(ConfigFieldEnum::USE_PHOTOS_CYCLE);
-    if (!mediaInputStruct.isPhotoProcessing) {
-        mediaInputStruct.frameSequence.open(
-            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
-    } else {
+    mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
+        ConfigFieldEnum::USE_PHOTOS_CYCLE);
+
+    if (mediaInputStruct.isPhotoProcessing) {
 		glob(
             configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
             mediaInputStruct.photosPaths, false);
 		sortGlobs(mediaInputStruct.photosPaths);
+    } else {
+        mediaInputStruct.frameSequence.open(
+            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
+        if (!mediaInputStruct.frameSequence.isOpened()) {
+			std::cerr << "Video wasn't opened" << std::endl;
+			exit(-1);
+		}
     }
 }
 

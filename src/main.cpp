@@ -44,13 +44,7 @@ int main(int argc, char** argv)
 //							  path);
 	}
 	else {
-		VideoCapture cap(configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
-		if (!cap.isOpened()) {
-			std::cerr << "Camera wasn't opened" << std::endl;
-			return -1;
-		}
-		videoCycle(
-			cap,
+		mainCycle(
 			configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_),
 			configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_),
 			configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_),
