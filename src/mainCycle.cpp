@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
@@ -40,7 +41,8 @@ void defineDistortionCoeffs(Mat &distortionCoeffs) {
 	);
 }
 
-
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
         ConfigFieldEnum::USE_PHOTOS_CYCLE);
@@ -59,7 +61,8 @@ void defineMediaSources(MediaSources &mediaInputStruct) {
 		}
     }
 }
-
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 
 void defineProcessingConditions(
     int featureExtractingThreshold, 
@@ -78,25 +81,30 @@ void defineProcessingConditions(
     dataProcessingConditions.radius = radius;
 }
 
-
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 bool getNextFrame(MediaSources &mediaInputStruct, Mat& nextFrame) {
-    if (!mediaInputStruct.isPhotoProcessing) {
-        mediaInputStruct.frameSequence.read(nextFrame);
+    if (mediaInputStruct.isPhotoProcessing) {
+        nextFrame = imread(mediaInputStruct.photosPaths.front());
+        auto iter = mediaInputStruct.photosPaths.cbegin();
+        mediaInputStruct.photosPaths.erase(iter);
     } else {
-        mediaInputStruct.photosPaths
+        mediaInputStruct.frameSequence.read(nextFrame);
     }
     
+    return !nextFrame.empty();
 }
-
+///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////
 
 bool findFirstGoodVideoFrameAndFeatures(
-    VideoCapture &frameSequence,
+    MediaSources &mediaInputStruct,
     DataProcessingConditions &dataProcessingConditions,
     Mat &goodFrame,
     std::vector<KeyPoint> &goodFrameFeatures)
 {
     Mat candidateFrame;
-    while (frameSequence.read(candidateFrame)) {
+    while (getNextFrame(mediaInputStruct, candidateFrame)) {
 //        undistort(candidateFrame, goodFrame,
 //            dataProcessingConditions.calibrationMatrix,
 //            dataProcessingConditions.distortionCoeffs);
@@ -138,11 +146,11 @@ void matchFramesPairFeatures(
 
 
 void fillVideoFrameBatch(
-    VideoCapture &frameSequence, int frameBatchSize, std::vector<Mat> &frameBatch)
+    MediaSources &mediaInputStruct, int frameBatchSize, std::vector<Mat> &frameBatch)
 {
     int currentFrameBatchSize = 0;
     Mat nextFrame;
-    while (currentFrameBatchSize < frameBatchSize && frameSequence.read(nextFrame)) {
+    while (currentFrameBatchSize < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
         frameBatch.push_back(nextFrame);
         currentFrameBatchSize++;
     }
@@ -150,7 +158,7 @@ void fillVideoFrameBatch(
 
 
 bool findGoodVideoFrameFromBatch(
-    VideoCapture &frameSequence, int frameBatchSize,
+    MediaSources &mediaInputStruct, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
     Mat &previousFrame, Mat &newGoodFrame,
     std::vector<KeyPoint> &previousFeatures, 
@@ -158,7 +166,7 @@ bool findGoodVideoFrameFromBatch(
     std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
-    fillVideoFrameBatch(frameSequence, frameBatchSize, frameBatch);
+    fillVideoFrameBatch(mediaInputStruct, frameBatchSize, frameBatch);
 
     Mat candidateFrame;
     for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
@@ -257,20 +265,20 @@ void defineCorrespondenceIndices(
 
 
 bool processingFirstPairFrames(
-    VideoCapture &frameSequence, int frameBatchSize,
+    MediaSources &mediaInputStruct, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
     std::deque<TemporalImageData> &temporalImageDataDeque,
     Mat &secondFrame, std::vector<Point3f> &spatialPoints)
 {
     Mat firstFrame;
-    if (!findFirstGoodVideoFrameAndFeatures(frameSequence, dataProcessingConditions,
+    if (!findFirstGoodVideoFrameAndFeatures(mediaInputStruct, dataProcessingConditions,
             firstFrame, temporalImageDataDeque.at(0).allExtractedFeatures)
     ) {
         return false;
     }
     defineInitialCameraPosition(temporalImageDataDeque.at(0));
 
-    if (!findGoodVideoFrameFromBatch(frameSequence, frameBatchSize,dataProcessingConditions,
+    if (!findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,dataProcessingConditions,
             firstFrame, secondFrame,temporalImageDataDeque.at(0).allExtractedFeatures,
             temporalImageDataDeque.at(1).allExtractedFeatures,
             temporalImageDataDeque.at(1).allMatches)
@@ -401,7 +409,7 @@ void mainCycle(
     initTemporalImageDataDeque(temporalImageDataDeque);
 
     // Process the first pair of frames
-    if (!processingFirstPairFrames(frameSequence, frameBatchSize, dataProcessingConditions,
+    if (!processingFirstPairFrames(mediaInputStruct, frameBatchSize, dataProcessingConditions,
             temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints)
     ) {
         // Error message if at least two good frames are not found in the video
@@ -414,7 +422,7 @@ void mainCycle(
     bool hasVideoGoodFrames;
     while (true) {
         // Find the next good frame batch
-        hasVideoGoodFrames = findGoodVideoFrameFromBatch(frameSequence, frameBatchSize,
+        hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
                                 dataProcessingConditions, lastGoodFrame, nextGoodFrame,
                                 temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
                                 temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
