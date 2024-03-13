@@ -20,7 +20,8 @@ typedef struct DataProcessingConditions {
 } DataProcessingConditions;
 
 /**
- * 
+ * This structure is designed to handle both video and photo data sources,
+ * allowing the same functions to process either type of media without the need for overriding.
 */
 typedef struct MediaSources {
     VideoCapture frameSequence;
@@ -241,13 +242,12 @@ void getMatchedPointCoords(
 
 
 /**
- * Processes a sequence of frames from a video source, extracting features,
+ * Processes a sequence of frames or photos, extracting features,
  * and performing motion analysis. This function processes a sequence of frames
- * from the provided video source. It extracts features, matches points,
+ * from the provided media source. It extracts features, matches points,
  * estimates transformation matrices, and performs motion analysis to track objects
- * or patterns throughout the video sequence.
+ * or patterns throughout the media image sequence.
  * 
- * @param [in] frameSequence VideoCapture object representing the video frame sequence.
  * @param [in] frameBatchSize The size of the frame batch to process.
  * @param [in] featureExtractingThreshold Threshold for feature extraction.
  * @param [in] requiredExtractedPointsCount Number of required extracted points.
