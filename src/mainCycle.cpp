@@ -19,9 +19,8 @@ const int OPTIMAL_DEQUE_SIZE = 8;
 /*
 Список того, на что я пока решил забить:
 1) Сохранение цветов фич - надо немного переписать Extractor (ну или добавить это в функции поиска frame-ов)
-2) Режим обработки последовательности фотографий
-3) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
-4) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
+2) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
+3) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
 */
 
 
@@ -42,6 +41,20 @@ void defineDistortionCoeffs(Mat &distortionCoeffs) {
 }
 
 
+void defineMediaSources(MediaSources &mediaInputStruct) {
+    mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(ConfigFieldEnum::USE_PHOTOS_CYCLE);
+    if (!mediaInputStruct.isPhotoProcessing) {
+        mediaInputStruct.frameSequence.open(
+            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
+    } else {
+		glob(
+            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
+            mediaInputStruct.photosPaths, false);
+		sortGlobs(mediaInputStruct.photosPaths);
+    }
+}
+
+
 void defineProcessingConditions(
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
@@ -57,6 +70,16 @@ void defineProcessingConditions(
     dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
     dataProcessingConditions.matcherType = matcherType;
     dataProcessingConditions.radius = radius;
+}
+
+
+bool getNextFrame(MediaSources &mediaInputStruct, Mat& nextFrame) {
+    if (!mediaInputStruct.isPhotoProcessing) {
+        mediaInputStruct.frameSequence.read(nextFrame);
+    } else {
+        mediaInputStruct.photosPaths
+    }
+    
 }
 
 
@@ -352,14 +375,16 @@ static void pushNewSpatialPoints(
 	}
 }
 
-void videoCycle(
-    VideoCapture &frameSequence,
+void mainCycle(
     int frameBatchSize,
     int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
     int matcherType, float radius)
 {
+    MediaSources mediaInputStruct;
+    defineMediaSources(mediaInputStruct);
+
     DataProcessingConditions dataProcessingConditions;
     defineProcessingConditions(featureExtractingThreshold, requiredExtractedPointsCount,
         requiredMatchedPointsCount, matcherType, radius, dataProcessingConditions);

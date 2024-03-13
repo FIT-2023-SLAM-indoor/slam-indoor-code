@@ -1,6 +1,7 @@
 #pragma once
 #include "fstream"
 
+#include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
 using namespace cv;
@@ -17,6 +18,15 @@ typedef struct DataProcessingConditions {
     int matcherType;                  // Type of descriptor matcher to use.
     float radius;                     // Matching radius.
 } DataProcessingConditions;
+
+/**
+ * 
+*/
+typedef struct MediaSources {
+    VideoCapture frameSequence;
+    std::vector<String> photosPaths;
+    bool isPhotoProcessing;
+} MediaSources;
 
 /**
  * Struct containing temporal image data.
@@ -245,8 +255,7 @@ void getMatchedPointCoords(
  * @param [in] matcherType Type of feature matcher.
  * @param [in] radius Radius parameter for feature matching.
  */
-void videoCycle(
-    VideoCapture &frameSequence,
+void mainCycle(
     int frameBatchSize, 
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
