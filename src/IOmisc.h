@@ -73,6 +73,14 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixK
 void rawOutput(const Mat &matrix, std::ofstream &fileStream);
 
 /**
+ * Works as function above but at first converts vector to matrix.
+ *
+ * @param [in] vector
+ * @param [out] fileStream
+ */
+void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream);
+
+/**
  * Writes the elements of a given matrix to a file at the specified path.
  *
  * @param [in] matrix The input matrix.
