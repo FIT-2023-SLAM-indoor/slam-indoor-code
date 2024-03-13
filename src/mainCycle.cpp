@@ -301,12 +301,6 @@ bool processingFirstPairFrames(
     defineCorrespondenceIndices(dataProcessingConditions, chiralityMask,
         temporalImageDataDeque.at(0), temporalImageDataDeque.at(1));
 
-	logStreams.mainReportStream << "R0: " << temporalImageDataDeque.at(0).rotation << std::endl;
-	logStreams.mainReportStream << "t0: " << temporalImageDataDeque.at(0).motion << std::endl;
-	logStreams.mainReportStream << "R1: " << temporalImageDataDeque.at(1).rotation << std::endl;
-	logStreams.mainReportStream << "t1: " << temporalImageDataDeque.at(1).motion << std::endl;
-	logStreams.mainReportStream << "First pair points:\n" << spatialPoints << std::endl;
-
     return true;
 }
 
@@ -455,7 +449,7 @@ void mainCycle(
 		logStreams.mainReportStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation << std::endl;
 		logStreams.mainReportStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t() << std::endl;
 		logStreams.mainReportStream.flush();
-		logStreams.poseStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t() << std::endl;
+		rawOutput(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t(), logStreams.poseStream);
 		logStreams.poseStream.flush();
 
         // Get matched point coordinates for reconstruction
@@ -492,6 +486,7 @@ void mainCycle(
             lastGoodFrameIdx++;
         }
     }
-	logStreams.pointsStream << globalDataStruct.spatialPoints << std::endl;
+
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
 }

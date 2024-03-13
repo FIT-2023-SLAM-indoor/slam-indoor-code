@@ -85,7 +85,7 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
     // Write into file every matrix element
     for (int row_id = 0; row_id < matrix.rows; row_id++) {
         for (int col_id = 0; col_id < matrix.cols; col_id++) {
-            fileStream << matrix.at<double>(row_id, col_id);
+            fileStream << std::fixed << std::setprecision(12) << matrix.at<double>(row_id, col_id);
             // If it wasn't the last element in a current row
             if (col_id < matrix.cols - 1) {
                 fileStream << " ";
@@ -101,6 +101,12 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
         // Flush the stream to ensure data is written immediately
         fileStream.flush();
     }
+}
+
+void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream) {
+	Mat pointsMat = Mat(vector);
+	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
+	rawOutput(pointsMat, fileStream);
 }
 
 void rawOutput(const Mat &matrix, const String &path, const char mode) {
