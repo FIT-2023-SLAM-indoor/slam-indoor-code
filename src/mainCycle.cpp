@@ -85,14 +85,16 @@ void defineProcessingConditions(
 ///////////////////////////////////////////////////////////////////
 bool getNextFrame(MediaSources &mediaInputStruct, Mat& nextFrame) {
     if (mediaInputStruct.isPhotoProcessing) {
+        if (mediaInputStruct.photosPaths.empty()) {
+            return false;
+        }
         nextFrame = imread(mediaInputStruct.photosPaths.front());
         auto iter = mediaInputStruct.photosPaths.cbegin();
         mediaInputStruct.photosPaths.erase(iter);
+        return !nextFrame.empty();
     } else {
-        mediaInputStruct.frameSequence.read(nextFrame);
+        return mediaInputStruct.frameSequence.read(nextFrame);
     }
-    
-    return !nextFrame.empty();
 }
 ///////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////
