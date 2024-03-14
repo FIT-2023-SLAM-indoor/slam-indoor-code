@@ -1,6 +1,3 @@
-#include <iostream>
-
-#include "opencv2/calib3d.hpp"
 #include "opencv2/core/core_c.h"
 
 #include "triangulate.h"
@@ -90,9 +87,11 @@ void reconstruct(
 
 	Mat homogeneousSpatialPoints;
 	// If there will be types' errors, convert vectors to matrices manually
-//	Mat matrix = Mat(vector);
-//	matrix.reshape(1).convertTo(matrix, CV_64F);
-	triangulationWrapper(points1, points2, projection1, projection2, homogeneousSpatialPoints);
+	Mat pointsMat1 = Mat(points1);
+	pointsMat1.reshape(1).convertTo(pointsMat1, CV_64F);
+	Mat pointsMat2 = Mat(points2);
+	pointsMat2.reshape(1).convertTo(pointsMat2, CV_64F);
+	triangulationWrapper(pointsMat1, pointsMat2, projection1, projection2, homogeneousSpatialPoints);
 
 	convertHomogeneousPointsMatrixToSpatialPointsVector(homogeneousSpatialPoints, spatialPoints);
 }
@@ -102,16 +101,16 @@ void convertHomogeneousPointsMatrixToSpatialPointsVector(
 )
 {
 	spatialPoints.clear();
-	float w;
+	double w;
 	Mat pointCol = Mat::zeros(4, 1, CV_64F);
 	for (int col = 0; col < homogeneous3DPoints.cols; ++col) {
-		w = homogeneous3DPoints.at<float>(3, col);
+		w = homogeneous3DPoints.at<double>(3, col);
 		pointCol = homogeneous3DPoints.col(col);
 		pointCol /= w;
 		spatialPoints.emplace_back(
-			pointCol.at<float>(0),
-			pointCol.at<float>(1),
-			pointCol.at<float>(2)
+			pointCol.at<double>(0),
+			pointCol.at<double>(1),
+			pointCol.at<double>(2)
 		);
 	}
 }

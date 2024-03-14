@@ -13,14 +13,13 @@ add_executable(
         slam-indoor-code
         "src/main.cpp"
         "src/main_config.h"
+        "src/mainCycle.cpp" "src/mainCycle.h"
         "src/fastExtractor.cpp" "src/fastExtractor.h"
         "src/cameraCalibration.cpp" "src/cameraCalibration.h"
         "src/cameraTransition.cpp" "src/cameraTransition.h"
         "src/featureTracking.cpp" "src/featureTracking.h"
         "src/featureMatching.cpp" "src/featureMatching.h"
         "src/triangulate.cpp" "src/triangulate.h"
-        "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
-        "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
         "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
         "src/IOmisc.cpp" "src/IOmisc.h"
         src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h)

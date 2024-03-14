@@ -1,6 +1,19 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 using namespace cv;
+
+enum MatcherType {
+	SIFT_BF,
+	SIFT_FLANN,
+	ORB_BF
+};
+/**
+ * Defines matcher type using flag from configService
+ *
+ * @return type as enum value
+ */
+MatcherType getMatcherTypeIndex();
+
 /*
 * @param previousFeatures [in]
 * @param currentFeatures [in]
@@ -63,6 +76,3 @@ void showMatchedPointsInTwoFrames(
 	Mat& currentFrame,
 	std::vector<DMatch>& matches
 );
-
-
-

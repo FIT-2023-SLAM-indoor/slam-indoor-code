@@ -2,16 +2,22 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include <opencv2/videoio.hpp>
 #include <opencv2/highgui.hpp>
 
 #include "featureMatching.h"
 
-#include "main_config.h"
+#include "config/config.h"
 using namespace cv;
-const int SIFT_BF = 0;
-const int SIFT_FLANN = 1;
-const int ORB_BF = 2;
+
+MatcherType getMatcherTypeIndex() {
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_BF_))
+		return MatcherType::SIFT_BF;
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_FLANN_))
+		return MatcherType::SIFT_FLANN;
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_ORB_))
+		return MatcherType::ORB_BF;
+	throw new std::exception();
+}
 
 void getMatchedPoints(
 	std::vector<KeyPoint>& previousFeatures,
