@@ -7,15 +7,20 @@ Repository with source code of SLAM indoor project
 
 ## Environment configuration
 ### OpenCV installation
+1. Install dependencies and tools:
 ```sh
 sudo apt update
 sudo apt install cmake libtbb2 g++ wget unzip ffmpeg libgtk2.0-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libtbb-dev libjpeg-dev libpng-dev libtiff-dev
-
+```
+2. Download sources
+```sh
 wget -O opencv.zip https://github.com/opencv/opencv/archive/4.8.0.zip
 unzip opencv.zip  # files will be extracted to ./opencv-4.8.0
 mkdir opencv-build
 cd opencv-build
-
+```
+3. Build & install
+```sh
 cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_GTK=ON -D WITH_OPENGL=ON -D WITH_FFMPEG=ON ../opencv-4.8.0  # Make sure FFMPEG and its modules marked "YES"
 
 make -j8  # Number of jobs can be specified
@@ -81,4 +86,21 @@ VIZ_PARSE_FORMAT = "xyz"
 ---
 So now you can specify program working using configs and run using `./rebuild_and_run.sh` (write `chmod a+x rebuild_and_run.sh` to make this file executable)
 
-### Ceres installation (WIP)
+### Ceres installation
+```sh
+sudo apt-get install libeigen3-dev libgflags-dev libgoogle-glog-dev
+
+wget http://ceres-solver.org/ceres-solver-2.2.0.tar.gz
+tar zxf ceres-solver-2.2.0.tar.gz
+mkdir ceres-bin
+cd ceres-bin
+cmake ../ceres-solver-2.2.0
+
+make -j3
+make test
+sudo make install
+```
+Run for testing installation 
+```sh
+./bin/simple_bundle_adjuster ../ceres-solver-2.2.0/data/problem-16-22106-pre.txt
+```
