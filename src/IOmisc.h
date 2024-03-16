@@ -1,9 +1,27 @@
 #pragma once
 
-#include "main_config.h"
 #include <opencv2/videoio.hpp>
+#include "fstream"
 
 using namespace cv;
+
+typedef struct LogFilesStreams {
+	std::ofstream mainReportStream;
+	std::ofstream pointsStream;
+	std::ofstream poseStream;
+} LogFilesStreams;
+
+extern LogFilesStreams logStreams;
+
+/**
+ * Opens streams for fields of LogFilesStreams' global structure.
+ */
+void openLogsStreams();
+
+/**
+ * Closes streams for fields of LogFilesStreams' global structure.
+ */
+void closeLogsStreams();
 
 /**
  * Sorts files photos paths by its numbers.
@@ -47,19 +65,27 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixK
 /**
  * Writes the elements of a given matrix to an output file stream.
  *
- * @param matrix The input matrix.
- * @param fileStream The output file stream to write the matrix elements to.
+ * @param [in] matrix The input matrix.
+ * @param [in] fileStream The output file stream to write the matrix elements to.
  *
  * @throws std::runtime_error if the file stream is not opened or if an error occurs during writing.
  */
 void rawOutput(const Mat &matrix, std::ofstream &fileStream);
 
 /**
+ * Works as function above but at first converts vector to matrix.
+ *
+ * @param [in] vector
+ * @param [out] fileStream
+ */
+void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream);
+
+/**
  * Writes the elements of a given matrix to a file at the specified path.
  *
- * @param matrix The input matrix.
- * @param path The path to the file where the matrix will be written.
- * @param mode The mode of writing to a file. 'w' - overwriting the file, 'a' - writing to the end.
+ * @param [in] matrix The input matrix.
+ * @param [in] path The path to the file where the matrix will be written.
+ * @param [in] mode The mode of writing to a file. 'w' - overwriting the file, 'a' - writing to the end.
  *
  * @throws std::runtime_error if the file cannot be opened or created.
  */
