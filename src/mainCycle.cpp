@@ -146,28 +146,45 @@ void matchFramesPairFeatures(
         dataProcessingConditions.matcherType, dataProcessingConditions.radius);
 }
 
-
-void fillVideoFrameBatch(
+/**
+ * Fills new batch up to frameBatchSize or while new frames can be obtained.
+ * <br>
+ * Only frames with extracted points count greater or equal to
+ * dataProcessingConditions.requiredExtractedPointsCount will be added to batch
+ *
+ * @param [in] mediaInputStruct
+ * @param [in] dataProcessingConditions
+ * @param [in] frameBatchSize
+ * @param [out] frameBatch
+ * @param [out] batchFeatures saved features for reason of effective findGoodVideoFrameFromBatch function working
+ */
+static void fillVideoFrameBatch(
     MediaSources &mediaInputStruct,
 	DataProcessingConditions &dataProcessingConditions,
-	int frameBatchSize, std::vector<Mat> &frameBatch
+	int frameBatchSize, std::vector<Mat> &frameBatch, std::vector<std::vector<KeyPoint>> &batchFeatures
 ) {
     int currentFrameBatchSize = 0;
     Mat nextFrame;
 	std::vector<KeyPoint> nextFeatures;
 	int skippedFrames = 0;
+	logStreams.mainReportStream << "Features count in frames added to batch: ";
     while (currentFrameBatchSize < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
+		// Учитывая новый вариант сбора батча, undistort тоже надо делать тут, если всё же будем им заниматься
+//        undistort(candidateFrame, newGoodFrame,
+//                  dataProcessingConditions.calibrationMatrix,
+//                  dataProcessingConditions.distortionCoeffs);
 		fastExtractor(nextFrame, nextFeatures,
 					  dataProcessingConditions.featureExtractingThreshold);
-		std::cout << nextFeatures.size() << " ";
 		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
 			skippedFrames++;
 			continue;
 		}
+		logStreams.mainReportStream << nextFeatures.size() << " ";
         frameBatch.push_back(nextFrame.clone());
+		batchFeatures.push_back(nextFeatures);
         currentFrameBatchSize++;
     }
-	std::cout << std::endl << skippedFrames << std::endl;
+	logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
 }
 
 
@@ -180,32 +197,30 @@ bool findGoodVideoFrameFromBatch(
     std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
-    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatchSize, frameBatch);
+	std::vector<std::vector<KeyPoint>> batchFeatures;
+    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatchSize, frameBatch, batchFeatures);
 
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
     Mat candidateFrame;
+	std::vector<KeyPoint> candidateFrameFeatures;
     for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
-//        candidateFrame = frameBatch.at(frameIndex);
-//        undistort(candidateFrame, newGoodFrame,
-//                  dataProcessingConditions.calibrationMatrix,
-//                  dataProcessingConditions.distortionCoeffs);
 		candidateFrame = frameBatch.at(frameIndex).clone();
-		std::vector<KeyPoint> tmpFeatures;
-		fastExtractor(candidateFrame, tmpFeatures,
-                      dataProcessingConditions.featureExtractingThreshold);
+		candidateFrameFeatures = batchFeatures.at(frameIndex);
 
 		matches.clear();
         // Match features between the previous frame and the new frame
         matchFramesPairFeatures(previousFrame, candidateFrame,
-                                previousFeatures, tmpFeatures,
+                                previousFeatures, candidateFrameFeatures,
                                 dataProcessingConditions, matches);
 
-		logStreams.mainReportStream << "Batch index: " << frameIndex << "; curr. extracted: "
-									<< tmpFeatures.size() << "; matched " << matches.size() << std::endl;
+		logStreams.mainReportStream << "Batch index: " << frameIndex
+									<< "; curr. extracted: " << candidateFrameFeatures.size()
+									<< "; matched " << matches.size() << std::endl;
         // Check if enough matches are found
         if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
 			newGoodFrame = candidateFrame.clone();
-			newFeatures = tmpFeatures;
+			newFeatures.resize(candidateFrameFeatures.size());
+			std::copy(candidateFrameFeatures.begin(), candidateFrameFeatures.end(), newFeatures.begin());
             return true;
         }
     }
