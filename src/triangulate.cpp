@@ -1,4 +1,5 @@
 #include "opencv2/core/core_c.h"
+#include <opencv2/calib3d.hpp>
 
 #include "triangulate.h"
 
@@ -91,6 +92,8 @@ void reconstruct(
 	pointsMat1.reshape(1).convertTo(pointsMat1, CV_64F);
 	Mat pointsMat2 = Mat(points2);
 	pointsMat2.reshape(1).convertTo(pointsMat2, CV_64F);
+
+//	triangulatePoints(projection1, projection2, points1, points2, homogeneousSpatialPoints);
 	triangulationWrapper(pointsMat1, pointsMat2, projection1, projection2, homogeneousSpatialPoints);
 
 	convertHomogeneousPointsMatrixToSpatialPointsVector(homogeneousSpatialPoints, spatialPoints);
