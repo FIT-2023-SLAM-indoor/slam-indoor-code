@@ -31,6 +31,7 @@ enum ConfigFieldEnum {
 
 	FRAMES_BATCH_SIZE_,
 
+	REQUIRED_MATCHED_POINTS_COUNT,
 
 	USE_FEATURE_TRACKER,
 	USE_OWN_FT,
@@ -71,6 +72,8 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{FEATURE_EXTRACTING_THRESHOLD_,{"featureExtractingThreshold", INTEGER}},
 
 		{FRAMES_BATCH_SIZE_,{"framesBatchSize", INTEGER}},
+
+		{REQUIRED_MATCHED_POINTS_COUNT,{"requiredMatchedPointsCount", INTEGER}},
 
 		{USE_FEATURE_TRACKER,{"useFeatureTracker", BOOL}},
 		{USE_OWN_FT,{"useOwnFeatureTracker", BOOL}},

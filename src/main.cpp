@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 		configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_),
 		configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_),
 		configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_),
-		configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_),
+		configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT),
 		getMatcherTypeIndex(),
 		configService.getValue<float>(ConfigFieldEnum::FM_SEARCH_RADIUS_));
 	/////////////////////////////////////////////////////////////////////////////////////
