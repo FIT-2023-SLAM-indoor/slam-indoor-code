@@ -345,9 +345,9 @@ void getObjAndImgPoints(
     std::vector<Point3f> &objPoints,
     std::vector<Point2f> &imgPoints)
 {
-    for (int i = 0; i < matches.size(); i++) {
-        int query_idx = matches[i].queryIdx;
-        int train_idx = matches[i].trainIdx;
+    for (auto &match : matches) {
+        int query_idx = match.queryIdx;
+        int train_idx = match.trainIdx;
 
         int struct_idx = correspondSpatialPointIdx[query_idx];
         if (struct_idx >= 0) {
@@ -412,8 +412,8 @@ static void pushNewSpatialPoints(
 
 		//If the point already exists in space, add the point to the structure, and the spatial point indexes of the pair of matching points are the indexes of the newly added points
 		allSpatialPoints.push_back(newSpatialPoints[i]);
-		prevFrameCorrespondingIndices[queryIdx] = allSpatialPoints.size() - 1;
-		currFrameCorrespondingIndices[trainIdx] = allSpatialPoints.size() - 1;
+		prevFrameCorrespondingIndices[queryIdx] = ((int)allSpatialPoints.size()) - 1;
+		currFrameCorrespondingIndices[trainIdx] = ((int)allSpatialPoints.size()) - 1;
 	}
 }
 
@@ -449,6 +449,8 @@ void mainCycle(
     Mat nextGoodFrame;
     bool hasVideoGoodFrames;
     while (true) {
+		logStreams.mainReportStream << std::endl << "================================================================" << std::endl << std::endl;
+
         // Find the next good frame batch
         hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
                                 dataProcessingConditions, lastGoodFrame, nextGoodFrame,
@@ -470,6 +472,10 @@ void mainCycle(
             objPoints, imgPoints);
 
         // Find transformation matrix
+		if (objPoints.size() != imgPoints.size() || objPoints.size() < 4) {
+			logStreams.mainReportStream << "Not enough corresponding points for solvePnP RANSAC" << std::endl;
+			break;
+		}
         Mat rotationVector;
         solvePnPRansac(objPoints, imgPoints, dataProcessingConditions.calibrationMatrix,
             noArray(), rotationVector, temporalImageDataDeque.at(lastGoodFrameIdx+1).motion);
