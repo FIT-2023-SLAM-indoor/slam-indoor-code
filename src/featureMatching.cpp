@@ -60,7 +60,7 @@ void matchFeatures(
 	default:
 		throw std::exception();
 	}
-	matcher->radiusMatch(prevDesc, curDesc, allMatches, radius);
+	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
 	getGoodMatches(allMatches,matches);
 
 }
@@ -72,7 +72,7 @@ void getGoodMatches(
 
 	for (size_t i = 0; i < allMatches.size(); i++)
 	{
-		if (allMatches[i].size() > 0)
+		if (allMatches[i][0].distance <  0.7f*allMatches[i][1].distance)
 		{
 			matches.push_back(allMatches[i][0]);
 		}
