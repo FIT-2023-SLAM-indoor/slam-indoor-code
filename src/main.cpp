@@ -1,7 +1,8 @@
+#include "fstream"
+#include "ceres/ceres.h"
+
 #include "cameraCalibration.h"
 #include "IOmisc.h"
-#include "fstream"
-
 #include "mainCycle.h"
 #include "config/config.h"
 #include "featureMatching.h"
@@ -19,6 +20,7 @@ int main(int argc, char** argv)
 		return 2;
 	}
 	configService.setConfigFile(argv[1]);
+	google::InitGoogleLogging("BA");
 	openLogsStreams();
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
@@ -39,8 +41,8 @@ int main(int argc, char** argv)
 		configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_),
 		configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_),
 		configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT),
-		getMatcherTypeIndex(),
-		configService.getValue<float>(ConfigFieldEnum::FM_SEARCH_RADIUS_));
+		getMatcherTypeIndex()
+	);
 	/////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////
 

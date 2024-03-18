@@ -1,13 +1,17 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <ceres/ceres.h>
+#include <opencv2/viz.hpp>
+#include <opencv2/sfm.hpp>
 
+#include "triangulate.h"
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "fastExtractor.h"
 #include "featureMatching.h"
-#include "triangulate.h"
 #include "IOmisc.h"
+#include "bundleAdjustment.h"
 
 #include "config/config.h"
 
@@ -68,7 +72,7 @@ void defineProcessingConditions(
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius,
+    int matcherType,
     DataProcessingConditions &dataProcessingConditions)
 {
     defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
@@ -78,7 +82,6 @@ void defineProcessingConditions(
     dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
     dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
     dataProcessingConditions.matcherType = matcherType;
-    dataProcessingConditions.radius = radius;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -141,9 +144,9 @@ void matchFramesPairFeatures(
     extractDescriptor(secondFrame, secondFeatures, 
         dataProcessingConditions.matcherType, secondDescriptor);
 
-    // Match the descriptors using the specified matcher type and radius
+    // Match the descriptors using the specified matcher type
     matchFeatures(firstDescriptor, secondDescriptor, matches, 
-        dataProcessingConditions.matcherType, dataProcessingConditions.radius);
+        dataProcessingConditions.matcherType);
 }
 
 /**
@@ -319,13 +322,14 @@ bool processingFirstPairFrames(
     ) {
         return false;
     }
-
+    
     // Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
     Mat chiralityMask;
     std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
     computeTransformationAndMaskPoints(dataProcessingConditions, chiralityMask,
         temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
         extractedPointCoords1, extractedPointCoords2);
+
     reconstruct(dataProcessingConditions.calibrationMatrix,
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
@@ -422,14 +426,14 @@ void mainCycle(
     int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius)
-{
+    int matcherType
+) {
     MediaSources mediaInputStruct;
     defineMediaSources(mediaInputStruct);
 
     DataProcessingConditions dataProcessingConditions;
     defineProcessingConditions(featureExtractingThreshold, requiredExtractedPointsCount,
-        requiredMatchedPointsCount, matcherType, radius, dataProcessingConditions);
+        requiredMatchedPointsCount, matcherType, dataProcessingConditions);
 
     Mat lastGoodFrame;
     GlobalData globalDataStruct;
@@ -445,8 +449,21 @@ void mainCycle(
         exit(-1);
     }
 
+	std::vector<Mat> rotations;
+	rotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
+	rotations.push_back(temporalImageDataDeque.at(1).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(1).motion.clone());
+
+    int requiredframesCount = 5;
+    int framesCount = 0;
+    std::vector<Mat> imagesForReconstruct;
+    imagesForReconstruct.push_back(lastGoodFrame.clone());
+
     int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
+
+
     bool hasVideoGoodFrames;
     while (true) {
 		logStreams.mainReportStream << std::endl << "================================================================" << std::endl << std::endl;
@@ -510,6 +527,10 @@ void mainCycle(
 		temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx.resize(
 				temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures.size(), -1
 		);
+        rotations.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation.clone());
+		globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.clone());
+
+
 		pushNewSpatialPoints(temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
 							 temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
 							 temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx,
@@ -517,13 +538,46 @@ void mainCycle(
 
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();  // будет ли в будущем освобождаться от старых значений nextGoodFrame?
+        imagesForReconstruct.push_back(lastGoodFrame.clone());
+
         if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
 			temporalImageDataDeque.push_back({});
         } else {
             lastGoodFrameIdx++;
         }
+        framesCount++;
+
     }
+     viz::Viz3d window("Coordinate Frame");
+    window.setWindowSize(Size(500,500));
+
+    window.setBackgroundColor(); // black by default
+    
+    // Create the pointcloud
+
+    
+    // recover estimated points3d
+    std::vector<Vec3f> point_cloud_est;
+    for (int i = 0; i < globalDataStruct.spatialPoints.size(); ++i)
+        point_cloud_est.push_back(Vec3f(globalDataStruct.spatialPoints[i]));
+    viz::WCloud cloud_widget(point_cloud_est, viz::Color::green());
+    window.showWidget("point_cloud", cloud_widget);
+
+    std::vector<Affine3d> path;
+    for (size_t i = 0; i < rotations.size(); ++i)
+        path.push_back(Affine3d(rotations[i],globalDataStruct.spatialCameraPositions[i]));
+
+    cv::Matx33f K((float*)dataProcessingConditions.calibrationMatrix.ptr());
+
+    window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
+    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,
+    K, 0.1, viz::Color::yellow()));
+
+    window.setWindowPosition(Point(0,0));
+    window.setViewerPose(path[0]);
+
+    window.spin();
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
