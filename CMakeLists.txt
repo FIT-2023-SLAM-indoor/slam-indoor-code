@@ -4,29 +4,34 @@ project(slam-indoor-code VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
-include(CPack)
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+find_package( Ceres REQUIRED  )
 
 find_package( OpenCV REQUIRED )
-find_package( Ceres REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
+find_package(nlohmann_json 3.10.0 REQUIRED)
+
+
 add_executable(
-        slam-indoor-code
-        "src/main.cpp"
-        "src/main_config.h"
-        "src/fastExtractor.cpp" "src/fastExtractor.h"
-        "src/cameraCalibration.cpp" "src/cameraCalibration.h"
-        "src/cameraTransition.cpp" "src/cameraTransition.h"
-        "src/featureTracking.cpp" "src/featureTracking.h"
-        "src/triangulate.cpp" "src/triangulate.h"
-        "src/videoProcessingCycle.h" "src/videoProcessingCycle.cpp"
-        "src/photosProcessingCycle.cpp" "src/photosProcessingCycle.h"
-        "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
-        "src/IOmisc.cpp" "src/IOmisc.h"
+    slam-indoor-code
+    "src/main.cpp"
+    "src/mainCycle.cpp" "src/mainCycle.h"
+    "src/fastExtractor.cpp" "src/fastExtractor.h"
+    "src/cameraCalibration.cpp" "src/cameraCalibration.h"
+    "src/cameraTransition.cpp" "src/cameraTransition.h"
+    "src/featureTracking.cpp" "src/featureTracking.h"
+    "src/featureMatching.cpp" "src/featureMatching.h"
+    "src/triangulate.cpp" "src/triangulate.h"
+    "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
+    "src/IOmisc.cpp" "src/IOmisc.h"
+    src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
 )
 
-target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
 target_link_libraries( slam-indoor-code Ceres::ceres )
+target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )
+target_link_libraries( slam-indoor-code nlohmann_json::nlohmann_json )
+
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+include(CPack)
  
