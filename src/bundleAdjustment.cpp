@@ -4,9 +4,8 @@
 #include "ceres/rotation.h"
 #include "ceres/autodiff_cost_function.h"
 
+#include "config/config.h"
 #include "bundleAdjustment.h"
-
-#include "main_config.h"
 
 ProjectionCostFunctor::ProjectionCostFunctor(cv::Point2d imagePoint) : imagePoint(imagePoint) {}
 
@@ -61,7 +60,9 @@ void bundleAdjustment(
         double *rotation = r.ptr<double>();
         double *transition = projectionMatrixVector.at(i)->col(3).ptr<double>();
 
-        ceres::LossFunction *lossFunction = new ceres::HuberLoss(HUBER_LOSS_FUNCTION_PARAMETER);
+        ceres::LossFunction *lossFunction = new ceres::HuberLoss(
+			configService.getValue<double>(ConfigFieldEnum::BA_HUBER_LOSS_FUNCTION_PARAMETER)
+		);
 
         cv::Mat *points3d = points3dVector.at(i);
         cv::Mat *points2d = points2dVector.at(i);
@@ -70,8 +71,8 @@ void bundleAdjustment(
             ceres::CostFunction *costFunction = ProjectionCostFunctor::createFunctor(point2d);
             std::vector<const double*> parameters;
             problem.AddResidualBlock(
-                    costFunction, lossFunction,
-                    calibrationArray, rotation, transition, points3d->row(j).ptr<double>()
+				costFunction, lossFunction,
+				calibrationArray, rotation, transition, points3d->row(j).ptr<double>()
             );
         }
     }
@@ -79,7 +80,7 @@ void bundleAdjustment(
     ceres::Solver::Options ceres_config_options;
     ceres_config_options.minimizer_progress_to_stdout = false;
     ceres_config_options.logging_type = ceres::SILENT;
-    ceres_config_options.num_threads = BUNDLE_ADJUSTMENT_THREADS_CNT;
+    ceres_config_options.num_threads = configService.getValue<int>(ConfigFieldEnum::BA_THREADS_CNT);
     ceres_config_options.preconditioner_type = ceres::JACOBI;
     ceres_config_options.linear_solver_type = ceres::SPARSE_SCHUR;
     ceres_config_options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;

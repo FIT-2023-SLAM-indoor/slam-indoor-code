@@ -54,7 +54,12 @@ enum ConfigFieldEnum {
 	RP_RANSAC_PROB,
 	RP_RANSAC_THRESHOLD,
 	RP_REQUIRED_GOOD_POINTS_PERCENT,
-	RP_DISTANCE_THRESHOLD
+	RP_DISTANCE_THRESHOLD,
+
+
+	USE_BUNDLE_ADJUSTMENT,
+	BA_HUBER_LOSS_FUNCTION_PARAMETER,
+	BA_THREADS_CNT
 };
 
 const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
@@ -97,4 +102,8 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{RP_RANSAC_THRESHOLD,{"RPRANSACThreshold", FLOATING}},
 		{RP_REQUIRED_GOOD_POINTS_PERCENT,{"RPRequiredGoodPointsPercent", FLOATING}},
 		{RP_DISTANCE_THRESHOLD,{"RPDistanceThreshold", FLOATING}},
+
+		{USE_BUNDLE_ADJUSTMENT, {"useBundleAdjustment", BOOL}},
+		{BA_HUBER_LOSS_FUNCTION_PARAMETER,{"BAHuberLossFunctionParameter", FLOATING}},
+		{BA_THREADS_CNT,{"BAThreadsCnt", INTEGER}}
 };
