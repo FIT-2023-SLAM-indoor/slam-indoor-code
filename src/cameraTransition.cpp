@@ -5,6 +5,7 @@
 
 #include "cameraTransition.h"
 #include "config/config.h"
+#include "IOmisc.h"
 
 using namespace cv;
 
@@ -46,7 +47,7 @@ bool estimateTransformation(
 
 	if (useRANSAC) {
 		maskNonZeroElemsCnt = countNonZero(mask);
-		std::cout << "Used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
+		logStreams.mainReportStream << "Points' count used in RANSAC E matrix estimation: " << maskNonZeroElemsCnt << std::endl;
 //    if ((maskNonZeroElemsCnt / points1.size()) < RANSAC_GOOD_POINTS_PERCENT)
 //        return false;
 	}
@@ -59,7 +60,7 @@ bool estimateTransformation(
 		chiralityMask
 	);
 	maskNonZeroElemsCnt = countNonZero(chiralityMask);
-	std::cout << "Passed chirality check cnt: " << maskNonZeroElemsCnt << std::endl;
+	logStreams.mainReportStream << "Points passed chirality check count: " << maskNonZeroElemsCnt << std::endl;
 	return passedPointsCount > 0;
 }
 

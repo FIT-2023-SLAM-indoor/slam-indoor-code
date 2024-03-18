@@ -146,16 +146,45 @@ void matchFramesPairFeatures(
         dataProcessingConditions.matcherType, dataProcessingConditions.radius);
 }
 
-
-void fillVideoFrameBatch(
-    MediaSources &mediaInputStruct, int frameBatchSize, std::vector<Mat> &frameBatch)
-{
+/**
+ * Fills new batch up to frameBatchSize or while new frames can be obtained.
+ * <br>
+ * Only frames with extracted points count greater or equal to
+ * dataProcessingConditions.requiredExtractedPointsCount will be added to batch
+ *
+ * @param [in] mediaInputStruct
+ * @param [in] dataProcessingConditions
+ * @param [in] frameBatchSize
+ * @param [out] frameBatch
+ * @param [out] batchFeatures saved features for reason of effective findGoodVideoFrameFromBatch function working
+ */
+static void fillVideoFrameBatch(
+    MediaSources &mediaInputStruct,
+	DataProcessingConditions &dataProcessingConditions,
+	int frameBatchSize, std::vector<Mat> &frameBatch, std::vector<std::vector<KeyPoint>> &batchFeatures
+) {
     int currentFrameBatchSize = 0;
     Mat nextFrame;
+	std::vector<KeyPoint> nextFeatures;
+	int skippedFrames = 0;
+	logStreams.mainReportStream << "Features count in frames added to batch: ";
     while (currentFrameBatchSize < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
-        frameBatch.push_back(nextFrame);
+		// Учитывая новый вариант сбора батча, undistort тоже надо делать тут, если всё же будем им заниматься
+//        undistort(candidateFrame, newGoodFrame,
+//                  dataProcessingConditions.calibrationMatrix,
+//                  dataProcessingConditions.distortionCoeffs);
+		fastExtractor(nextFrame, nextFeatures,
+					  dataProcessingConditions.featureExtractingThreshold);
+		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
+			skippedFrames++;
+			continue;
+		}
+		logStreams.mainReportStream << nextFeatures.size() << " ";
+        frameBatch.push_back(nextFrame.clone());
+		batchFeatures.push_back(nextFeatures);
         currentFrameBatchSize++;
     }
+	logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
 }
 
 
@@ -168,27 +197,30 @@ bool findGoodVideoFrameFromBatch(
     std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
-    fillVideoFrameBatch(mediaInputStruct, frameBatchSize, frameBatch);
+	std::vector<std::vector<KeyPoint>> batchFeatures;
+    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatchSize, frameBatch, batchFeatures);
 
+	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
     Mat candidateFrame;
+	std::vector<KeyPoint> candidateFrameFeatures;
     for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
-//        candidateFrame = frameBatch.at(frameIndex);
-//        undistort(candidateFrame, newGoodFrame,
-//                  dataProcessingConditions.calibrationMatrix,
-//                  dataProcessingConditions.distortionCoeffs);
-		newGoodFrame = frameBatch.at(frameIndex).clone();
-		fastExtractor(newGoodFrame, newFeatures,
-                      dataProcessingConditions.featureExtractingThreshold);
-        
+		candidateFrame = frameBatch.at(frameIndex).clone();
+		candidateFrameFeatures = batchFeatures.at(frameIndex);
+
+		matches.clear();
         // Match features between the previous frame and the new frame
-        matchFramesPairFeatures(previousFrame, newGoodFrame, 
-                                previousFeatures, newFeatures,
+        matchFramesPairFeatures(previousFrame, candidateFrame,
+                                previousFeatures, candidateFrameFeatures,
                                 dataProcessingConditions, matches);
 
-		logStreams.mainReportStream << "Batch index: " << frameIndex << "; prev. extracted - curr. extracted: " <<
-			previousFeatures.size() << " - " << newFeatures.size() << "; matched " << matches.size() << std::endl;
+		logStreams.mainReportStream << "Batch index: " << frameIndex
+									<< "; curr. extracted: " << candidateFrameFeatures.size()
+									<< "; matched " << matches.size() << std::endl;
         // Check if enough matches are found
         if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
+			newGoodFrame = candidateFrame.clone();
+			newFeatures.resize(candidateFrameFeatures.size());
+			std::copy(candidateFrameFeatures.begin(), candidateFrameFeatures.end(), newFeatures.begin());
             return true;
         }
     }
@@ -313,9 +345,9 @@ void getObjAndImgPoints(
     std::vector<Point3f> &objPoints,
     std::vector<Point2f> &imgPoints)
 {
-    for (int i = 0; i < matches.size(); i++) {
-        int query_idx = matches[i].queryIdx;
-        int train_idx = matches[i].trainIdx;
+    for (auto &match : matches) {
+        int query_idx = match.queryIdx;
+        int train_idx = match.trainIdx;
 
         int struct_idx = correspondSpatialPointIdx[query_idx];
         if (struct_idx >= 0) {
@@ -380,8 +412,8 @@ static void pushNewSpatialPoints(
 
 		//If the point already exists in space, add the point to the structure, and the spatial point indexes of the pair of matching points are the indexes of the newly added points
 		allSpatialPoints.push_back(newSpatialPoints[i]);
-		prevFrameCorrespondingIndices[queryIdx] = allSpatialPoints.size() - 1;
-		currFrameCorrespondingIndices[trainIdx] = allSpatialPoints.size() - 1;
+		prevFrameCorrespondingIndices[queryIdx] = ((int)allSpatialPoints.size()) - 1;
+		currFrameCorrespondingIndices[trainIdx] = ((int)allSpatialPoints.size()) - 1;
 	}
 }
 
@@ -417,6 +449,8 @@ void mainCycle(
     Mat nextGoodFrame;
     bool hasVideoGoodFrames;
     while (true) {
+		logStreams.mainReportStream << std::endl << "================================================================" << std::endl << std::endl;
+
         // Find the next good frame batch
         hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
                                 dataProcessingConditions, lastGoodFrame, nextGoodFrame,
@@ -438,6 +472,10 @@ void mainCycle(
             objPoints, imgPoints);
 
         // Find transformation matrix
+		if (objPoints.size() != imgPoints.size() || objPoints.size() < 4) {
+			logStreams.mainReportStream << "Not enough corresponding points for solvePnP RANSAC" << std::endl;
+			break;
+		}
         Mat rotationVector;
         solvePnPRansac(objPoints, imgPoints, dataProcessingConditions.calibrationMatrix,
             noArray(), rotationVector, temporalImageDataDeque.at(lastGoodFrameIdx+1).motion);
