@@ -4,12 +4,14 @@
 #include <ceres/ceres.h>
 #include <opencv2/viz.hpp>
 #include <opencv2/sfm.hpp>
+
 #include "triangulate.h"
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "fastExtractor.h"
 #include "featureMatching.h"
 #include "IOmisc.h"
+#include "bundleAdjustment.h"
 
 #include "config/config.h"
 

@@ -2,6 +2,7 @@
 
 #include "opencv2/core.hpp"
 #include "ceres/ceres.h"
+#include "mainCycle.h"
 
 /**
  * Functor class for re-projection cost function `project(K*[R|T]*P3d) - p2d`
@@ -39,7 +40,6 @@ public:
 
 void bundleAdjustment(
         cv::Mat& calibrationMatrix,
-        std::vector<cv::Mat*>& projectionMatrixVector,
-        std::vector<cv::Mat*>& points3dVector,
-        std::vector<cv::Mat*>& points2dVector
+		std::vector<TemporalImageData> &imagesDataForAdjustment,
+		GlobalData &globalData
 );
