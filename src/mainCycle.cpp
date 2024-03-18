@@ -1,4 +1,3 @@
-#define CERES_FOUND true
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -448,6 +447,13 @@ void mainCycle(
         std::cerr << "Couldn't find at least two good frames in video" << std::endl;
         exit(-1);
     }
+
+	std::vector<Mat> rotations;
+	rotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
+	rotations.push_back(temporalImageDataDeque.at(1).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(1).motion.clone());
+
     int requiredframesCount = 5;
     int framesCount = 0;
     std::vector<Mat> imagesForReconstruct;
@@ -456,8 +462,6 @@ void mainCycle(
     int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
 
-    std::vector<Mat> rotations;
-    std::vector<Mat> motions;
 
     bool hasVideoGoodFrames;
     while (true) {
@@ -522,8 +526,8 @@ void mainCycle(
 		temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx.resize(
 				temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures.size(), -1
 		);
-        rotations.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation);
-        motions.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion);
+        rotations.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation.clone());
+		globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.clone());
 
 
 		pushNewSpatialPoints(temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
@@ -561,12 +565,12 @@ void mainCycle(
 
     std::vector<Affine3d> path;
     for (size_t i = 0; i < rotations.size(); ++i)
-        path.push_back(Affine3d(rotations[i],motions[i]));
+        path.push_back(Affine3d(rotations[i],globalDataStruct.spatialCameraPositions[i]));
 
     cv::Matx33f K((float*)dataProcessingConditions.calibrationMatrix.ptr());
 
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
-    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path, 
+    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,
     K, 0.1, viz::Color::yellow()));
 
     window.setWindowPosition(Point(0,0));
