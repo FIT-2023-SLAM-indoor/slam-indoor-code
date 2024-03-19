@@ -17,13 +17,6 @@ using namespace cv;
 
 const int OPTIMAL_DEQUE_SIZE = 8;
 
-/*
-Список того, на что я пока решил забить:
-1) Сохранение цветов фич - надо немного переписать Extractor (ну или добавить это в функции поиска frame-ов)
-2) Выбор применения Undistortion-а к кадрам - сейчас он просто применяется
-3) Обработка крайних случаев: этот код нужно хорошо отревьюить, я толком не думал про небезопасные места
-*/
-
 
 void mainCycle(
     int frameBatchSize,
@@ -226,16 +219,14 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat& nextFrame) {
  * Finds the first good video frame and its features.
  *
  * This function reads frames from the video sequence captured by the provided VideoCapture object.
- * It undistorts each frame using the calibration matrix and distortion coefficients specified
- * in the data processing conditions, and then extracts features from the undistorted frame.
- * If the number of extracted features meets the required count, the function returns true and
- * stores the undistorted frame and its features in the output parameters. Otherwise, it continues
- * reading frames until a suitable frame is found or the end of the video sequence is reached.
+ * It extracts features from the frame. If the number of extracted features meets the required 
+ * count, the function returns true and stores the frame and its features in the output parameters. 
+ * Otherwise, it continues reading frames until a suitable frame is found or the end of the video sequence is reached.
  *
  * @param [in] frameSequence The video capture object representing the sequence of frames.
  * @param [in] dataProcessingConditions The data processing conditions including calibration matrix,
  *                                 distortion coefficients, and feature extracting threshold.
- * @param [out] goodFrame Output parameter to store the undistorted good frame.
+ * @param [out] goodFrame Output parameter to store the good frame.
  * @param [out] goodFrameFeatures Output parameter to store the features of the good frame.
  * @return True if a good frame with sufficient features is found, false otherwise.
  */
@@ -247,7 +238,7 @@ bool findFirstGoodVideoFrameAndFeatures(
 {
     Mat candidateFrame;
     while (getNextFrame(mediaInputStruct, candidateFrame)) {
-        // TODO: In future we can do UNDSTORTION here
+        // TODO: In future we can do UNDISTORTION here
 		goodFrame = candidateFrame;
         fastExtractor(goodFrame, goodFrameFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
@@ -299,8 +290,7 @@ void matchFramesPairFeatures(
 }
 
 /**
- * Fills new batch up to frameBatchSize or while new frames can be obtained.
- * <br>
+ * Fills new batch up to frameBatchSize and while new frames can be obtained.
  * Only frames with extracted points count greater or equal to
  * dataProcessingConditions.requiredExtractedPointsCount will be added to batch
  *
@@ -310,30 +300,31 @@ void matchFramesPairFeatures(
  * @param [out] frameBatch
  * @param [out] batchFeatures saved features for reason of effective findGoodVideoFrameFromBatch function working
  */
-static void fillVideoFrameBatch(
-    MediaSources &mediaInputStruct,
-	DataProcessingConditions &dataProcessingConditions,
-	int frameBatchSize, std::vector<Mat> &frameBatch, std::vector<std::vector<KeyPoint>> &batchFeatures
-) {
-    int currentFrameBatchSize = 0;
+static int fillVideoFrameBatch(
+    MediaSources &mediaInputStruct, DataProcessingConditions &dataProcessingConditions,
+    int frameBatchSize, std::vector<Mat> &frameBatch, 
+    std::vector<std::vector<KeyPoint>> &batchFeatures)
+{
+    logStreams.mainReportStream << "Features count in frames added to batch: ";
     Mat nextFrame;
 	std::vector<KeyPoint> nextFeatures;
 	int skippedFrames = 0;
-	logStreams.mainReportStream << "Features count in frames added to batch: ";
-    while (currentFrameBatchSize < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
-        // TODO: In future we can do UNDSTORTION here
-		fastExtractor(nextFrame, nextFeatures,
-					  dataProcessingConditions.featureExtractingThreshold);
-		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
-			skippedFrames++;
-			continue;
-		}
-		logStreams.mainReportStream << nextFeatures.size() << " ";
-        frameBatch.push_back(nextFrame.clone());
-		batchFeatures.push_back(nextFeatures);
-        currentFrameBatchSize++;
+    while (frameBatch.size() < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
+        // TODO: In future we can do UNDISTORTION here
+		fastExtractor(nextFrame, nextFeatures, 
+            dataProcessingConditions.featureExtractingThreshold);
+		if (nextFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
+            logStreams.mainReportStream << nextFeatures.size() << " ";
+            frameBatch.push_back(nextFrame.clone());
+            batchFeatures.push_back(nextFeatures);
+		} else {
+            skippedFrames++;
+        }
     }
-	logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
+
+    logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: ";
+    logStreams.mainReportStream << skippedFrames << std::endl;
+    return frameBatch.size();
 }
 
 
@@ -342,9 +333,9 @@ static void fillVideoFrameBatch(
  *
  * This function retrieves a batch of frames from the video sequence captured by the provided
  * VideoCapture object and selects the most recent frame that meets the required criteria for
- * feature matching. It undistorts each frame, extracts features, matches them with features
+ * feature matching. It extracts features, matches them with features
  * from the previous frame, and checks if the number of matches meets the specified threshold.
- * If a frame with enough matches is found, it returns true and stores the undistorted frame,
+ * If a frame with enough matches is found, it returns true and stores the frame,
  * its features, and the matches in the output parameters. Otherwise, it continues searching
  * through the batch of frames until a suitable frame is found or the end of the batch is reached.
  *
@@ -355,12 +346,12 @@ static void fillVideoFrameBatch(
  *                                 required matched points count.
  * @param [in] previousFrame The previous frame used as a reference for feature matching.
  * @param [in] previousFeatures The features extracted from the previous frame.
- * @param [out] newGoodFrame Output parameter to store the undistorted good frame.
+ * @param [out] newGoodFrame Output parameter to store the good frame.
  * @param [out] newFeatures Output parameter to store the features extracted from the new frame.
  * @param [out] matches Output vector to store the matches between the features of the previous and new frames.
  * @return True if a good frame with sufficient matches is found, false otherwise.
  */
-bool findGoodVideoFrameFromBatch(
+int findGoodVideoFrameFromBatch(
     MediaSources &mediaInputStruct, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
     Mat &previousFrame, Mat &newGoodFrame,
@@ -370,7 +361,12 @@ bool findGoodVideoFrameFromBatch(
 {
     std::vector<Mat> frameBatch;
 	std::vector<std::vector<KeyPoint>> batchFeatures;
-    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatchSize, frameBatch, batchFeatures);
+    int realBatchSize = fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, 
+        frameBatchSize, frameBatch, batchFeatures);
+    
+    if (realBatchSize == 0) {
+        return 0;
+    }
 
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
     Mat candidateFrame;
@@ -393,12 +389,12 @@ bool findGoodVideoFrameFromBatch(
 			newGoodFrame = candidateFrame.clone();
 			newFeatures.resize(candidateFrameFeatures.size());
 			std::copy(candidateFrameFeatures.begin(), candidateFrameFeatures.end(), newFeatures.begin());
-            return true;
+            return realBatchSize;
         }
     }
 
     // No good frame found in the batch
-    return false;
+    return -1;
 }
 
 
@@ -515,10 +511,10 @@ bool processingFirstPairFrames(
     }
     defineInitialCameraPosition(temporalImageDataDeque.at(0));
 
-    if (!findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,dataProcessingConditions,
+    if (findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,dataProcessingConditions,
             firstFrame, secondFrame,temporalImageDataDeque.at(0).allExtractedFeatures,
             temporalImageDataDeque.at(1).allExtractedFeatures,
-            temporalImageDataDeque.at(1).allMatches)
+            temporalImageDataDeque.at(1).allMatches) <= 0
     ) {
         return false;
     }
