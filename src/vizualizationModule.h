@@ -10,3 +10,4 @@ void vizualizePointsAndCameras(
     std::vector<Mat> transitions, 
     Mat calibration
     );
+void KeyboardViz3d(const viz::KeyboardEvent &w, void *t);

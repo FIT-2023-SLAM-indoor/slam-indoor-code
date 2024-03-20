@@ -41,9 +41,45 @@ void vizualizePointsAndCameras(
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
     window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,
     K, 0.1, viz::Color::yellow()));
-
+    window.registerKeyboardCallback(KeyboardViz3d,&window);
     window.setWindowPosition(Point(0,0));
     window.setViewerPose(path[0]);
     window.spin();
+    
 }
 
+void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
+{
+    
+    viz::Viz3d* ptr = (viz::Viz3d*)window;
+    Affine3d affine = ptr->getViewerPose();
+
+    Vec3d past =  affine.translation();
+    if (w.action){
+        std::cout << "you pressed "<< w.symbol<< " " << w.code << "\n";
+        switch (w.code){
+            case 's': 
+                affine = affine.translate(Vec3d(0,0,-1));
+                ptr->setViewerPose(affine);
+                std::cout << affine.translation() - past;
+                break;
+            case 'w': 
+                affine = affine.translate(Vec3d(0,0,1));
+                ptr->setViewerPose(affine);
+                std::cout << affine.translation()- past;
+                break;
+            case 'd': 
+                affine = affine.translate(Vec3d(1,0,0));
+                ptr->setViewerPose(affine);
+                std::cout << affine.translation()- past;
+                break;
+            case 'a': 
+                affine = affine.translate(Vec3d(-1,0,0));
+                ptr->setViewerPose(affine);
+                std::cout << affine.translation();
+                break;
+        }
+    }
+        
+    
+}
