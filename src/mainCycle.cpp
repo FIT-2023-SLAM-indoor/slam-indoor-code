@@ -42,7 +42,7 @@ void mainCycle(
             temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints)
     ) {
         // Error message if at least two good frames are not found in the video
-        std::cerr << "Couldn't find at least two good frames in video" << std::endl;
+        std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
         exit(-1);
     }
 
@@ -50,7 +50,7 @@ void mainCycle(
     Mat nextGoodFrame;
     bool hasVideoGoodFrames;
     while (true) {
-		logStreams.mainReportStream << std::endl << "================================================================" << std::endl << std::endl;
+		logStreams.mainReportStream << std::endl << "================================================================\n" << std::endl;
 
         // Find the next good frame batch
         hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
@@ -58,7 +58,11 @@ void mainCycle(
                                 temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
                                 temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
                                 temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches);
-        if (!hasVideoGoodFrames) {
+        if (hasVideoGoodFrames == 0) {
+            logStreams.mainReportStream << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+            logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
+        }
+        else if (hasVideoGoodFrames < 0) {
             std::cerr << "No good frames in batch. Stop video processing" << std::endl;
             break;
         }
@@ -300,7 +304,7 @@ void matchFramesPairFeatures(
  * @param [out] frameBatch
  * @param [out] batchFeatures saved features for reason of effective findGoodVideoFrameFromBatch function working
  */
-static int fillVideoFrameBatch(
+static void fillVideoFrameBatch(
     MediaSources &mediaInputStruct, DataProcessingConditions &dataProcessingConditions,
     int frameBatchSize, std::vector<Mat> &frameBatch, 
     std::vector<std::vector<KeyPoint>> &batchFeatures)
@@ -324,7 +328,6 @@ static int fillVideoFrameBatch(
 
     logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: ";
     logStreams.mainReportStream << skippedFrames << std::endl;
-    return frameBatch.size();
 }
 
 
@@ -361,10 +364,10 @@ int findGoodVideoFrameFromBatch(
 {
     std::vector<Mat> frameBatch;
 	std::vector<std::vector<KeyPoint>> batchFeatures;
-    int realBatchSize = fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, 
+    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, 
         frameBatchSize, frameBatch, batchFeatures);
     
-    if (realBatchSize == 0) {
+    if (frameBatch.size() == 0) {
         return 0;
     }
 
@@ -389,7 +392,7 @@ int findGoodVideoFrameFromBatch(
 			newGoodFrame = candidateFrame.clone();
 			newFeatures.resize(candidateFrameFeatures.size());
 			std::copy(candidateFrameFeatures.begin(), candidateFrameFeatures.end(), newFeatures.begin());
-            return realBatchSize;
+            return frameBatch.size();
         }
     }
 
@@ -511,11 +514,15 @@ bool processingFirstPairFrames(
     }
     defineInitialCameraPosition(temporalImageDataDeque.at(0));
 
-    if (findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,dataProcessingConditions,
-            firstFrame, secondFrame,temporalImageDataDeque.at(0).allExtractedFeatures,
-            temporalImageDataDeque.at(1).allExtractedFeatures,
-            temporalImageDataDeque.at(1).allMatches) <= 0
-    ) {
+    int videoGoodFramesCnt = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
+                            dataProcessingConditions,firstFrame, secondFrame,
+                            temporalImageDataDeque.at(0).allExtractedFeatures,
+                            temporalImageDataDeque.at(1).allExtractedFeatures,
+                            temporalImageDataDeque.at(1).allMatches);
+    if (videoGoodFramesCnt == 0) {
+        logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+        logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
+    } else if (videoGoodFramesCnt < 0) {
         return false;
     }
 
