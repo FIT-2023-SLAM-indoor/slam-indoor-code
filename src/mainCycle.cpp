@@ -54,8 +54,9 @@ void mainCycle(
 
         // Find the next good frame batch
         hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
-                                dataProcessingConditions, lastGoodFrame, nextGoodFrame,
+                                dataProcessingConditions, lastGoodFrame,
                                 temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+                                nextGoodFrame,
                                 temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
                                 temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches);
         if (hasVideoGoodFrames == 0) {
@@ -357,9 +358,8 @@ static void fillVideoFrameBatch(
 int findGoodVideoFrameFromBatch(
     MediaSources &mediaInputStruct, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
-    Mat &previousFrame, Mat &newGoodFrame,
-    std::vector<KeyPoint> &previousFeatures, 
-    std::vector<KeyPoint> &newFeatures,
+    Mat &previousFrame, std::vector<KeyPoint> &previousFeatures, 
+    Mat &newGoodFrame, std::vector<KeyPoint> &newFeatures,
     std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
@@ -510,18 +510,22 @@ bool processingFirstPairFrames(
     if (!findFirstGoodVideoFrameAndFeatures(mediaInputStruct, dataProcessingConditions,
             firstFrame, temporalImageDataDeque.at(0).allExtractedFeatures)
     ) {
+        logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+        logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
         return false;
     }
     defineInitialCameraPosition(temporalImageDataDeque.at(0));
 
+
     int videoGoodFramesCnt = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
-                            dataProcessingConditions,firstFrame, secondFrame,
+                            dataProcessingConditions,firstFrame,
                             temporalImageDataDeque.at(0).allExtractedFeatures,
-                            temporalImageDataDeque.at(1).allExtractedFeatures,
+                            secondFrame,temporalImageDataDeque.at(1).allExtractedFeatures,
                             temporalImageDataDeque.at(1).allMatches);
     if (videoGoodFramesCnt == 0) {
         logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
         logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
+        return false;
     } else if (videoGoodFramesCnt < 0) {
         return false;
     }
