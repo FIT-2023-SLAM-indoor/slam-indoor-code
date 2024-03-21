@@ -41,7 +41,6 @@ void matchFeatures(
 	std::vector<DMatch>& matches,
 	int extractorType
 ) {
-
 	std::vector<std::vector<DMatch>> allMatches;
 	cv::Ptr<cv::DescriptorExtractor> extractor;
 
@@ -61,13 +60,13 @@ void matchFeatures(
 	}
 	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
 	getGoodMatches(allMatches,matches);
-
 }
 
 void getGoodMatches(
 	std::vector<std::vector<DMatch>>& allMatches,
 	std::vector<DMatch>& matches
 ){
+	matches.clear();
 	double distanceMlt = configService.getValue<double>(ConfigFieldEnum::FM_KNN_DISTANCE);
 	for (size_t i = 0; i < allMatches.size(); i++)
 	{

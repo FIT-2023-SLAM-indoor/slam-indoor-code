@@ -14,12 +14,15 @@ void openLogsStreams() {
 	logStreams.pointsStream.open(tmp);
 	sprintf(tmp, "%s/pose.txt", path.c_str());
 	logStreams.poseStream.open(tmp);
+	sprintf(tmp, "%s/extractedMatched.csv", path.c_str());
+	logStreams.extractedMatchedTable.open(tmp);
 }
 
 void closeLogsStreams() {
 	logStreams.mainReportStream.close();
 	logStreams.pointsStream.close();
 	logStreams.poseStream.close();
+	logStreams.extractedMatchedTable.close();
 }
 
 void sortGlobs(std::vector<String> &paths) {

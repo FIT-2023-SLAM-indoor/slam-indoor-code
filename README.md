@@ -47,12 +47,12 @@ JSON config (path to file should be specified as command line argument):
 {
   "calibrate": false,
   "visualCalibration": true,
-  "calibrationPath": "./config/samsung-hp.xml",
+  "calibrationPath": "./config/samsung-hv.xml",
 
-  "usePhotosCycle": true,
-  "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-tumbochka/*.JPG",
+  "usePhotosCycle": false,
+  "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/NSU-hall/*.JPG",
   // "videoSourcePath" has an effect when "usePhotosCycle" is false
-  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-NSU-s.mp4",
+  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-hall.mp4",
 
   "outputDataDir": "./data/video_report/video_test",
 
@@ -61,7 +61,7 @@ JSON config (path to file should be specified as command line argument):
   "requiredExtractedPointsCount": 1000,
   "featureExtractingThreshold": 15,
 
-  "framesBatchSize": 1,
+  "framesBatchSize": 15,
 
   "requiredMatchedPointsCount": 200,
 
@@ -88,7 +88,11 @@ JSON config (path to file should be specified as command line argument):
   "RPRANSACProb": 0.999,
   "RPRANSACThreshold": 5.0,
   "RPRequiredGoodPointsPercent": 0.5,
-  "RPDistanceThreshold": 200.0
+  "RPDistanceThreshold": 200.0,
+
+  "useBundleAdjustment": true,
+  "BAHuberLossFunctionParameter": 4.0,
+  "BAThreadsCnt": 4
 }
 ```
 - `./python_utility/config.py`:
