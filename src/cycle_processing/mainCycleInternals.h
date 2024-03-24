@@ -42,7 +42,7 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame);
 */
 bool findFirstGoodVideoFrameAndFeatures(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions,
+    const DataProcessingConditions &dataProcessingConditions,
     Mat &goodFrame,
     std::vector<KeyPoint> &goodFrameFeatures
 );
@@ -52,10 +52,10 @@ bool findFirstGoodVideoFrameAndFeatures(
  * Написать документацию!!!
 */
 void getObjAndImgPoints(
-    std::vector<DMatch> &matches,
-    std::vector<int> &correspondSpatialPointIdx,
-    std::vector<Point3f> &spatialPoints,
-    std::vector<KeyPoint> &extractedFeatures,
+    const std::vector<DMatch> &matches,
+    const std::vector<int> &correspondSpatialPointIdx,
+    const std::vector<Point3f> &spatialPoints,
+    const std::vector<KeyPoint> &extractedFeatures,
     std::vector<Point3f> &objPoints,
     std::vector<Point2f> &imgPoints
 );
@@ -65,9 +65,9 @@ void getObjAndImgPoints(
  * Написать документацию!!!
 */
 void computeTransformationAndMaskPoints(
-    DataProcessingConditions &dataProcessingConditions,
+    const DataProcessingConditions &dataProcessingConditions,
     Mat &chiralityMask,
-    TemporalImageData &prevFrameData,
+    const TemporalImageData &prevFrameData,
     TemporalImageData &newFrameData,
     std::vector<Point2f> &extractedPointCoords1,
     std::vector<Point2f> &extractedPointCoords2
@@ -78,8 +78,7 @@ void computeTransformationAndMaskPoints(
  * Написать документацию!!!
 */
 void defineCorrespondenceIndices(
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &chiralityMask,
+    const Mat &chiralityMask,
     TemporalImageData &prevFrameData,
     TemporalImageData &newFrameData
 );

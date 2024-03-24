@@ -219,7 +219,7 @@ static void fillVideoFrameBatch(
     while (frameBatch.size() < dataProcessingConditions.frameBatchSize 
            && getNextFrame(mediaInputStruct, nextFrame)
     ) {
-        // TODO: In future we can do UNDISTORTION here
+        /// TODO: In future we can do UNDISTORTION here
 		fastExtractor(nextFrame, nextFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
 		if (nextFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {

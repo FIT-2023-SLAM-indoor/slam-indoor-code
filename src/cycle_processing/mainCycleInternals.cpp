@@ -100,14 +100,12 @@ void defineInitialCameraPosition(TemporalImageData &initialFrame) {
  * Написать документацию!!!
 */
 bool findFirstGoodVideoFrameAndFeatures(
-    MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &goodFrame,
-    std::vector<KeyPoint> &goodFrameFeatures)
+    MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
+    Mat &goodFrame, std::vector<KeyPoint> &goodFrameFeatures)
 {
     Mat candidateFrame;
     while (getNextFrame(mediaInputStruct, candidateFrame)) {
-        // TODO: In future we can do UNDISTORTION here
+        /// TODO: In future we can do UNDISTORTION here
 		goodFrame = candidateFrame;
         fastExtractor(goodFrame, goodFrameFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
@@ -127,21 +125,15 @@ bool findFirstGoodVideoFrameAndFeatures(
  * Написать документацию!!!
 */
 void getObjAndImgPoints(
-    std::vector<DMatch> &matches,
-    std::vector<int> &correspondSpatialPointIdx,
-    std::vector<Point3f> &spatialPoints,
-    std::vector<KeyPoint> &extractedFeatures,
-    std::vector<Point3f> &objPoints,
-    std::vector<Point2f> &imgPoints)
+    const std::vector<DMatch> &matches, const std::vector<int> &correspondSpatialPointIdx,
+    const std::vector<Point3f> &spatialPoints, const std::vector<KeyPoint> &extractedFeatures,
+    std::vector<Point3f> &objPoints, std::vector<Point2f> &imgPoints)
 {
     for (auto &match : matches) {
-        int query_idx = match.queryIdx;
-        int train_idx = match.trainIdx;
-
-        int struct_idx = correspondSpatialPointIdx[query_idx];
-        if (struct_idx >= 0) {
-            objPoints.push_back(spatialPoints[struct_idx]);
-            imgPoints.push_back(extractedFeatures[train_idx].pt);
+        int structIdx = correspondSpatialPointIdx[match.queryIdx];
+        if (structIdx >= 0) {
+            objPoints.push_back(spatialPoints[structIdx]);
+            imgPoints.push_back(extractedFeatures[match.trainIdx].pt);
         }
     }
 }
@@ -151,8 +143,8 @@ void getObjAndImgPoints(
  * Написать документацию!!!
 */
 void computeTransformationAndMaskPoints(
-    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
-    TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
+    const DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
+    const TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
     std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
 {
 	getMatchedPointCoords(prevFrameData.allExtractedFeatures, newFrameData.allExtractedFeatures,
@@ -172,8 +164,7 @@ void computeTransformationAndMaskPoints(
  * Написать документацию!!!
 */
 void defineCorrespondenceIndices(
-    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
-    TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
+    const Mat &chiralityMask, TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
 {
     // Resize the correspondence spatial point indices vectors for the previous and new frames
     prevFrameData.correspondSpatialPointIdx.resize(

@@ -20,8 +20,8 @@ MatcherType getMatcherTypeIndex() {
 }
 
 void getMatchedPointCoords(
-	std::vector<KeyPoint> &firstFeatures, std::vector<KeyPoint> &secondFeatures,
-	std::vector<DMatch> &matches, std::vector<Point2f> &firstFrameMatchedPointCoords,
+	const std::vector<KeyPoint> &firstFeatures, const std::vector<KeyPoint> &secondFeatures,
+	const std::vector<DMatch> &matches, std::vector<Point2f> &firstFrameMatchedPointCoords,
 	std::vector<Point2f> &secondFrameMatchedPointCoords)
 {
 	firstFrameMatchedPointCoords.clear();
