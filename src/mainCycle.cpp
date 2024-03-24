@@ -62,8 +62,7 @@ void mainCycle(
         if (hasVideoGoodFrames == 0) {
             logStreams.mainReportStream << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
-        }
-        else if (hasVideoGoodFrames < 0) {
+        } else if (hasVideoGoodFrames < 0) {
             std::cerr << "No good frames in batch. Stop video processing" << std::endl;
             break;
         }
@@ -293,6 +292,7 @@ void matchFramesPairFeatures(
     matchFeatures(firstDescriptor, secondDescriptor, matches, 
         dataProcessingConditions.matcherType, dataProcessingConditions.radius);
 }
+
 
 /**
  * Fills new batch up to frameBatchSize and while new frames can be obtained.
