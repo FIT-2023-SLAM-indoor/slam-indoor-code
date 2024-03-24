@@ -30,6 +30,7 @@ enum ConfigFieldEnum {
 	FEATURE_EXTRACTING_THRESHOLD_,
 
 	FRAMES_BATCH_SIZE_,
+	MINIMAL_FRAMES_GAP,
 
 	REQUIRED_MATCHED_POINTS_COUNT,
 
@@ -44,7 +45,8 @@ enum ConfigFieldEnum {
 	FM_SIFT_FLANN_,
 	FM_SIFT_BF_,
 	FM_ORB_,
-	FM_SEARCH_RADIUS_,
+
+	FM_KNN_DISTANCE,
 
 	SHOW_TRACKED_POINTS,
 
@@ -53,7 +55,12 @@ enum ConfigFieldEnum {
 	RP_RANSAC_PROB,
 	RP_RANSAC_THRESHOLD,
 	RP_REQUIRED_GOOD_POINTS_PERCENT,
-	RP_DISTANCE_THRESHOLD
+	RP_DISTANCE_THRESHOLD,
+
+
+	USE_BUNDLE_ADJUSTMENT,
+	BA_HUBER_LOSS_FUNCTION_PARAMETER,
+	BA_THREADS_CNT
 };
 
 const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
@@ -72,6 +79,7 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{FEATURE_EXTRACTING_THRESHOLD_,{"featureExtractingThreshold", INTEGER}},
 
 		{FRAMES_BATCH_SIZE_,{"framesBatchSize", INTEGER}},
+		{MINIMAL_FRAMES_GAP,{"minimalFramesGap", INTEGER}},
 
 		{REQUIRED_MATCHED_POINTS_COUNT,{"requiredMatchedPointsCount", INTEGER}},
 
@@ -87,7 +95,7 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{FM_SIFT_BF_,{"useFM-SIFT-BF", BOOL}},
 		{FM_ORB_,{"useFM-ORB", BOOL}},
 
-		{FM_SEARCH_RADIUS_,{"featureMatchingRadius", FLOATING}},
+		{FM_KNN_DISTANCE,{"knnMatcherDistance",FLOATING}},
 
 		{SHOW_TRACKED_POINTS,{"showTrackedPoints", BOOL}},
 
@@ -96,4 +104,8 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{RP_RANSAC_THRESHOLD,{"RPRANSACThreshold", FLOATING}},
 		{RP_REQUIRED_GOOD_POINTS_PERCENT,{"RPRequiredGoodPointsPercent", FLOATING}},
 		{RP_DISTANCE_THRESHOLD,{"RPDistanceThreshold", FLOATING}},
+
+		{USE_BUNDLE_ADJUSTMENT, {"useBundleAdjustment", BOOL}},
+		{BA_HUBER_LOSS_FUNCTION_PARAMETER,{"BAHuberLossFunctionParameter", FLOATING}},
+		{BA_THREADS_CNT,{"BAThreadsCnt", INTEGER}}
 };

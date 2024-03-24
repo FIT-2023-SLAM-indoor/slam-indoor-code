@@ -104,7 +104,7 @@ void matchFramesPairFeatures(
         dataProcessingConditions.matcherType, secondDescriptor);
 
     // Match the descriptors using the specified matcher type and radius
-    matchFeatures(firstDescriptor, secondDescriptor, matches, 
+    matchFeatures(firstDescriptor, secondDescriptor, matches,
         dataProcessingConditions.matcherType);
 }
 
