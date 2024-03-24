@@ -2,7 +2,8 @@
 #include "IOmisc.h"
 #include "fstream"
 
-#include "mainCycle.h"
+#include "cycle_processing/mainCycle.h"
+#include "cycle_processing/mainCycleInternals.h"
 #include "config/config.h"
 #include "featureMatching.h"
 

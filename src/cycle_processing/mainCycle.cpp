@@ -2,16 +2,17 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include "cameraCalibration.h"
-#include "cameraTransition.h"
-#include "fastExtractor.h"
-#include "featureMatching.h"
-#include "triangulate.h"
-#include "IOmisc.h"
+#include "../cameraCalibration.h"
+#include "../cameraTransition.h"
+#include "../fastExtractor.h"
+#include "../featureMatching.h"
+#include "../triangulate.h"
+#include "../IOmisc.h"
 
-#include "config/config.h"
+#include "../config/config.h"
 
 #include "mainCycle.h"
+#include "mainCycleInternals.h"
 
 using namespace cv;
 
@@ -21,16 +22,16 @@ const int OPTIMAL_DEQUE_SIZE = 8;
 void mainCycle(GlobalData globalDataStruct) {
     //// TODO: Объединить в одну функцию
     MediaSources mediaInputStruct;
-    defineMediaSources(mediaInputStruct);
     DataProcessingConditions dataProcessingConditions;
-    defineProcessingConditions(dataProcessingConditions);
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
+    defineMediaSources(mediaInputStruct);
+    defineProcessingConditions(dataProcessingConditions);
     initTemporalImageDataDeque(temporalImageDataDeque);
     ////
 
     Mat lastGoodFrame;
     // Process the first pair of frames
-    if (!processingFirstPairFrames(mediaInputStruct, frameBatchSize, dataProcessingConditions,
+    if (!processingFirstPairFrames(mediaInputStruct, dataProcessingConditions,
             temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints)
     ) {
         // Error message if at least two good frames are not found in the video
@@ -45,7 +46,7 @@ void mainCycle(GlobalData globalDataStruct) {
 		logStreams.mainReportStream << std::endl << "================================================================\n" << std::endl;
 
         // Find the next good frame batch
-        hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
+        hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct,
                                 dataProcessingConditions, lastGoodFrame,
                                 temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
                                 nextGoodFrame,
@@ -127,7 +128,7 @@ void mainCycle(GlobalData globalDataStruct) {
 }
 
 
-bool findFirstGoodVideoFrameAndFeatures(
+static bool findFirstGoodVideoFrameAndFeatures(
     MediaSources &mediaInputStruct,
     DataProcessingConditions &dataProcessingConditions,
     Mat &goodFrame,
@@ -178,7 +179,7 @@ static void fillVideoFrameBatch(
 }
 
 
-int findGoodVideoFrameFromBatch(
+static int findGoodVideoFrameFromBatch(
     MediaSources &mediaInputStruct, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
     Mat &previousFrame, std::vector<KeyPoint> &previousFeatures, 
@@ -224,74 +225,7 @@ int findGoodVideoFrameFromBatch(
 }
 
 
-void defineInitialCameraPosition(TemporalImageData &initialFrame) {
-    initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
-    initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
-}
-
-
-void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints) {
-    // Ensure that the sizes of the chirality mask and points vector match
-    if (chiralityMask.rows != extractedPoints.size()) {
-        std::cerr << "Chirality mask size does not match points vector size" << std::endl;
-        exit(-1);
-    }
-
-    std::vector<Point2f> pointsCopy = extractedPoints;
-    extractedPoints.clear();
-
-    for (int i = 0; i < chiralityMask.rows; i++) {
-        if (chiralityMask.at<uchar>(i) > 0) {
-            extractedPoints.push_back(pointsCopy[i]);
-        }
-    }
-}
-
-
-void computeTransformationAndMaskPoints(
-    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
-    TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
-    std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
-{
-	getMatchedPointCoords(prevFrameData.allExtractedFeatures, newFrameData.allExtractedFeatures,
-						  newFrameData.allMatches, extractedPointCoords1, extractedPointCoords2);
-
-    estimateTransformation(
-        extractedPointCoords1, extractedPointCoords2, dataProcessingConditions.calibrationMatrix,
-        newFrameData.rotation, newFrameData.motion, chiralityMask);
-
-    // Apply the chirality mask to the points from the frames
-    maskoutPoints(chiralityMask, extractedPointCoords1);
-    maskoutPoints(chiralityMask, extractedPointCoords2);
-}
-
-
-void defineCorrespondenceIndices(
-    DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
-    TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
-{
-    // Resize the correspondence spatial point indices vectors for the previous and new frames
-    prevFrameData.correspondSpatialPointIdx.resize(
-        prevFrameData.allExtractedFeatures.size(), -1);
-    newFrameData.correspondSpatialPointIdx.resize(
-        newFrameData.allExtractedFeatures.size(), -1);
-
-    int newMatchIdx = 0;
-    for (int matchIdx = 0; matchIdx < newFrameData.allMatches.size(); matchIdx++) {
-        // Check if the match is valid based on the chirality mask
-        if (chiralityMask.at<uchar>(matchIdx) > 0) {
-            // Update correspondence indices for keypoints in the previous and new frames
-            prevFrameData.correspondSpatialPointIdx.at(
-                newFrameData.allMatches[matchIdx].queryIdx) = newMatchIdx;
-            newFrameData.correspondSpatialPointIdx.at(
-                newFrameData.allMatches[matchIdx].trainIdx) = newMatchIdx;
-            newMatchIdx++;
-        }
-    }
-}
-
-
-bool processingFirstPairFrames(
+static bool processingFirstPairFrames(
     MediaSources &mediaInputStruct, int frameBatchSize,
     DataProcessingConditions &dataProcessingConditions,
     std::deque<TemporalImageData> &temporalImageDataDeque,

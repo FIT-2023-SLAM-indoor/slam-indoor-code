@@ -7,19 +7,6 @@
 using namespace cv;
 
 /**
- * Struct containing conditions for data processing.
- */
-typedef struct DataProcessingConditions {
-    Mat calibrationMatrix;            // Calibration matrix for camera.
-    Mat distortionCoeffs;             // Distortion coefficients for camera.
-    int featureExtractingThreshold;   // Threshold for feature extraction.
-    int requiredExtractedPointsCount; // Required number of extracted points in frame.
-    int requiredMatchedPointsCount;   // Required number of of matched points in frame.
-    int matcherType;                  // Type of descriptor matcher to use.
-    float radius;                     // Matching radius.
-} DataProcessingConditions;
-
-/**
  * This structure is designed to handle both video and photo data sources,
  * allowing the same functions to process either type of media without the need for overriding.
 */
