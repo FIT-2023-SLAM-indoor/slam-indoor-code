@@ -4,6 +4,7 @@
 
 #include "../cameraCalibration.h"
 #include "../cameraTransition.h"
+#include "../fastExtractor.h"
 #include "../featureMatching.h"
 #include "../IOmisc.h"
 
@@ -71,7 +72,10 @@ void defineProcessingEnvironment(
 }
 
 
-bool getNextFrame(MediaSources &mediaInputStruct, Mat& nextFrame) {
+/**
+ * Написать документацию!!!
+*/
+bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     if (mediaInputStruct.isPhotoProcessing) {
         if (mediaInputStruct.photosPaths.empty()) {
             return false;
@@ -92,7 +96,37 @@ void defineInitialCameraPosition(TemporalImageData &initialFrame) {
 }
 
 
-void getObjAndImgPoints(//////////////////////////////////////////////////
+/**
+ * Написать документацию!!!
+*/
+bool findFirstGoodVideoFrameAndFeatures(
+    MediaSources &mediaInputStruct,
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &goodFrame,
+    std::vector<KeyPoint> &goodFrameFeatures)
+{
+    Mat candidateFrame;
+    while (getNextFrame(mediaInputStruct, candidateFrame)) {
+        // TODO: In future we can do UNDISTORTION here
+		goodFrame = candidateFrame;
+        fastExtractor(goodFrame, goodFrameFeatures, 
+            dataProcessingConditions.featureExtractingThreshold);
+        
+        // Check if enough features are extracted
+        if (goodFrameFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
+            return true;
+        }
+    }
+
+    // No good frame found
+    return false;
+}
+
+
+/**
+ * Написать документацию!!!
+*/
+void getObjAndImgPoints(
     std::vector<DMatch> &matches,
     std::vector<int> &correspondSpatialPointIdx,
     std::vector<Point3f> &spatialPoints,
@@ -113,7 +147,10 @@ void getObjAndImgPoints(//////////////////////////////////////////////////
 }
 
 
-void computeTransformationAndMaskPoints(/////////////////////////////////////////////////////////
+/**
+ * Написать документацию!!!
+*/
+void computeTransformationAndMaskPoints(
     DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
     std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
@@ -131,7 +168,10 @@ void computeTransformationAndMaskPoints(////////////////////////////////////////
 }
 
 
-void defineCorrespondenceIndices(/////////////////////////////////////////////////////////
+/**
+ * Написать документацию!!!
+*/
+void defineCorrespondenceIndices(
     DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
 {
@@ -153,4 +193,34 @@ void defineCorrespondenceIndices(///////////////////////////////////////////////
             newMatchIdx++;
         }
     }
+}
+
+
+/**
+ * Написать документацию!!!
+*/
+void pushNewSpatialPoints(
+	const std::vector<DMatch> &matches,
+	std::vector<int> &prevFrameCorrespondingIndices,
+	std::vector<int> &currFrameCorrespondingIndices,
+	const std::vector<Point3f> &newSpatialPoints,
+	std::vector<Point3f> &allSpatialPoints) 
+{
+	for (int i = 0; i < matches.size(); ++i)
+	{
+		int queryIdx = matches[i].queryIdx;
+		int trainIdx = matches[i].trainIdx;
+
+		int structIdx = prevFrameCorrespondingIndices[queryIdx];
+		if (structIdx >= 0) //If the point already exists in space, the space points corresponding to the pair of matching points should be the same, with the same index
+		{
+			currFrameCorrespondingIndices[trainIdx] = structIdx;
+			continue;
+		}
+
+		//If the point already exists in space, add the point to the structure, and the spatial point indexes of the pair of matching points are the indexes of the newly added points
+		allSpatialPoints.push_back(newSpatialPoints[i]);
+		prevFrameCorrespondingIndices[queryIdx] = ((int)allSpatialPoints.size()) - 1;
+		currFrameCorrespondingIndices[trainIdx] = ((int)allSpatialPoints.size()) - 1;
+	}
 }
