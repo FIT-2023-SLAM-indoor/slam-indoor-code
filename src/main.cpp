@@ -32,13 +32,10 @@ int main(int argc, char** argv)
 	}
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
 
-	mainCycle(
-		configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_),
-		configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_),
-		configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_),
-		configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT),
-		getMatcherTypeIndex(),
-		configService.getValue<float>(ConfigFieldEnum::FM_SEARCH_RADIUS_));
+	GlobalData globalDataStruct;
+	while(mainCycle(globalDataStruct));
+
+	/* Что-то делаем с GlobalData */
 
 	closeLogsStreams();
     return 0;

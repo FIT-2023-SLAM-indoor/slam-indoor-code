@@ -45,27 +45,11 @@ typedef struct GlobalData {
 	std::vector<Point3f> spatialPoints;
 	std::vector<Vec3b> spatialPointsColors;
 	std::vector<Mat> spatialCameraPositions;
+    std::vector<Mat> cameraRotations;
 } GlobalData;
 
 
 /**
- * Processes a sequence of frames or photos, extracting features,
- * and performing motion analysis. This function processes a sequence of frames
- * from the provided media source. It extracts features, matches points,
- * estimates transformation matrices, and performs motion analysis to track objects
- * or patterns throughout the media image sequence.
  * 
- * @param [in] frameBatchSize The size of the frame batch to process.
- * @param [in] featureExtractingThreshold Threshold for feature extraction.
- * @param [in] requiredExtractedPointsCount Number of required extracted points.
- * @param [in] requiredMatchedPointsCount Number of required matched points.
- * @param [in] matcherType Type of feature matcher.
- * @param [in] radius Radius parameter for feature matching.
- */
-void mainCycle(
-    int frameBatchSize, 
-    int featureExtractingThreshold, 
-    int requiredExtractedPointsCount,
-    int requiredMatchedPointsCount,
-    int matcherType, float radius
-);
+*/
+void mainCycle(GlobalData globalDataStruct);
