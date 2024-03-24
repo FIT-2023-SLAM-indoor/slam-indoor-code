@@ -3,18 +3,18 @@
 #include "fstream"
 
 #include "cycle_processing/mainCycle.h"
-#include "cycle_processing/mainCycleInternals.h"
 #include "config/config.h"
 #include "featureMatching.h"
 
-
 using namespace cv;
+
+const int OPTIMAL_DEQUE_SIZE = 8;
 
 ConfigService configService;
 LogFilesStreams logStreams;
 
-int main(int argc, char** argv)
-{
+
+int main(int argc, char** argv) {
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
@@ -34,9 +34,10 @@ int main(int argc, char** argv)
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
 
 	GlobalData globalDataStruct;
-	while(mainCycle(globalDataStruct));
-
-	/* Что-то делаем с GlobalData */
+	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
+	do {
+		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
+	} while (mainCycle(temporalImageDataDeque, globalDataStruct));
 
 	closeLogsStreams();
     return 0;

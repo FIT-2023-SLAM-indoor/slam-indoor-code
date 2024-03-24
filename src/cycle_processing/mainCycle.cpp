@@ -19,18 +19,12 @@ using namespace cv;
 const int OPTIMAL_DEQUE_SIZE = 8;
 
 
-void mainCycle(GlobalData globalDataStruct) {
-    //// TODO: Объединить в одну функцию
+void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> temporalImageDataDeque) {
     MediaSources mediaInputStruct;
     DataProcessingConditions dataProcessingConditions;
-    std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
-    defineMediaSources(mediaInputStruct);
-    defineProcessingConditions(dataProcessingConditions);
-    initTemporalImageDataDeque(temporalImageDataDeque);
-    ////
+    defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 
     Mat lastGoodFrame;
-    // Process the first pair of frames
     if (!processingFirstPairFrames(mediaInputStruct, dataProcessingConditions,
             temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints)
     ) {
@@ -39,8 +33,8 @@ void mainCycle(GlobalData globalDataStruct) {
         exit(-1);
     }
 
-    int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
+    int lastGoodFrameIdx = 1;
     bool hasVideoGoodFrames;
     while (true) {
 		logStreams.mainReportStream << std::endl << "================================================================\n" << std::endl;
@@ -154,14 +148,15 @@ static bool findFirstGoodVideoFrameAndFeatures(
 
 static void fillVideoFrameBatch(
     MediaSources &mediaInputStruct, DataProcessingConditions &dataProcessingConditions,
-    int frameBatchSize, std::vector<Mat> &frameBatch, 
-    std::vector<std::vector<KeyPoint>> &batchFeatures)
+    std::vector<Mat> &frameBatch, std::vector<std::vector<KeyPoint>> &batchFeatures)
 {
     logStreams.mainReportStream << "Features count in frames added to batch: ";
     Mat nextFrame;
 	std::vector<KeyPoint> nextFeatures;
 	int skippedFrames = 0;
-    while (frameBatch.size() < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
+    while (frameBatch.size() < dataProcessingConditions.frameBatchSize 
+           && getNextFrame(mediaInputStruct, nextFrame)
+    ) {
         // TODO: In future we can do UNDISTORTION here
 		fastExtractor(nextFrame, nextFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
@@ -180,16 +175,13 @@ static void fillVideoFrameBatch(
 
 
 static int findGoodVideoFrameFromBatch(
-    MediaSources &mediaInputStruct, int frameBatchSize,
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &previousFrame, std::vector<KeyPoint> &previousFeatures, 
-    Mat &newGoodFrame, std::vector<KeyPoint> &newFeatures,
-    std::vector<DMatch> &matches)
+    MediaSources &mediaInputStruct, DataProcessingConditions &dataProcessingConditions,
+    Mat &previousFrame, std::vector<KeyPoint> &previousFeatures, Mat &newGoodFrame,
+    std::vector<KeyPoint> &newFeatures, std::vector<DMatch> &matches)
 {
     std::vector<Mat> frameBatch;
 	std::vector<std::vector<KeyPoint>> batchFeatures;
-    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, 
-        frameBatchSize, frameBatch, batchFeatures);
+    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatch, batchFeatures);
     
     if (frameBatch.size() == 0) {
         return 0;
@@ -226,8 +218,7 @@ static int findGoodVideoFrameFromBatch(
 
 
 static bool processingFirstPairFrames(
-    MediaSources &mediaInputStruct, int frameBatchSize,
-    DataProcessingConditions &dataProcessingConditions,
+    MediaSources &mediaInputStruct, DataProcessingConditions &dataProcessingConditions,
     std::deque<TemporalImageData> &temporalImageDataDeque,
     Mat &secondFrame, std::vector<Point3f> &spatialPoints)
 {
@@ -239,14 +230,12 @@ static bool processingFirstPairFrames(
         logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
         return false;
     }
-    defineInitialCameraPosition(temporalImageDataDeque.at(0));
 
-
-    int videoGoodFramesCnt = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
-                            dataProcessingConditions,firstFrame,
-                            temporalImageDataDeque.at(0).allExtractedFeatures,
-                            secondFrame,temporalImageDataDeque.at(1).allExtractedFeatures,
-                            temporalImageDataDeque.at(1).allMatches);
+    int videoGoodFramesCnt = findGoodVideoFrameFromBatch(mediaInputStruct, 
+                                dataProcessingConditions, firstFrame,
+                                temporalImageDataDeque.at(0).allExtractedFeatures,
+                                secondFrame,temporalImageDataDeque.at(1).allExtractedFeatures,
+                                temporalImageDataDeque.at(1).allMatches);
     if (videoGoodFramesCnt == 0) {
         logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
         logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;

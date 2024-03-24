@@ -4,9 +4,7 @@
 
 #include "../cameraCalibration.h"
 #include "../cameraTransition.h"
-#include "../fastExtractor.h"
 #include "../featureMatching.h"
-#include "../triangulate.h"
 #include "../IOmisc.h"
 
 #include "../config/config.h"
@@ -16,27 +14,8 @@
 
 using namespace cv;
 
-const int OPTIMAL_DEQUE_SIZE = 8;
 
-
-void defineCalibrationMatrix(Mat &calibrationMatrix) {
-    // Сreating a new matrix or changing the type and size of an existing one
-    calibrationMatrix.create(3, 3, CV_64F);
-    calibration(calibrationMatrix, CalibrationOption::load);
-}
-
-
-void defineDistortionCoeffs(Mat &distortionCoeffs) {
-    // Сreating a new matrix or changing the type and size of an existing one
-    distortionCoeffs.create(1, 5, CV_64F);
-    loadMatrixFromXML(
-		configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
-		distortionCoeffs, "DC"
-	);
-}
-
-
-void defineMediaSources(MediaSources &mediaInputStruct) {
+static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
         ConfigFieldEnum::USE_PHOTOS_CYCLE);
 
@@ -55,15 +34,35 @@ void defineMediaSources(MediaSources &mediaInputStruct) {
     }
 }
 
+static void defineCalibrationMatrix(Mat &calibrationMatrix) {
+    // Сreating a new matrix or changing the type and size of an existing one
+    calibrationMatrix.create(3, 3, CV_64F);
+    calibration(calibrationMatrix, CalibrationOption::load);
+}
 
-void defineProcessingEnvironment(DataProcessingConditions &dataProcessingConditions) {
+static void defineDistortionCoeffs(Mat &distortionCoeffs) {
+    // Сreating a new matrix or changing the type and size of an existing one
+    distortionCoeffs.create(1, 5, CV_64F);
+    loadMatrixFromXML(
+		configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
+		distortionCoeffs, "DC"
+	);
+}
+
+
+void defineProcessingEnvironment(
+    MediaSources &mediaInputStruct,
+    DataProcessingConditions &dataProcessingConditions)
+{
+    defineMediaSources(mediaInputStruct);
+
     defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
-    configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_),
-
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_);
+    dataProcessingConditions.frameBatchSize =
+        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_);
     dataProcessingConditions.requiredExtractedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_);
     dataProcessingConditions.requiredMatchedPointsCount =
@@ -86,8 +85,14 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat& nextFrame) {
     }
 }
 
+// эта функция либо в main, либо удалить
+void defineInitialCameraPosition(TemporalImageData &initialFrame) {
+    initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
+    initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
+}
 
-void matchFramesPairFeatures(
+
+void matchFramesPairFeatures(//////////////////////////////////////////
     Mat& firstFrame,
     Mat& secondFrame,
     std::vector<KeyPoint>& firstFeatures,
@@ -109,7 +114,7 @@ void matchFramesPairFeatures(
 }
 
 
-void getObjAndImgPoints(
+void getObjAndImgPoints(//////////////////////////////////////////////////
     std::vector<DMatch> &matches,
     std::vector<int> &correspondSpatialPointIdx,
     std::vector<Point3f> &spatialPoints,
@@ -130,7 +135,7 @@ void getObjAndImgPoints(
 }
 
 
-void getMatchedPointCoords(
+void getMatchedPointCoords(/////////////////////////////////////////////////////
 	std::vector<KeyPoint> &firstExtractedFeatures,
 	std::vector<KeyPoint> &secondExtractedFeatures,
 	std::vector<DMatch> &matches,
@@ -146,22 +151,7 @@ void getMatchedPointCoords(
 }
 
 
-void initTemporalImageDataDeque(std::deque<TemporalImageData> &temporalImageDataDeque) {
-    for (int imageDataIdx = 0; imageDataIdx < temporalImageDataDeque.size(); imageDataIdx++) {
-        temporalImageDataDeque.at(imageDataIdx).allExtractedFeatures.clear();
-        temporalImageDataDeque.at(imageDataIdx).allMatches.clear();
-        temporalImageDataDeque.at(imageDataIdx).correspondSpatialPointIdx.clear();
-    }
-}
-
-
-void defineInitialCameraPosition(TemporalImageData &initialFrame) {
-    initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
-    initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
-}
-
-
-void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints) {
+void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints) {////////////////////////////
     // Ensure that the sizes of the chirality mask and points vector match
     if (chiralityMask.rows != extractedPoints.size()) {
         std::cerr << "Chirality mask size does not match points vector size" << std::endl;
@@ -179,7 +169,7 @@ void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoin
 }
 
 
-void computeTransformationAndMaskPoints(
+void computeTransformationAndMaskPoints(/////////////////////////////////////////////////////////
     DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
     std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
@@ -197,7 +187,7 @@ void computeTransformationAndMaskPoints(
 }
 
 
-void defineCorrespondenceIndices(
+void defineCorrespondenceIndices(/////////////////////////////////////////////////////////
     DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
 {
