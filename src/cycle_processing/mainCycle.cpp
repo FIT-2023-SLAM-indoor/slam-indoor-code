@@ -198,7 +198,7 @@ static int findGoodVideoFrameFromBatch(
         // Match features between the previous frame and the new frame
         matchFramesPairFeatures(previousFrame, candidateFrame,
                                 previousFeatures, candidateFrameFeatures,
-                                dataProcessingConditions, matches);
+                                dataProcessingConditions.matcherType, matches);
 
 		logStreams.mainReportStream << "Batch index: " << frameIndex
 									<< "; curr. extracted: " << candidateFrameFeatures.size()

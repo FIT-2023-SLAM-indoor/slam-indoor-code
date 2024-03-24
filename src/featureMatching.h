@@ -14,20 +14,26 @@ enum MatcherType {
  */
 MatcherType getMatcherTypeIndex();
 
-/*
-* @param previousFeatures [in]
-* @param currentFeatures [in]
-* @param matches [in]
-* @param matchedFeatures [out]
-* @param newPreviousFeatures [out] 
-*/
-void getMatchedPoints(
-	std::vector<KeyPoint>& previousFeatures,
-	std::vector<KeyPoint>& currentFeatures,
-	std::vector<DMatch> matches,
-	std::vector<Point2f>& matchedFeatures,
-	std::vector<Point2f>& newPreviousFeatures
+/**
+ * Функция принимает вектора ключевых точек первого и второго кадра, а также вектор матчей этих
+ * точек. Линейным обходом вектора matches функция возвращает координаты (x, y) точек первого
+ * и второго кадра из соответсвующего матча.
+ *
+ * @param [in] firstFrameFeatures
+ * @param [in] secondFrameFeatures
+ * @param [in] matches
+ * @param [out] firstFrameMatchedPointCoords
+ * @param [out] secondFrameMatchedPointCoords
+ */
+void getMatchedPointCoords(
+	std::vector<KeyPoint> &firstFrameFeatures, 
+	std::vector<KeyPoint> &secondFrameFeatures,
+	std::vector<DMatch> &matches, 
+	std::vector<Point2f> &firstFrameMatchedPointCoords,
+	std::vector<Point2f> &secondFrameMatchedPointCoords
 );
+
+
 /*
 * @param prevDesc [in]
 * @param curDesc [in]
@@ -73,4 +79,16 @@ void showMatchedPointsInTwoFrames(
 	Mat& previousFrame,
 	Mat& currentFrame,
 	std::vector<DMatch>& matches
+);
+
+/**
+ * Написать документацию!!!
+*/
+void matchFramesPairFeatures(
+    Mat& firstFrame,
+    Mat& secondFrame,
+    std::vector<KeyPoint>& firstFeatures,
+    std::vector<KeyPoint>& secondFeatures,
+    int matcherType,
+    std::vector<DMatch>& matches
 );

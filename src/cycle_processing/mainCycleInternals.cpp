@@ -92,28 +92,6 @@ void defineInitialCameraPosition(TemporalImageData &initialFrame) {
 }
 
 
-void matchFramesPairFeatures(//////////////////////////////////////////
-    Mat& firstFrame,
-    Mat& secondFrame,
-    std::vector<KeyPoint>& firstFeatures,
-    std::vector<KeyPoint>& secondFeatures,
-    DataProcessingConditions &dataProcessingConditions,
-    std::vector<DMatch>& matches)
-{
-    // Extract descriptors from the key points of the input frames
-    Mat firstDescriptor;
-    extractDescriptor(firstFrame, firstFeatures, 
-        dataProcessingConditions.matcherType, firstDescriptor);
-    Mat secondDescriptor;
-    extractDescriptor(secondFrame, secondFeatures, 
-        dataProcessingConditions.matcherType, secondDescriptor);
-
-    // Match the descriptors using the specified matcher type and radius
-    matchFeatures(firstDescriptor, secondDescriptor, matches,
-        dataProcessingConditions.matcherType);
-}
-
-
 void getObjAndImgPoints(//////////////////////////////////////////////////
     std::vector<DMatch> &matches,
     std::vector<int> &correspondSpatialPointIdx,
@@ -135,40 +113,6 @@ void getObjAndImgPoints(//////////////////////////////////////////////////
 }
 
 
-void getMatchedPointCoords(/////////////////////////////////////////////////////
-	std::vector<KeyPoint> &firstExtractedFeatures,
-	std::vector<KeyPoint> &secondExtractedFeatures,
-	std::vector<DMatch> &matches,
-	std::vector<Point2f> &firstMatchedPoints,
-	std::vector<Point2f> &secondMatchedPoints)
-{
-	firstMatchedPoints.clear();
-	secondMatchedPoints.clear();
-	for (int i = 0; i < matches.size(); i++) {
-		firstMatchedPoints.push_back(firstExtractedFeatures[matches[i].queryIdx].pt);
-		secondMatchedPoints.push_back(secondExtractedFeatures[matches[i].trainIdx].pt);
-	}
-}
-
-
-void maskoutPoints(const Mat &chiralityMask, std::vector<Point2f> &extractedPoints) {////////////////////////////
-    // Ensure that the sizes of the chirality mask and points vector match
-    if (chiralityMask.rows != extractedPoints.size()) {
-        std::cerr << "Chirality mask size does not match points vector size" << std::endl;
-        exit(-1);
-    }
-
-    std::vector<Point2f> pointsCopy = extractedPoints;
-    extractedPoints.clear();
-
-    for (int i = 0; i < chiralityMask.rows; i++) {
-        if (chiralityMask.at<uchar>(i) > 0) {
-            extractedPoints.push_back(pointsCopy[i]);
-        }
-    }
-}
-
-
 void computeTransformationAndMaskPoints(/////////////////////////////////////////////////////////
     DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
@@ -182,8 +126,8 @@ void computeTransformationAndMaskPoints(////////////////////////////////////////
         newFrameData.rotation, newFrameData.motion, chiralityMask);
 
     // Apply the chirality mask to the points from the frames
-    maskoutPoints(chiralityMask, extractedPointCoords1);
-    maskoutPoints(chiralityMask, extractedPointCoords2);
+    filterVectorByMask(extractedPointCoords1, chiralityMask);
+    filterVectorByMask(extractedPointCoords2, chiralityMask);
 }
 
 
