@@ -56,30 +56,47 @@ bool isRotationMatrix(Mat &R)
  
     return  norm(I, shouldBeIdentity) < 1e-6;
 }
-Vec3f rotationMatrixToEulerAngles(Mat &R)
+
+Vec3f rotationMatrixToEulerAngles(Mat &rotationMatrix)
 {
- 
-    assert(isRotationMatrix(R));
- 
-    float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
- 
-    bool singular = sy < 1e-6; // If
- 
-    float x, y, z;
-    if (!singular)
-    {
-        x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
-        y = atan2(-R.at<double>(2,0), sy);
-        z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+
+    cv::Mat euler(3,1,CV_64F);
+
+    double m00 = rotationMatrix.at<double>(0,0);
+    double m02 = rotationMatrix.at<double>(0,2);
+    double m10 = rotationMatrix.at<double>(1,0);
+    double m11 = rotationMatrix.at<double>(1,1);
+    double m12 = rotationMatrix.at<double>(1,2);
+    double m20 = rotationMatrix.at<double>(2,0);
+    double m22 = rotationMatrix.at<double>(2,2);
+
+    double bank, attitude, heading;
+
+    // Assuming the angles are in radians.
+    if (m10 > 0.998) { // singularity at north pole
+        bank = 0;
+        attitude = CV_PI/2;
+        heading = atan2(m02,m22);
+    }
+    else if (m10 < -0.998) { // singularity at south pole
+        bank = 0;
+        attitude = -CV_PI/2;
+        heading = atan2(m02,m22);
     }
     else
     {
-        x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
-        y = atan2(-R.at<double>(2,0), sy);
-        z = 0;
+        bank = atan2(-m12,m11);
+        attitude = asin(m10);
+        heading = atan2(-m20,m00);
     }
-    return Vec3f(x, y, z);
+
+    euler.at<double>(0) = bank;
+    euler.at<double>(1) = attitude;
+    euler.at<double>(2) = heading;
+
+    return euler;
 }
+
 void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
 {
     
@@ -89,30 +106,62 @@ void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
     Vec3f eulerAngles = rotationMatrixToEulerAngles(rotation);
     Vec3d past =  affine.translation();
 
-    Vec3d newTranslation;
-    double speed = 0.5;
-    newTranslation[2] = cos(eulerAngles[1]);
-    std::cout << past[0] << std::endl;
-    std::cout << eulerAngles[1]*180/3.14159 << " " << cos(eulerAngles[1]) << std::endl;
     
+    double speed = 0.25;
+    viz::Camera cam = ptr->getCamera();
 
-    newTranslation[0] = sin(eulerAngles[1]);
-    std::cout << eulerAngles[1]*180/3.14159 << " " << sin(eulerAngles[1]) << std::endl;
-  
 
+
+    std::cout << "Angle 2 :" << eulerAngles[2]*180/3.14159 << "  Cos:" << cos(eulerAngles[2]) << std::endl;
+
+
+    std::cout <<  "Angle 2 :" << eulerAngles[2]*180/3.14159 << " Sin:" << sin(eulerAngles[2]) << std::endl;
+
+    std::cout << eulerAngles << std::endl;
+    Vec3d newTranslation;
     if (w.action){
         std::cout << "you pressed "<< w.symbol<< " " << (int)w.code << std::endl;
         switch ((int)w.code){
             case 119: //w 
-                std::cout << eulerAngles << std::endl;
+                newTranslation[2] = cos(eulerAngles[2]) * speed;
+                newTranslation[0] = sin(eulerAngles[2]) * speed;
                 ptr->setViewerPose(affine.translate(newTranslation));
+                break;
+            case 115: //s 
+                newTranslation[2] = -cos(eulerAngles[2]) * speed;
+                newTranslation[0] = -sin(eulerAngles[2]) * speed;
+                ptr->setViewerPose(affine.translate(newTranslation));
+                break;
+            case 97: //a
+                newTranslation[2] = cos(eulerAngles[2]- 3.14159/2.0) * speed;
+                newTranslation[0] = sin(eulerAngles[2] - 3.14159/2.0) * speed;
+                ptr->setViewerPose(affine.translate(newTranslation));
+                break;
+            case 100: //d
+                newTranslation[2] = cos(eulerAngles[2] + 3.14159/2.0) * speed;
+                newTranslation[0] = sin(eulerAngles[2] + 3.14159/2.0) * speed;
+                ptr->setViewerPose(affine.translate(newTranslation));
+                break;
+            case 99: //c 
+                newTranslation[1] = speed;
+                ptr->setViewerPose(affine.translate(newTranslation));
+                break;
+            case 61: //+ 
+                if (speed < 2){
+                    speed += 0.25;
+                }
+                std::cout << "Current speed" << speed << std::endl;
+                break;
+            case 45: // - 
+                if (speed > 0){
+                    speed -= 0.25;
+                }
+                std::cout << "Current speed" << speed << std::endl;
                 break;
             case 32: //space
-                Vec3d newTranslation;
-                newTranslation[1] = -1;
+                newTranslation[1] = -speed;
                 ptr->setViewerPose(affine.translate(newTranslation));
                 break;
-  
         }
     }
         
