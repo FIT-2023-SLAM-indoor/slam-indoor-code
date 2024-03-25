@@ -2,6 +2,7 @@
 #include <opencv2/viz.hpp>
 #include "vizualizationModule.h"
 using namespace cv;
+double speed = 0.5;
 void vizualizePoints(std::vector<Point3f> spatialPoints)
 {
     viz::Viz3d window("Coordinate Frame");
@@ -41,20 +42,12 @@ void vizualizePointsAndCameras(
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
     window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,
     K, 0.1, viz::Color::yellow()));
+    
     window.registerKeyboardCallback(KeyboardViz3d,&window);
     window.setWindowPosition(Point(0,0));
     window.setViewerPose(path[0]);
     window.spin();
     
-}
-bool isRotationMatrix(Mat &R)
-{
-    Mat Rt;
-    transpose(R, Rt);
-    Mat shouldBeIdentity = Rt * R;
-    Mat I = Mat::eye(3,3, shouldBeIdentity.type());
- 
-    return  norm(I, shouldBeIdentity) < 1e-6;
 }
 
 Vec3f rotationMatrixToEulerAngles(Mat &rotationMatrix)
@@ -107,7 +100,7 @@ void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
     Vec3d past =  affine.translation();
 
     
-    double speed = 0.25;
+
     viz::Camera cam = ptr->getCamera();
 
 
@@ -143,7 +136,7 @@ void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
                 ptr->setViewerPose(affine.translate(newTranslation));
                 break;
             case 99: //c 
-                newTranslation[1] = speed;
+                newTranslation[1] = speed*speed;
                 ptr->setViewerPose(affine.translate(newTranslation));
                 break;
             case 61: //+ 
@@ -159,7 +152,7 @@ void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
                 std::cout << "Current speed" << speed << std::endl;
                 break;
             case 32: //space
-                newTranslation[1] = -speed;
+                newTranslation[1] = -speed*speed;
                 ptr->setViewerPose(affine.translate(newTranslation));
                 break;
         }
