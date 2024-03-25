@@ -72,9 +72,6 @@ void defineProcessingEnvironment(
 }
 
 
-/**
- * Написать документацию!!!
-*/
 bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     if (mediaInputStruct.isPhotoProcessing) {
         if (mediaInputStruct.photosPaths.empty()) {
@@ -89,17 +86,16 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     }
 }
 
-// эта функция либо в main, либо удалить
+///////////////////////////////////////////////////////////////
+// Эта функция должна быть либо в main, либо удалить её надо //
+///////////////////////////////////////////////////////////////
 void defineInitialCameraPosition(TemporalImageData &initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
     initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
 }
 
 
-/**
- * Написать документацию!!!
-*/
-bool findFirstGoodVideoFrameAndFeatures(
+bool findFirstGoodFrame(
     MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
     Mat &goodFrame, std::vector<KeyPoint> &goodFrameFeatures)
 {
@@ -121,49 +117,26 @@ bool findFirstGoodVideoFrameAndFeatures(
 }
 
 
-/**
- * Написать документацию!!!
-*/
-void getObjAndImgPoints(
-    const std::vector<DMatch> &matches, const std::vector<int> &correspondSpatialPointIdx,
-    const std::vector<Point3f> &spatialPoints, const std::vector<KeyPoint> &extractedFeatures,
-    std::vector<Point3f> &objPoints, std::vector<Point2f> &imgPoints)
-{
-    for (auto &match : matches) {
-        int structIdx = correspondSpatialPointIdx[match.queryIdx];
-        if (structIdx >= 0) {
-            objPoints.push_back(spatialPoints[structIdx]);
-            imgPoints.push_back(extractedFeatures[match.trainIdx].pt);
-        }
-    }
-}
-
-
-/**
- * Написать документацию!!!
-*/
-void computeTransformationAndMaskPoints(
+void computeTransformationAndFilterPoints(
     const DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
     const TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
-    std::vector<Point2f> &extractedPointCoords1, std::vector<Point2f> &extractedPointCoords2)
+    std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
 {
-	getMatchedPointCoords(prevFrameData.allExtractedFeatures, newFrameData.allExtractedFeatures,
-						  newFrameData.allMatches, extractedPointCoords1, extractedPointCoords2);
+	getKeyPointCoordsFromFramePair(prevFrameData.allExtractedFeatures, 
+        newFrameData.allExtractedFeatures, newFrameData.allMatches, 
+        keyPointFrameCoords1, keyPointFrameCoords2);
 
-    estimateTransformation(
-        extractedPointCoords1, extractedPointCoords2, dataProcessingConditions.calibrationMatrix,
-        newFrameData.rotation, newFrameData.motion, chiralityMask);
+    estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2, 
+        dataProcessingConditions.calibrationMatrix,newFrameData.rotation,
+        newFrameData.motion, chiralityMask);
 
     // Apply the chirality mask to the points from the frames
-    filterVectorByMask(extractedPointCoords1, chiralityMask);
-    filterVectorByMask(extractedPointCoords2, chiralityMask);
+    filterVectorByMask(keyPointFrameCoords1, chiralityMask);
+    filterVectorByMask(keyPointFrameCoords2, chiralityMask);
 }
 
 
-/**
- * Написать документацию!!!
-*/
-void defineCorrespondenceIndices(
+void defineFeaturesCorrespondSpatialIndices(
     const Mat &chiralityMask, TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
 {
     // Resize the correspondence spatial point indices vectors for the previous and new frames
@@ -190,28 +163,44 @@ void defineCorrespondenceIndices(
 /**
  * Написать документацию!!!
 */
+void getObjAndImgPoints(
+    const std::vector<DMatch> &matches, const std::vector<int> &correspondSpatialPointIdx,
+    const std::vector<Point3f> &spatialPoints, const std::vector<KeyPoint> &extractedFeatures,
+    std::vector<Point3f> &objPoints, std::vector<Point2f> &imgPoints)
+{
+    for (auto &match : matches) {
+        int structIdx = correspondSpatialPointIdx[match.queryIdx];
+        if (structIdx >= 0) {
+            objPoints.push_back(spatialPoints[structIdx]);
+            imgPoints.push_back(extractedFeatures[match.trainIdx].pt);
+        }
+    }
+}
+
+
+/**
+ * Написать документацию!!!
+*/
 void pushNewSpatialPoints(
 	const std::vector<DMatch> &matches,
 	std::vector<int> &prevFrameCorrespondingIndices,
 	std::vector<int> &currFrameCorrespondingIndices,
 	const std::vector<Point3f> &newSpatialPoints,
-	std::vector<Point3f> &allSpatialPoints) 
+	std::vector<Point3f> &allSpatialPoints)
 {
-	for (int i = 0; i < matches.size(); ++i)
-	{
-		int queryIdx = matches[i].queryIdx;
-		int trainIdx = matches[i].trainIdx;
-
-		int structIdx = prevFrameCorrespondingIndices[queryIdx];
-		if (structIdx >= 0) //If the point already exists in space, the space points corresponding to the pair of matching points should be the same, with the same index
-		{
-			currFrameCorrespondingIndices[trainIdx] = structIdx;
+	for (int i = 0; i < matches.size(); i++) {
+		int structIdx = prevFrameCorrespondingIndices[matches[i].queryIdx];
+        // If the point already exists in space, the space points 
+        // corresponding to the pair of matching points should be the same, with the same index
+		if (structIdx >= 0) {
+			currFrameCorrespondingIndices[matches[i].trainIdx] = structIdx;
 			continue;
 		}
 
-		//If the point already exists in space, add the point to the structure, and the spatial point indexes of the pair of matching points are the indexes of the newly added points
+		// If the point already exists in space, add the point to the structure, and the spatial
+        // point indexes of the pair of matching points are the indexes of the newly added points
 		allSpatialPoints.push_back(newSpatialPoints[i]);
-		prevFrameCorrespondingIndices[queryIdx] = ((int)allSpatialPoints.size()) - 1;
-		currFrameCorrespondingIndices[trainIdx] = ((int)allSpatialPoints.size()) - 1;
+		prevFrameCorrespondingIndices[matches[i].queryIdx] = ((int)allSpatialPoints.size()) - 1;
+		currFrameCorrespondingIndices[matches[i].trainIdx] = ((int)allSpatialPoints.size()) - 1;
 	}
 }

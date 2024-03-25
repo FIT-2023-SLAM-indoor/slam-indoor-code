@@ -19,16 +19,15 @@ MatcherType getMatcherTypeIndex() {
 	throw new std::exception();
 }
 
-void getMatchedPointCoords(
-	const std::vector<KeyPoint> &firstFeatures, const std::vector<KeyPoint> &secondFeatures,
-	const std::vector<DMatch> &matches, std::vector<Point2f> &firstFrameMatchedPointCoords,
-	std::vector<Point2f> &secondFrameMatchedPointCoords)
+void getKeyPointCoordsFromFramePair(const std::vector<KeyPoint> &firstFeatures, 
+	const std::vector<KeyPoint> &secondFeatures, const std::vector<DMatch> &matches,
+	std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
 {
-	firstFrameMatchedPointCoords.clear();
-	secondFrameMatchedPointCoords.clear();
+	keyPointFrameCoords1.clear();
+	keyPointFrameCoords2.clear();
 	for (int i = 0; i < matches.size(); i++) {
-		firstFrameMatchedPointCoords.push_back(firstFeatures[matches[i].queryIdx].pt);
-		secondFrameMatchedPointCoords.push_back(secondFeatures[matches[i].trainIdx].pt);
+		keyPointFrameCoords1.push_back(firstFeatures[matches[i].queryIdx].pt);
+		keyPointFrameCoords2.push_back(secondFeatures[matches[i].trainIdx].pt);
 	}
 }
 

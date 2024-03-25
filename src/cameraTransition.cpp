@@ -21,7 +21,7 @@ void filterVectorByMask(std::vector<Point2f>& vector, const Mat& mask) {
 	}
 
 	std::vector<Point2f> newVector;
-	for (int i = 0; i < filterMask.rows; ++i) {
+	for (int i = 0; i < filterMask.rows; i++) {
         if (filterMask.at<uchar>(i)) {
             newVector.push_back(vector[i]);
 		}

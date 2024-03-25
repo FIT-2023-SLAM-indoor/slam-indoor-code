@@ -16,21 +16,22 @@ MatcherType getMatcherTypeIndex();
 
 /**
  * Функция принимает вектора ключевых точек первого и второго кадра, а также вектор матчей этих
- * точек. Линейным обходом вектора matches функция возвращает координаты (x, y) точек первого и
- * второго кадра из соответсвующего матча.
+ * точек. Линейным обходом вектора matches функция вычисляет координаты (x, y) точек первого и
+ * второго кадра из соответсвующего матча. Проще говоря мы получаем для каждой ключевой точки её
+ * координаты на первом и втором изображении.
  *
  * @param [in] firstFrameFeatures
  * @param [in] secondFrameFeatures
  * @param [in] matches
- * @param [out] firstFrameMatchedPointCoords
- * @param [out] secondFrameMatchedPointCoords
+ * @param [out] keyPointFrameCoords1
+ * @param [out] keyPointFrameCoords2
  */
-void getMatchedPointCoords(
+void getKeyPointCoordsFromFramePair(
 	const std::vector<KeyPoint> &firstFrameFeatures, 
 	const std::vector<KeyPoint> &secondFrameFeatures,
 	const std::vector<DMatch> &matches, 
-	std::vector<Point2f> &firstFrameMatchedPointCoords,
-	std::vector<Point2f> &secondFrameMatchedPointCoords
+	std::vector<Point2f> &keyPointFrameCoords1,
+	std::vector<Point2f> &keyPointFrameCoords2
 );
 
 

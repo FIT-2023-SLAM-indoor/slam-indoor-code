@@ -86,7 +86,8 @@ void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> tempor
         std::vector<Point2f> matchedPointCoords1;
         std::vector<Point2f> matchedPointCoords2;
         std::vector<Point3f> newSpatialPoints;
-        getMatchedPointCoords(temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+        getKeyPointCoordsFromFramePair(
+            temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
             temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
             temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
             matchedPointCoords1, matchedPointCoords2);
@@ -128,8 +129,8 @@ static bool processingFirstPairFrames(
     Mat &secondFrame, std::vector<Point3f> &spatialPoints)
 {
     Mat firstFrame;
-    if (!findFirstGoodVideoFrameAndFeatures(mediaInputStruct, dataProcessingConditions,
-            firstFrame, temporalImageDataDeque.at(0).allExtractedFeatures)
+    if (!findFirstGoodFrame(mediaInputStruct, dataProcessingConditions,firstFrame, 
+            temporalImageDataDeque.at(0).allExtractedFeatures)
     ) {
         logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
         logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
@@ -151,15 +152,15 @@ static bool processingFirstPairFrames(
 
     Mat chiralityMask;
     std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
-    computeTransformationAndMaskPoints(dataProcessingConditions, chiralityMask,
+    computeTransformationAndFilterPoints(dataProcessingConditions,
         temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
-        extractedPointCoords1, extractedPointCoords2);
+        extractedPointCoords1, extractedPointCoords2, chiralityMask);
     reconstruct(dataProcessingConditions.calibrationMatrix,
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
-    defineCorrespondenceIndices(dataProcessingConditions, chiralityMask,
-        temporalImageDataDeque.at(0), temporalImageDataDeque.at(1));
+    defineCorrespondenceIndices(chiralityMask,temporalImageDataDeque.at(0), 
+        temporalImageDataDeque.at(1));
 
     return true;
 }

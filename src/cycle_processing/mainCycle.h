@@ -9,7 +9,7 @@ using namespace cv;
 /**
  * This structure is designed to handle both video and photo data sources,
  * allowing the same functions to process either type of media without the need for overriding.
-*/
+ */
 struct MediaSources {
     VideoCapture frameSequence;
     std::vector<String> photosPaths;
@@ -44,5 +44,5 @@ struct GlobalData {
  * @param [in, out] temporalImageDeque
  * @param [out] globalDataStruct 
  * @return 
-*/
+ */
 void mainCycle(std::deque<TemporalImageData> temporalImageDataDeque, GlobalData globalDataStruct);
