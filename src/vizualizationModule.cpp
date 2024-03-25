@@ -47,37 +47,72 @@ void vizualizePointsAndCameras(
     window.spin();
     
 }
-
+bool isRotationMatrix(Mat &R)
+{
+    Mat Rt;
+    transpose(R, Rt);
+    Mat shouldBeIdentity = Rt * R;
+    Mat I = Mat::eye(3,3, shouldBeIdentity.type());
+ 
+    return  norm(I, shouldBeIdentity) < 1e-6;
+}
+Vec3f rotationMatrixToEulerAngles(Mat &R)
+{
+ 
+    assert(isRotationMatrix(R));
+ 
+    float sy = sqrt(R.at<double>(0,0) * R.at<double>(0,0) +  R.at<double>(1,0) * R.at<double>(1,0) );
+ 
+    bool singular = sy < 1e-6; // If
+ 
+    float x, y, z;
+    if (!singular)
+    {
+        x = atan2(R.at<double>(2,1) , R.at<double>(2,2));
+        y = atan2(-R.at<double>(2,0), sy);
+        z = atan2(R.at<double>(1,0), R.at<double>(0,0));
+    }
+    else
+    {
+        x = atan2(-R.at<double>(1,2), R.at<double>(1,1));
+        y = atan2(-R.at<double>(2,0), sy);
+        z = 0;
+    }
+    return Vec3f(x, y, z);
+}
 void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
 {
     
     viz::Viz3d* ptr = (viz::Viz3d*)window;
     Affine3d affine = ptr->getViewerPose();
-
+    Mat rotation = (Mat)affine.rotation();
+    Vec3f eulerAngles = rotationMatrixToEulerAngles(rotation);
     Vec3d past =  affine.translation();
+
+    Vec3d newTranslation;
+    double speed = 0.5;
+    newTranslation[2] = cos(eulerAngles[1]);
+    std::cout << past[0] << std::endl;
+    std::cout << eulerAngles[1]*180/3.14159 << " " << cos(eulerAngles[1]) << std::endl;
+    
+
+    newTranslation[0] = sin(eulerAngles[1]);
+    std::cout << eulerAngles[1]*180/3.14159 << " " << sin(eulerAngles[1]) << std::endl;
+  
+
     if (w.action){
-        std::cout << "you pressed "<< w.symbol<< " " << w.code << "\n";
-        switch (w.code){
-            case 's': 
-                affine = affine.translate(Vec3d(0,0,-1));
-                ptr->setViewerPose(affine);
-                std::cout << affine.translation() - past;
+        std::cout << "you pressed "<< w.symbol<< " " << (int)w.code << std::endl;
+        switch ((int)w.code){
+            case 119: //w 
+                std::cout << eulerAngles << std::endl;
+                ptr->setViewerPose(affine.translate(newTranslation));
                 break;
-            case 'w': 
-                affine = affine.translate(Vec3d(0,0,1));
-                ptr->setViewerPose(affine);
-                std::cout << affine.translation()- past;
+            case 32: //space
+                Vec3d newTranslation;
+                newTranslation[1] = -1;
+                ptr->setViewerPose(affine.translate(newTranslation));
                 break;
-            case 'd': 
-                affine = affine.translate(Vec3d(1,0,0));
-                ptr->setViewerPose(affine);
-                std::cout << affine.translation()- past;
-                break;
-            case 'a': 
-                affine = affine.translate(Vec3d(-1,0,0));
-                ptr->setViewerPose(affine);
-                std::cout << affine.translation();
-                break;
+  
         }
     }
         
