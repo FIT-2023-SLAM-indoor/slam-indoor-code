@@ -48,14 +48,14 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame);
  *
  * @param [in, out] mediaInputStruct из структуры вынимются изображения
  * @param [in] dataProcessingConditions
- * @param [out] goodFrame найденный кадр с достаточным количеством ключевых точек
+ * @param [out] firstGoodFrame найденный кадр с достаточным количеством ключевых точек
  * @param [out] goodFrameFeatures ключевые точки полученного кадра
  * @return true, если удалось найти изображение с достаточным количеством точек, иначе false
  */
 bool findFirstGoodFrame(
     MediaSources &mediaInputStruct,
     const DataProcessingConditions &dataProcessingConditions,
-    Mat &goodFrame,
+    Mat &firstGoodFrame,
     std::vector<KeyPoint> &goodFrameFeatures
 );
 
@@ -68,16 +68,16 @@ bool findFirstGoodFrame(
  * координаты не попадут в выходные вектора.
  *
  * @param [in] dataProcessingConditions
- * @param [in] prevFrameData
- * @param [out] newFrameData
+ * @param [in] firstFrameData
+ * @param [out] secondFrameData
  * @param [in, out] keyPointFrameCoords1
  * @param [in, out] keyPointFrameCoords2
  * @param [out] chiralityMask
  */
 void computeTransformationAndFilterPoints(
     const DataProcessingConditions &dataProcessingConditions,
-    const TemporalImageData &prevFrameData,
-    TemporalImageData &newFrameData,
+    const TemporalImageData &firstFrameData,
+    TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1,
     std::vector<Point2f> &keyPointFrameCoords2,
     Mat &chiralityMask
@@ -105,25 +105,43 @@ void defineFeaturesCorrespondSpatialIndices(
 
 
 /**
- * Написать документацию!!!
+ * Функция определяет, какие трехмерные точки, из вычисленных для предыдущих кадров, соответствуют
+ * фичам для нового кадра. В качестве выходных значений получаются трехмерные точки и координаты
+ * их фич на изображении нового кадра.
+ *
+ * @param [in] matches
+ * @param [in] prevFrameCorrespondIndices
+ * @param [in] allSpatialPoints
+ * @param [in] newFrameKeyPoints
+ * @param [out] oldSpatialPointsForNewFrame
+ * @param [out] newFrameFeatureCoords
  */
-void getObjAndImgPoints(
+void getOldSpatialPointsAndNewFeatureCoords(
     const std::vector<DMatch> &matches,
-    const std::vector<int> &correspondSpatialPointIdx,
-    const std::vector<Point3f> &spatialPoints,
-    const std::vector<KeyPoint> &extractedFeatures,
-    std::vector<Point3f> &objPoints,
-    std::vector<Point2f> &imgPoints
+    const std::vector<int> &prevFrameCorrespondIndices,
+    const std::vector<Point3f> &allSpatialPoints,
+    const std::vector<KeyPoint> &newFrameKeyPoints,
+    std::vector<Point3f> &oldSpatialPointsForNewFrame,
+    std::vector<Point2f> &newFrameFeatureCoords
 );
 
 
 /**
- * Написать документацию!!!
+ * Благодаря этой функции получаем из трехмерных точек вычисленных для нового кадра только те
+ * трехмерные точки, которые не получены из предыдущих кадров (т.е. это новые трехмерные точки).
+ * А для уже, существующих трехмерных точек просто записываем соответствующие индексы в поле
+ * newFrameCorrespondIndices структуры для нового кадра.
+ *
+ * @param [in] matches
+ * @param [in] newSpatialPoints
+ * @param [out] allSpatialPoints
+ * @param [in, out] prevFrameCorrespondIndices
+ * @param [out] newFrameCorrespondIndices
  */
 void pushNewSpatialPoints(
 	const std::vector<DMatch> &matches,
-	std::vector<int> &prevFrameCorrespondingIndices,
-	std::vector<int> &currFrameCorrespondingIndices,
-	const std::vector<Point3f> &newSpatialPoints,
-	std::vector<Point3f> &allSpatialPoints
+    const std::vector<Point3f> &newSpatialPoints,
+	std::vector<Point3f> &allSpatialPoints,
+	std::vector<int> &prevFrameCorrespondIndices,
+	std::vector<int> &newFrameCorrespondIndices
 ); 

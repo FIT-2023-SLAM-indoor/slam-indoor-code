@@ -97,13 +97,13 @@ void defineInitialCameraPosition(TemporalImageData &initialFrame) {
 
 bool findFirstGoodFrame(
     MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
-    Mat &goodFrame, std::vector<KeyPoint> &goodFrameFeatures)
+    Mat &firstGoodFrame, std::vector<KeyPoint> &goodFrameFeatures)
 {
     Mat candidateFrame;
     while (getNextFrame(mediaInputStruct, candidateFrame)) {
         /// TODO: In future we can do UNDISTORTION here
-		goodFrame = candidateFrame;
-        fastExtractor(goodFrame, goodFrameFeatures, 
+		firstGoodFrame = candidateFrame;
+        fastExtractor(firstGoodFrame, goodFrameFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
         
         // Check if enough features are extracted
@@ -119,16 +119,16 @@ bool findFirstGoodFrame(
 
 void computeTransformationAndFilterPoints(
     const DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
-    const TemporalImageData &prevFrameData, TemporalImageData &newFrameData,
+    const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
 {
-	getKeyPointCoordsFromFramePair(prevFrameData.allExtractedFeatures, 
-        newFrameData.allExtractedFeatures, newFrameData.allMatches, 
+	getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures, 
+        secondFrameData.allExtractedFeatures, secondFrameData.allMatches, 
         keyPointFrameCoords1, keyPointFrameCoords2);
 
     estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2, 
-        dataProcessingConditions.calibrationMatrix,newFrameData.rotation,
-        newFrameData.motion, chiralityMask);
+        dataProcessingConditions.calibrationMatrix, secondFrameData.rotation,
+        secondFrameData.motion, chiralityMask);
 
     // Apply the chirality mask to the points from the frames
     filterVectorByMask(keyPointFrameCoords1, chiralityMask);
@@ -160,44 +160,38 @@ void defineFeaturesCorrespondSpatialIndices(
 }
 
 
-void getObjAndImgPoints(
-    const std::vector<DMatch> &matches, const std::vector<int> &correspondSpatialPointIdx,
-    const std::vector<Point3f> &spatialPoints, const std::vector<KeyPoint> &extractedFeatures,
-    std::vector<Point3f> &objPoints, std::vector<Point2f> &imgPoints)
+void getOldSpatialPointsAndNewFeatureCoords(
+    const std::vector<DMatch> &matches, const std::vector<int> &prevFrameCorrespondIndices,
+    const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints, 
+    std::vector<Point3f> &oldSpatialPointsForNewFrame, std::vector<Point2f> &newFrameFeatureCoords)
 {
     for (auto &match : matches) {
-        int structIdx = correspondSpatialPointIdx[match.queryIdx];
+        int structIdx = prevFrameCorrespondIndices[match.queryIdx];
         if (structIdx >= 0) {
-            objPoints.push_back(spatialPoints[structIdx]);
-            imgPoints.push_back(extractedFeatures[match.trainIdx].pt);
+            oldSpatialPointsForNewFrame.push_back(allSpatialPoints[structIdx]);
+            newFrameFeatureCoords.push_back(newFrameKeyPoints[match.trainIdx].pt);
         }
     }
 }
 
 
-/**
- * Написать документацию!!!
-*/
 void pushNewSpatialPoints(
-	const std::vector<DMatch> &matches,
-	std::vector<int> &prevFrameCorrespondingIndices,
-	std::vector<int> &currFrameCorrespondingIndices,
-	const std::vector<Point3f> &newSpatialPoints,
-	std::vector<Point3f> &allSpatialPoints)
+	const std::vector<DMatch> &matches, const std::vector<Point3f> &newSpatialPoints,
+	std::vector<Point3f> &allSpatialPoints, std::vector<int> &prevFrameCorrespondIndices,
+	std::vector<int> &newFrameCorrespondIndices)
 {
 	for (int i = 0; i < matches.size(); i++) {
-		int structIdx = prevFrameCorrespondingIndices[matches[i].queryIdx];
-        // If the point already exists in space, the space points 
-        // corresponding to the pair of matching points should be the same, with the same index
-		if (structIdx >= 0) {
-			currFrameCorrespondingIndices[matches[i].trainIdx] = structIdx;
-			continue;
-		}
-
-		// If the point already exists in space, add the point to the structure, and the spatial
-        // point indexes of the pair of matching points are the indexes of the newly added points
-		allSpatialPoints.push_back(newSpatialPoints[i]);
-		prevFrameCorrespondingIndices[matches[i].queryIdx] = ((int)allSpatialPoints.size()) - 1;
-		currFrameCorrespondingIndices[matches[i].trainIdx] = ((int)allSpatialPoints.size()) - 1;
+		int structIdx = prevFrameCorrespondIndices[matches[i].queryIdx];
+        if (structIdx < 0) {
+            // If it is a new point in space, add the point to the structure, and the spatial
+            // point indices of the pair of matching points are the indexes of the newly added points
+            allSpatialPoints.push_back(newSpatialPoints[i]);
+            prevFrameCorrespondIndices[matches[i].queryIdx] = ((int)allSpatialPoints.size()) - 1;
+            newFrameCorrespondIndices[matches[i].trainIdx] = ((int)allSpatialPoints.size()) - 1;
+        } else {
+            // If the point already exists in space, the space points 
+            // corresponding to the pair of matching points should be the same, with the same index
+            newFrameCorrespondIndices[matches[i].trainIdx] = structIdx;
+        }
 	}
 }
