@@ -95,14 +95,14 @@ void computeTransformationAndFilterPoints(
  * Подобным образом сохранятся цвет из первого изображения для соответствующей трехмерной точки.
  *
  * @param [in] chiralityMask
- * @param [in] firstFrame
+ * @param [in] secondFrame
  * @param [in, out] firstFrameData
  * @param [in, out] secondFrameData
  * @param [out] firstPairSpatialPointColors
  */
 void defineFeaturesCorrespondSpatialIndices(
     const Mat &chiralityMask, 
-    const Mat &firstFrame, 
+    const Mat &secondFrame, 
     TemporalImageData &firstFrameData, 
     TemporalImageData &secondFrameData,
     std::vector<Vec3b> &firstPairSpatialPointColors
@@ -137,16 +137,31 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
  * А для уже существующих трехмерных точек просто записываем соответствующие индексы в поле
  * newFrameCorrespondIndices структуры для нового кадра.
  *
- * @param [in] matches
+ * @param [in] newFrame
  * @param [in] newSpatialPoints
- * @param [out] allSpatialPoints
+ * @param [out] globalDataStruct
  * @param [in, out] prevFrameCorrespondIndices
- * @param [out] newFrameCorrespondIndices
+ * @param [in, out] newFrameData WE NEED ONLY ...
  */
 void pushNewSpatialPoints(
-	const std::vector<DMatch> &matches,
+    const Mat &newFrame,
     const std::vector<Point3f> &newSpatialPoints,
-	std::vector<Point3f> &allSpatialPoints,
+	GlobalData &globalDataStruct,
 	std::vector<int> &prevFrameCorrespondIndices,
-	std::vector<int> &newFrameCorrespondIndices
-); 
+	TemporalImageData &newFrameData
+);
+
+
+/**
+ * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
+ *
+ * @param [in] frame
+ * @param [in] matchIdx ABOBA!!!
+ * @param [in, out] frameData
+ * @param [out] spatialPointColors
+ */
+void saveFrameColorOfKeyPoint(
+    const Mat &frame, int matchIdx, 
+    TemporalImageData &frameData, 
+    std::vector<Vec3b> &spatialPointColors
+);

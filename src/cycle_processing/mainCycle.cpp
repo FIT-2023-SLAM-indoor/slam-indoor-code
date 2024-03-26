@@ -94,23 +94,15 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
             temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
             temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
             matchedPointCoords1, matchedPointCoords2);
-
-        // Reconstruct 3D spatial points
         reconstruct(dataProcessingConditions.calibrationMatrix,
             temporalImageDataDeque.at(lastFrameIdx).rotation,
             temporalImageDataDeque.at(lastFrameIdx).motion,
             temporalImageDataDeque.at(lastFrameIdx+1).rotation,
             temporalImageDataDeque.at(lastFrameIdx+1).motion,
             matchedPointCoords1, matchedPointCoords2, newSpatialPoints);
-
-        // Мой внутренний перфекционист успокоится если две эти команды объеденить в одну функцию
-		temporalImageDataDeque.at(lastFrameIdx+1).correspondSpatialPointIdx.resize(
-			temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures.size(), -1
-		);
-		pushNewSpatialPoints(temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
-            newSpatialPoints, globalDataStruct.spatialPoints,
+		pushNewSpatialPoints(nextGoodFrame, newSpatialPoints, globalDataStruct,
             temporalImageDataDeque.at(lastFrameIdx).correspondSpatialPointIdx,
-            temporalImageDataDeque.at(lastFrameIdx+1).correspondSpatialPointIdx);
+            temporalImageDataDeque.at(lastFrameIdx+1));
 
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();
@@ -163,9 +155,8 @@ static bool processingFirstPairFrames(
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
-    defineFeaturesCorrespondSpatialIndices(chiralityMask, firstFrame, temporalImageDataDeque.at(0),
+    defineFeaturesCorrespondSpatialIndices(chiralityMask, secondFrame, temporalImageDataDeque.at(0),
         temporalImageDataDeque.at(1), firstPairSpatialPointColors);
-
 
     return true;
 }

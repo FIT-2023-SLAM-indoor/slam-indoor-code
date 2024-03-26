@@ -137,7 +137,7 @@ void computeTransformationAndFilterPoints(
 
 
 void defineFeaturesCorrespondSpatialIndices(
-    const Mat &chiralityMask, const Mat &firstFrame, TemporalImageData &firstFrameData,
+    const Mat &chiralityMask, const Mat &secondFrame, TemporalImageData &firstFrameData,
     TemporalImageData &secondFrameData, std::vector<Vec3b> &firstPairSpatialPointColors)
 {
     // Resize the correspondence spatial point indices vectors for the first and second frames
@@ -156,10 +156,8 @@ void defineFeaturesCorrespondSpatialIndices(
             secondFrameData.correspondSpatialPointIdx.at(
                 secondFrameData.allMatches[matchIdx].trainIdx) = newMatchIdx;
             // Save color of current good key point (with index = newMatchIdx)
-            int frameIdOfKeyPoint = secondFrameData.allMatches[matchIdx].queryIdx;
-            Point2f &keyPointCoords = firstFrameData.allExtractedFeatures.at(frameIdOfKeyPoint).pt;
-            firstPairSpatialPointColors.push_back(
-                firstFrame.at<Vec3b>(keyPointCoords.y, keyPointCoords.x));
+            saveFrameColorOfKeyPoint(secondFrame, matchIdx, secondFrameData,
+                firstPairSpatialPointColors);
             // Update index for next good matches
             newMatchIdx++;
         }
@@ -183,22 +181,37 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
 
 
 void pushNewSpatialPoints(
-	const std::vector<DMatch> &matches, const std::vector<Point3f> &newSpatialPoints,
-	std::vector<Point3f> &allSpatialPoints, std::vector<int> &prevFrameCorrespondIndices,
-	std::vector<int> &newFrameCorrespondIndices)
+	const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints, 
+    GlobalData &globalDataStruct, std::vector<int> &prevFrameCorrespondIndices,
+	TemporalImageData &newFrameData)
 {
-	for (int i = 0; i < matches.size(); i++) {
-		int structIdx = prevFrameCorrespondIndices[matches[i].queryIdx];
-        if (structIdx < 0) {
+    newFrameData.correspondSpatialPointIdx.resize(newFrameData.allExtractedFeatures.size(), -1);
+	for (int i = 0; i < newFrameData.allMatches.size(); i++) {
+		int structId = prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx];
+        if (structId < 0) {
             // If it is a new point in space, add the point to the structure, and the spatial
             // point indices of the pair of matching points are the indexes of the newly added points
-            allSpatialPoints.push_back(newSpatialPoints[i]);
-            prevFrameCorrespondIndices[matches[i].queryIdx] = ((int)allSpatialPoints.size()) - 1;
-            newFrameCorrespondIndices[matches[i].trainIdx] = ((int)allSpatialPoints.size()) - 1;
+            globalDataStruct.spatialPoints.push_back(newSpatialPoints[i]);
+            saveFrameColorOfKeyPoint(newFrame, i, newFrameData,
+                globalDataStruct.spatialPointsColors);
+            prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx] = 
+                globalDataStruct.spatialPoints.size() - 1;
+            newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] =
+                globalDataStruct.spatialPoints.size() - 1;
         } else {
             // If the point already exists in space, the space points 
             // corresponding to the pair of matching points should be the same, with the same index
-            newFrameCorrespondIndices[matches[i].trainIdx] = structIdx;
+            newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] = structId;
         }
 	}
+}
+
+
+void saveFrameColorOfKeyPoint(
+    const Mat &frame, int matchIdx, TemporalImageData &frameData, 
+    std::vector<Vec3b> &spatialPointColors)
+{
+    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
+    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
+    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
 }
