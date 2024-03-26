@@ -21,17 +21,17 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
         ConfigFieldEnum::USE_PHOTOS_CYCLE);
 
     if (mediaInputStruct.isPhotoProcessing) {
-		glob(
+        glob(
             configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
             mediaInputStruct.photosPaths, false);
-		sortGlobs(mediaInputStruct.photosPaths);
+        sortGlobs(mediaInputStruct.photosPaths);
     } else {
         mediaInputStruct.frameSequence.open(
             configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
         if (!mediaInputStruct.frameSequence.isOpened()) {
-			std::cerr << "Video wasn't opened" << std::endl;
-			exit(-1);
-		}
+            std::cerr << "Video wasn't opened" << std::endl;
+            exit(-1);
+        }
     }
 }
 
@@ -45,9 +45,9 @@ static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
     loadMatrixFromXML(
-		configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
-		distortionCoeffs, "DC"
-	);
+        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
+        distortionCoeffs, "DC"
+    );
 }
 
 
@@ -102,7 +102,7 @@ bool findFirstGoodFrame(
     Mat candidateFrame;
     while (getNextFrame(mediaInputStruct, candidateFrame)) {
         /// TODO: In future we can do UNDISTORTION here
-		firstGoodFrame = candidateFrame;
+        firstGoodFrame = candidateFrame;
         fastExtractor(firstGoodFrame, goodFrameFeatures, 
             dataProcessingConditions.featureExtractingThreshold);
         
@@ -122,7 +122,7 @@ void computeTransformationAndFilterPoints(
     const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
 {
-	getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures, 
+    getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures, 
         secondFrameData.allExtractedFeatures, secondFrameData.allMatches, 
         keyPointFrameCoords1, keyPointFrameCoords2);
 
@@ -181,13 +181,13 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
 
 
 void pushNewSpatialPoints(
-	const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints, 
+    const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints, 
     GlobalData &globalDataStruct, std::vector<int> &prevFrameCorrespondIndices,
-	TemporalImageData &newFrameData)
+    TemporalImageData &newFrameData)
 {
     newFrameData.correspondSpatialPointIdx.resize(newFrameData.allExtractedFeatures.size(), -1);
-	for (int i = 0; i < newFrameData.allMatches.size(); i++) {
-		int structId = prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx];
+    for (int i = 0; i < newFrameData.allMatches.size(); i++) {
+        int structId = prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx];
         if (structId < 0) {
             // If it is a new point in space, add the point to the structure, and the spatial
             // point indices of the pair of matching points are the indexes of the newly added points
@@ -203,7 +203,7 @@ void pushNewSpatialPoints(
             // corresponding to the pair of matching points should be the same, with the same index
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] = structId;
         }
-	}
+    }
 }
 
 
