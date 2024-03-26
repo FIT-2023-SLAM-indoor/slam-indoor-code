@@ -19,33 +19,33 @@ using namespace cv;
 const int OPTIMAL_DEQUE_SIZE = 8;
 
 
-void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> temporalImageDataDeque) {
+void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct) {
     MediaSources mediaInputStruct;
     DataProcessingConditions dataProcessingConditions;
     defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 
     Mat lastGoodFrame;
     if (!processingFirstPairFrames(mediaInputStruct, dataProcessingConditions,
-            temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints)
+            temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints,
+            globalDataStruct.spatialPointsColors)
     ) {
         // Error message if at least two good frames are not found in the video
         std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
         exit(-1);
     }
 
-    Mat nextGoodFrame;
-    int lastGoodFrameIdx = 1;
-    bool hasVideoGoodFrames;
+    int lastFrameIdx = 1;
     while (true) {
 		logStreams.mainReportStream << std::endl << "================================================================\n" << std::endl;
 
         // Find the next good frame batch
-        hasVideoGoodFrames = findGoodFrameFromBatch(mediaInputStruct,
-                                dataProcessingConditions, lastGoodFrame,
-                                temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
-                                nextGoodFrame,
-                                temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
-                                temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches);
+        Mat nextGoodFrame;
+        int hasVideoGoodFrames = findGoodFrameFromBatch(mediaInputStruct,
+                                    dataProcessingConditions, lastGoodFrame,
+                                    temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
+                                    nextGoodFrame,
+                                    temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
+                                    temporalImageDataDeque.at(lastFrameIdx+1).allMatches);
         if (hasVideoGoodFrames == 0) {
             logStreams.mainReportStream << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
@@ -57,15 +57,15 @@ void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> tempor
         // Get object and image points for reconstruction
         std::vector<Point3f> oldSpatialPointsForNewFrame;
         std::vector<Point2f> newFrameFeatureCoords;
-        getOldSpatialPointsAndNewFeatureCoords(
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
-            temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
+        getOldSpatialPointsAndNewFrameFeatureCoords(
+            temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
+            temporalImageDataDeque.at(lastFrameIdx).correspondSpatialPointIdx,
             globalDataStruct.spatialPoints,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
+            temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
             oldSpatialPointsForNewFrame, newFrameFeatureCoords);
 
         // Find transformation matrix
-		if (oldSpatialPointsForNewFrame.size() != newFrameFeatureCoords.size()
+		if (oldSpatialPointsForNewFrame.size() != newFrameFeatureCoords.size() // А такое вообще может быть???
             || oldSpatialPointsForNewFrame.size() < 4
         ) {
 			logStreams.mainReportStream << "Not enough corresponding points for solvePnP RANSAC" << std::endl;
@@ -74,16 +74,15 @@ void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> tempor
         Mat rotationVector;
         solvePnPRansac(oldSpatialPointsForNewFrame, newFrameFeatureCoords,
             dataProcessingConditions.calibrationMatrix, noArray(), rotationVector,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).motion);
-
+            temporalImageDataDeque.at(lastFrameIdx+1).motion);
         // Convert rotation vector to rotation matrix
-        Rodrigues(rotationVector, temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation);
+        Rodrigues(rotationVector, temporalImageDataDeque.at(lastFrameIdx+1).rotation);
 
 		logStreams.mainReportStream << "Used in solvePnP: " << oldSpatialPointsForNewFrame.size() << std::endl;
-		logStreams.mainReportStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation << std::endl;
-		logStreams.mainReportStream << temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t() << std::endl;
+		logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).rotation << std::endl;
+		logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).motion.t() << std::endl;
 		logStreams.mainReportStream.flush();
-		rawOutput(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.t(), logStreams.poseStream);
+		rawOutput(temporalImageDataDeque.at(lastFrameIdx+1).motion.t(), logStreams.poseStream);
 		logStreams.poseStream.flush();
 
         // Get matched point coordinates for reconstruction
@@ -91,34 +90,35 @@ void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> tempor
         std::vector<Point2f> matchedPointCoords2;
         std::vector<Point3f> newSpatialPoints;
         getKeyPointCoordsFromFramePair(
-            temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
+            temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
+            temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
+            temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
             matchedPointCoords1, matchedPointCoords2);
 
         // Reconstruct 3D spatial points
         reconstruct(dataProcessingConditions.calibrationMatrix,
-            temporalImageDataDeque.at(lastGoodFrameIdx).rotation,
-            temporalImageDataDeque.at(lastGoodFrameIdx).motion,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).motion, 
+            temporalImageDataDeque.at(lastFrameIdx).rotation,
+            temporalImageDataDeque.at(lastFrameIdx).motion,
+            temporalImageDataDeque.at(lastFrameIdx+1).rotation,
+            temporalImageDataDeque.at(lastFrameIdx+1).motion,
             matchedPointCoords1, matchedPointCoords2, newSpatialPoints);
 
-		temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx.resize(
-			temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures.size(), -1
+        // Мой внутренний перфекционист успокоится если две эти команды объеденить в одну функцию
+		temporalImageDataDeque.at(lastFrameIdx+1).correspondSpatialPointIdx.resize(
+			temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures.size(), -1
 		);
-		pushNewSpatialPoints(temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
+		pushNewSpatialPoints(temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
             newSpatialPoints, globalDataStruct.spatialPoints,
-            temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
-            temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx);
+            temporalImageDataDeque.at(lastFrameIdx).correspondSpatialPointIdx,
+            temporalImageDataDeque.at(lastFrameIdx+1).correspondSpatialPointIdx);
 
         // Update last good frame
-        lastGoodFrame = nextGoodFrame.clone();  // будет ли в будущем освобождаться от старых значений nextGoodFrame?
-        if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
+        lastGoodFrame = nextGoodFrame.clone();
+        if (lastFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
 			temporalImageDataDeque.push_back({});
         } else {
-            lastGoodFrameIdx++;
+            lastFrameIdx++;
         }
     }
 
@@ -129,8 +129,8 @@ void mainCycle(GlobalData globalDataStruct, std::deque<TemporalImageData> tempor
 
 static bool processingFirstPairFrames(
     MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
-    std::deque<TemporalImageData> &temporalImageDataDeque,
-    Mat &secondFrame, std::vector<Point3f> &spatialPoints)
+    std::deque<TemporalImageData> &temporalImageDataDeque, Mat &secondFrame,
+    std::vector<Point3f> &spatialPoints, std::vector<cv::Vec3b> &firstPairSpatialPointColors)
 {
     Mat firstFrame;
     if (!findFirstGoodFrame(mediaInputStruct, dataProcessingConditions,firstFrame, 
@@ -163,8 +163,9 @@ static bool processingFirstPairFrames(
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
-    defineFeaturesCorrespondSpatialIndices(chiralityMask,temporalImageDataDeque.at(0), 
-        temporalImageDataDeque.at(1));
+    defineFeaturesCorrespondSpatialIndices(chiralityMask, firstFrame, temporalImageDataDeque.at(0),
+        temporalImageDataDeque.at(1), firstPairSpatialPointColors);
+
 
     return true;
 }

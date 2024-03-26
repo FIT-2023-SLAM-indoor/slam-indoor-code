@@ -137,9 +137,10 @@ void computeTransformationAndFilterPoints(
 
 
 void defineFeaturesCorrespondSpatialIndices(
-    const Mat &chiralityMask, TemporalImageData &firstFrameData, TemporalImageData &secondFrameData)
+    const Mat &chiralityMask, const Mat &firstFrame, TemporalImageData &firstFrameData,
+    TemporalImageData &secondFrameData, std::vector<Vec3b> &firstPairSpatialPointColors)
 {
-    // Resize the correspondence spatial point indices vectors for the previous and new frames
+    // Resize the correspondence spatial point indices vectors for the first and second frames
     firstFrameData.correspondSpatialPointIdx.resize(
         firstFrameData.allExtractedFeatures.size(), -1);
     secondFrameData.correspondSpatialPointIdx.resize(
@@ -149,18 +150,24 @@ void defineFeaturesCorrespondSpatialIndices(
     for (int matchIdx = 0; matchIdx < secondFrameData.allMatches.size(); matchIdx++) {
         // Check if the match is valid based on the chirality mask
         if (chiralityMask.at<uchar>(matchIdx) > 0) {
-            // Update correspondence indices for keypoints in the previous and new frames
+            // Update correspondence indices for keypoints in the first and second frames
             firstFrameData.correspondSpatialPointIdx.at(
                 secondFrameData.allMatches[matchIdx].queryIdx) = newMatchIdx;
             secondFrameData.correspondSpatialPointIdx.at(
                 secondFrameData.allMatches[matchIdx].trainIdx) = newMatchIdx;
+            // Save color of current good key point (with index = newMatchIdx)
+            int frameIdOfKeyPoint = secondFrameData.allMatches[matchIdx].queryIdx;
+            Point2f &keyPointCoords = firstFrameData.allExtractedFeatures.at(frameIdOfKeyPoint).pt;
+            firstPairSpatialPointColors.push_back(
+                firstFrame.at<Vec3b>(keyPointCoords.y, keyPointCoords.x));
+            // Update index for next good matches
             newMatchIdx++;
         }
     }
 }
 
 
-void getOldSpatialPointsAndNewFeatureCoords(
+void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches, const std::vector<int> &prevFrameCorrespondIndices,
     const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints, 
     std::vector<Point3f> &oldSpatialPointsForNewFrame, std::vector<Point2f> &newFrameFeatureCoords)

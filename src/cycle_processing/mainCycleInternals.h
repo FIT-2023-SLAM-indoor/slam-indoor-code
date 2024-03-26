@@ -89,18 +89,23 @@ void computeTransformationAndFilterPoints(
  * и второго изображения из медиа данных. Сначала для обоих кадров мы задаем размер этому полю
  * равный размеру соответствующего вектора фич (т.е. всех фич, полученных с этого кадра).
  * Изначально это поле заполняется значением -1 (т.е. пока что для каждой фичи не опрделен индекс
- * соответствующей трехмерной точки). Потом за линейное время для хороших фичс первого и второго
+ * соответствующей трехмерной точки). Потом за линейное время для хороших фич из первого и второго
  * кадра мы вычисляем индекс соответствующего им матча (для начальной пары кадров эти индексы будут
  * равны искомым индексам трехмерных точек).
+ * Подобным образом сохранятся цвет из первого изображения для соответствующей трехмерной точки.
  *
  * @param [in] chiralityMask
+ * @param [in] firstFrame
  * @param [in, out] firstFrameData
  * @param [in, out] secondFrameData
+ * @param [out] firstPairSpatialPointColors
  */
 void defineFeaturesCorrespondSpatialIndices(
-    const Mat &chiralityMask,
-    TemporalImageData &firstFrameData,
-    TemporalImageData &secondFrameData
+    const Mat &chiralityMask, 
+    const Mat &firstFrame, 
+    TemporalImageData &firstFrameData, 
+    TemporalImageData &secondFrameData,
+    std::vector<Vec3b> &firstPairSpatialPointColors
 );
 
 
@@ -116,7 +121,7 @@ void defineFeaturesCorrespondSpatialIndices(
  * @param [out] oldSpatialPointsForNewFrame
  * @param [out] newFrameFeatureCoords
  */
-void getOldSpatialPointsAndNewFeatureCoords(
+void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches,
     const std::vector<int> &prevFrameCorrespondIndices,
     const std::vector<Point3f> &allSpatialPoints,
@@ -129,7 +134,7 @@ void getOldSpatialPointsAndNewFeatureCoords(
 /**
  * Благодаря этой функции получаем из трехмерных точек вычисленных для нового кадра только те
  * трехмерные точки, которые не получены из предыдущих кадров (т.е. это новые трехмерные точки).
- * А для уже, существующих трехмерных точек просто записываем соответствующие индексы в поле
+ * А для уже существующих трехмерных точек просто записываем соответствующие индексы в поле
  * newFrameCorrespondIndices структуры для нового кадра.
  *
  * @param [in] matches

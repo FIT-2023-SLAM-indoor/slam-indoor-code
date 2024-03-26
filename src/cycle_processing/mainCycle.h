@@ -45,4 +45,4 @@ struct GlobalData {
  * @param [out] globalDataStruct 
  * @return 
  */
-void mainCycle(std::deque<TemporalImageData> temporalImageDataDeque, GlobalData globalDataStruct);
+void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct);
