@@ -26,6 +26,7 @@ add_executable(
         "src/triangulate.cpp" "src/triangulate.h"
         "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
         "src/IOmisc.cpp" "src/IOmisc.h"
+        "src/vizualizationModule.cpp" "src/vizualizationModule.h"
         src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h)
 
 target_link_libraries( slam-indoor-code Ceres::ceres )
