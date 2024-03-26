@@ -44,7 +44,8 @@ enum ConfigFieldEnum {
 	FM_SIFT_FLANN_,
 	FM_SIFT_BF_,
 	FM_ORB_,
-	FM_SEARCH_RADIUS_,
+
+	FM_KNN_DISTANCE,
 
 	SHOW_TRACKED_POINTS,
 
@@ -87,7 +88,7 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{FM_SIFT_BF_,{"useFM-SIFT-BF", BOOL}},
 		{FM_ORB_,{"useFM-ORB", BOOL}},
 
-		{FM_SEARCH_RADIUS_,{"featureMatchingRadius", FLOATING}},
+		{FM_KNN_DISTANCE,{"knnMatcherDistance",FLOATING}},
 
 		{SHOW_TRACKED_POINTS,{"showTrackedPoints", BOOL}},
 

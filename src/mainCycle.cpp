@@ -70,7 +70,7 @@ void defineProcessingConditions(
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius,
+    int matcherType,
     DataProcessingConditions &dataProcessingConditions)
 {
     defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
@@ -80,7 +80,6 @@ void defineProcessingConditions(
     dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
     dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
     dataProcessingConditions.matcherType = matcherType;
-    dataProcessingConditions.radius = radius;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -143,9 +142,9 @@ void matchFramesPairFeatures(
     extractDescriptor(secondFrame, secondFeatures, 
         dataProcessingConditions.matcherType, secondDescriptor);
 
-    // Match the descriptors using the specified matcher type and radius
+    // Match the descriptors using the specified matcher type
     matchFeatures(firstDescriptor, secondDescriptor, matches, 
-        dataProcessingConditions.matcherType, dataProcessingConditions.radius);
+        dataProcessingConditions.matcherType);
 }
 
 /**
@@ -425,14 +424,14 @@ void mainCycle(
     int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius)
-{
+    int matcherType
+) {
     MediaSources mediaInputStruct;
     defineMediaSources(mediaInputStruct);
 
     DataProcessingConditions dataProcessingConditions;
     defineProcessingConditions(featureExtractingThreshold, requiredExtractedPointsCount,
-        requiredMatchedPointsCount, matcherType, radius, dataProcessingConditions);
+        requiredMatchedPointsCount, matcherType, dataProcessingConditions);
 
     Mat lastGoodFrame;
     GlobalData globalDataStruct;
