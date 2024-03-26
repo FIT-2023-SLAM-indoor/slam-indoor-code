@@ -137,32 +137,29 @@ void computeTransformationAndFilterPoints(
 
 
 void defineFeaturesCorrespondSpatialIndices(
-    const Mat &chiralityMask, TemporalImageData &prevFrameData, TemporalImageData &newFrameData)
+    const Mat &chiralityMask, TemporalImageData &firstFrameData, TemporalImageData &secondFrameData)
 {
     // Resize the correspondence spatial point indices vectors for the previous and new frames
-    prevFrameData.correspondSpatialPointIdx.resize(
-        prevFrameData.allExtractedFeatures.size(), -1);
-    newFrameData.correspondSpatialPointIdx.resize(
-        newFrameData.allExtractedFeatures.size(), -1);
+    firstFrameData.correspondSpatialPointIdx.resize(
+        firstFrameData.allExtractedFeatures.size(), -1);
+    secondFrameData.correspondSpatialPointIdx.resize(
+        secondFrameData.allExtractedFeatures.size(), -1);
 
     int newMatchIdx = 0;
-    for (int matchIdx = 0; matchIdx < newFrameData.allMatches.size(); matchIdx++) {
+    for (int matchIdx = 0; matchIdx < secondFrameData.allMatches.size(); matchIdx++) {
         // Check if the match is valid based on the chirality mask
         if (chiralityMask.at<uchar>(matchIdx) > 0) {
             // Update correspondence indices for keypoints in the previous and new frames
-            prevFrameData.correspondSpatialPointIdx.at(
-                newFrameData.allMatches[matchIdx].queryIdx) = newMatchIdx;
-            newFrameData.correspondSpatialPointIdx.at(
-                newFrameData.allMatches[matchIdx].trainIdx) = newMatchIdx;
+            firstFrameData.correspondSpatialPointIdx.at(
+                secondFrameData.allMatches[matchIdx].queryIdx) = newMatchIdx;
+            secondFrameData.correspondSpatialPointIdx.at(
+                secondFrameData.allMatches[matchIdx].trainIdx) = newMatchIdx;
             newMatchIdx++;
         }
     }
 }
 
 
-/**
- * Написать документацию!!!
-*/
 void getObjAndImgPoints(
     const std::vector<DMatch> &matches, const std::vector<int> &correspondSpatialPointIdx,
     const std::vector<Point3f> &spatialPoints, const std::vector<KeyPoint> &extractedFeatures,

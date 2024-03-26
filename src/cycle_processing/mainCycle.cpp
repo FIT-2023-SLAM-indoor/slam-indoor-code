@@ -159,7 +159,7 @@ static bool processingFirstPairFrames(
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
         extractedPointCoords1, extractedPointCoords2, spatialPoints);
-    defineCorrespondenceIndices(chiralityMask,temporalImageDataDeque.at(0), 
+    defineFeaturesCorrespondSpatialIndices(chiralityMask,temporalImageDataDeque.at(0), 
         temporalImageDataDeque.at(1));
 
     return true;
