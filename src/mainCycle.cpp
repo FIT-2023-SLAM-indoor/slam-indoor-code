@@ -1,12 +1,14 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
-
+#include <ceres/ceres.h>
+#include <opencv2/sfm.hpp>
+#include "triangulate.h"
+#include "vizualizationModule.h"
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "fastExtractor.h"
 #include "featureMatching.h"
-#include "triangulate.h"
 #include "IOmisc.h"
 
 #include "config/config.h"
@@ -68,7 +70,7 @@ void defineProcessingConditions(
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius,
+    int matcherType,
     DataProcessingConditions &dataProcessingConditions)
 {
     defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
@@ -78,7 +80,6 @@ void defineProcessingConditions(
     dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
     dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
     dataProcessingConditions.matcherType = matcherType;
-    dataProcessingConditions.radius = radius;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -141,9 +142,9 @@ void matchFramesPairFeatures(
     extractDescriptor(secondFrame, secondFeatures, 
         dataProcessingConditions.matcherType, secondDescriptor);
 
-    // Match the descriptors using the specified matcher type and radius
+    // Match the descriptors using the specified matcher type
     matchFeatures(firstDescriptor, secondDescriptor, matches, 
-        dataProcessingConditions.matcherType, dataProcessingConditions.radius);
+        dataProcessingConditions.matcherType);
 }
 
 /**
@@ -319,13 +320,14 @@ bool processingFirstPairFrames(
     ) {
         return false;
     }
-
+    
     // Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
     Mat chiralityMask;
     std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
     computeTransformationAndMaskPoints(dataProcessingConditions, chiralityMask,
         temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
         extractedPointCoords1, extractedPointCoords2);
+
     reconstruct(dataProcessingConditions.calibrationMatrix,
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
@@ -422,14 +424,14 @@ void mainCycle(
     int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius)
-{
+    int matcherType
+) {
     MediaSources mediaInputStruct;
     defineMediaSources(mediaInputStruct);
 
     DataProcessingConditions dataProcessingConditions;
     defineProcessingConditions(featureExtractingThreshold, requiredExtractedPointsCount,
-        requiredMatchedPointsCount, matcherType, radius, dataProcessingConditions);
+        requiredMatchedPointsCount, matcherType, dataProcessingConditions);
 
     Mat lastGoodFrame;
     GlobalData globalDataStruct;
@@ -445,8 +447,21 @@ void mainCycle(
         exit(-1);
     }
 
+	std::vector<Mat> rotations;
+	rotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
+	rotations.push_back(temporalImageDataDeque.at(1).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(1).motion.clone());
+
+    int requiredframesCount = 5;
+    int framesCount = 0;
+    std::vector<Mat> imagesForReconstruct;
+    imagesForReconstruct.push_back(lastGoodFrame.clone());
+
     int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
+
+
     bool hasVideoGoodFrames;
     while (true) {
 		logStreams.mainReportStream << std::endl << "================================================================" << std::endl << std::endl;
@@ -510,6 +525,10 @@ void mainCycle(
 		temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx.resize(
 				temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures.size(), -1
 		);
+        rotations.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation.clone());
+		globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.clone());
+
+
 		pushNewSpatialPoints(temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
 							 temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
 							 temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx,
@@ -517,13 +536,21 @@ void mainCycle(
 
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();  // будет ли в будущем освобождаться от старых значений nextGoodFrame?
+        imagesForReconstruct.push_back(lastGoodFrame.clone());
+
         if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
 			temporalImageDataDeque.push_back({});
         } else {
             lastGoodFrameIdx++;
         }
+        framesCount++;
+
     }
+    vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+                                rotations,
+                                globalDataStruct.spatialCameraPositions,
+                                dataProcessingConditions.calibrationMatrix);
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();

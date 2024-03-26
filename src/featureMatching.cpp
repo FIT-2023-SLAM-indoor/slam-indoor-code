@@ -39,8 +39,7 @@ void matchFeatures(
 	Mat& prevDesc, 
 	Mat& curDesc, 
 	std::vector<DMatch>& matches,
-	int extractorType,
-	float radius
+	int extractorType
 ) {
 
 	std::vector<std::vector<DMatch>> allMatches;
@@ -60,7 +59,7 @@ void matchFeatures(
 	default:
 		throw std::exception();
 	}
-	matcher->radiusMatch(prevDesc, curDesc, allMatches, radius);
+	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
 	getGoodMatches(allMatches,matches);
 
 }
@@ -69,13 +68,13 @@ void getGoodMatches(
 	std::vector<std::vector<DMatch>>& allMatches,
 	std::vector<DMatch>& matches
 ){
-
+	double distanceMlt = configService.getValue<double>(ConfigFieldEnum::FM_KNN_DISTANCE);
 	for (size_t i = 0; i < allMatches.size(); i++)
 	{
-		if (allMatches[i].size() > 0)
-		{
+		if (allMatches[i].empty())
+			continue;
+		if (allMatches[i][0].distance < distanceMlt*allMatches[i][1].distance)
 			matches.push_back(allMatches[i][0]);
-		}
 	}
 }
 

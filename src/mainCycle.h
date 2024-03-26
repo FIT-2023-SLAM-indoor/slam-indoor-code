@@ -16,7 +16,6 @@ typedef struct DataProcessingConditions {
     int requiredExtractedPointsCount; // Required number of extracted points in frame.
     int requiredMatchedPointsCount;   // Required number of of matched points in frame.
     int matcherType;                  // Type of descriptor matcher to use.
-    float radius;                     // Matching radius.
 } DataProcessingConditions;
 
 /**
@@ -59,14 +58,13 @@ typedef struct GlobalData {
  * @param [in] requiredExtractedPointsCount The required number of extracted points.
  * @param [in] requiredMatchedPointsCount The required number of matched points.
  * @param [in] matcherType The type of descriptor matcher to use.
- * @param [in] radius The matching radius.
  * @param [out] dataProcessingConditions Reference to the struct to store the processing conditions.
  */
 void defineProcessingConditions(
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius,
+    int matcherType,
     DataProcessingConditions &dataProcessingConditions
 );
 
@@ -253,12 +251,11 @@ void getMatchedPointCoords(
  * @param [in] requiredExtractedPointsCount Number of required extracted points.
  * @param [in] requiredMatchedPointsCount Number of required matched points.
  * @param [in] matcherType Type of feature matcher.
- * @param [in] radius Radius parameter for feature matching.
  */
 void mainCycle(
     int frameBatchSize, 
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius
+    int matcherType
 );

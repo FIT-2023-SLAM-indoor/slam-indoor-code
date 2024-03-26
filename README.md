@@ -5,86 +5,40 @@ Repository with source code of SLAM indoor project
 - OpenCV 4.8.0 
 - CMake 3.26.2 ([release](https://github.com/Kitware/CMake/releases/tag/v3.27.6))
 
-## Environment configuration
-### OpenCV installation
-1. Install dependencies and tools:
-```sh
-sudo apt update
-sudo apt install cmake libtbb2 g++ wget unzip ffmpeg libgtk2.0-dev libavformat-dev libavcodec-dev libavutil-dev libswscale-dev libtbb-dev libjpeg-dev libpng-dev libtiff-dev
-```
-2. Download sources
-```sh
-wget -O opencv.zip https://github.com/opencv/opencv/archive/4.8.0.zip
-unzip opencv.zip  # files will be extracted to ./opencv-4.8.0
-mkdir opencv-build
-cd opencv-build
-```
-3. Build & install
-```sh
-cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_GTK=ON -D WITH_OPENGL=ON -D WITH_FFMPEG=ON ../opencv-4.8.0  # Make sure FFMPEG and its modules marked "YES"
 
-make -j8  # Number of jobs can be specified
+## Environment configuration
+### OpenCV with libs installation
+Короче, много всего попробовал точную последовательность не помню, напишу примерно
+Использовал две статьи:
+1. Для установки VIZ https://habr.com/ru/companies/intel/articles/217021/
+просят libvtk5-dev но щас только libvtk7-dev
+```sh
+sudo apt-get install libvtk7-dev
+```
+2. Теперь ко второй статье https://bksp.space/blog/en/2020-03-01-compiling-opencv-with-structure-from-motion-module-python-bindings.html
+```sh
+sudo apt install build-essential
+sudo apt install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
+#тут некоторые библиотеки могли не установится но пофиг
+sudo apt install libeigen3-dev libgflags-dev libgoogle-glog-dev libatlas-base-dev libsuitesparse-
+#тут вроде всё должно сработать
+#теперь я не знаю, можно ли установить всё поверх нашего установщика, поэтому сделаем новый билд
+mkdir opencv_build
+cd opencv_build
+#дальше просят установить керас, снизу есть гайд, как это сделать, но вот тут возможно лучше воспользовать гайдом из статьи, потому что сфм какого-то фига не видит керас поэтому пришлось вручную писать дефан что керас есть
+git clone https://github.com/opencv/opencv.git
+git clone https://github.com/opencv/opencv_contrib.git
+#тут в статье предлагают менять названия реконстрактов в сфм потому что там 4 одинаковых но я ничего не менял
+cd opencv
+mkdir build
+cd build
+cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D OPENCV_EXTRA_MODULES_PATH=~/opencv_build/opencv_contrib/modules -D BUILD_SHARED_LIBS=ON -D BUILD_opencv_sfm=ON -D OPENCV_ENABLE_NONFREE=ON -D BUILD_SHARED_LIBS=ON  -D BUILD_TESTS=ON -D OPENCV_GENERATE_PKGCONFIG=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_GTK=ON -D WITH_OPENGL=ON -D WITH_FFMPEG=ON -D WITH_TBB=ON -D WITH_V4L=ON -D WITH_VTK=ON ..
+#Объединение флагов первых двух статей и нашей инструкции к установки opencv 
+make -j8
 sudo make install
 ```
-### Configuration files (may be outdated)
-Install `nlohmann-json`:
-```bash
-sudo apt install nlohmann-json3-dev
-```
-JSON config (path to file should be specified as command line argument):
-```json
-{
-  "calibrate": false,
-  "calibrationPath": "./config/samsung-hp.xml",
 
-  "usePhotosCycle": true,
-  "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-tumbochka-s/*.JPG",
-  // "videoSourcePath" has an effect when "usePhotosCycle" is false
-  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-hall.mp4",
-  
-  "outputDataDir": "./data/video_report/video_test",
-  
-  "useUndistortion": false,
 
-  "requiredExtractedPointsCount": 100,
-  "featureExtractingThreshold": 20,
-
-  "framesBatchSize": 1,
-
-  "useFeatureTracker": false,
-  // This block has an effect when "useFeatureTracker" is true
-  "useOwnFeatureTracker": true,
-  "FTThreadsCount": 3,
-  "useSADOwnFT": true,
-  "useSSDOwnFT": false,
-  "FTBarrier": 20,
-  "FTMaxAcceptableDifference": 2000,
-  
-  // This block has an effect when "useFeatureTracker" is false
-  "useFM-SIFT-FLANN": true,
-  "useFM-SIFT-BF": false,
-  "useFM-ORB": false,
-  "featureMatchingRadius": 100.0,
-  "showTrackedPoints": true,
-
-  "RPUseRANSAC": true,
-  "RPRANSACProb": 0.999,
-  "RPRANSACThreshold": 5.0,
-  "RPRequiredGoodPointsPercent": 0.5,
-  "RPDistanceTreshold": 200
-}
-```
-
----
-
-`./python_utility/config.py`:
-```python
-PROJECT_PATH = "/PATH/TO/PROJECT/DIR"
-VIZ_FILE_PATH = "data/points.txt"
-VIZ_PARSE_FORMAT = "xyz"
-```
----
-So now you can specify program working using configs and run using `./rebuild_and_run.sh` (write `chmod a+x rebuild_and_run.sh` to make this file executable)
 
 ### Ceres installation
 ```sh

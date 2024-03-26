@@ -33,14 +33,12 @@ void getMatchedPoints(
 * @param curDesc [in]
 * @param matches [out]
 * @param matcherType [in] matcher type: 0 - sift_bf, 1 - sift_flann, 2 - orb_bf
-* @param radius [in]
 */
 void matchFeatures(
 	Mat& prevDesc,
 	Mat& curDesc,
 	std::vector<DMatch>& matches,
-	int matcherType,
-	float radius
+	int matcherType
 );
 /*
 * @param allMatches [in]
