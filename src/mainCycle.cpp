@@ -2,10 +2,10 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <ceres/ceres.h>
-#include <opencv2/viz.hpp>
 #include <opencv2/sfm.hpp>
 
 #include "triangulate.h"
+#include "vizualizationModule.h"
 #include "cameraCalibration.h"
 #include "cameraTransition.h"
 #include "fastExtractor.h"
@@ -70,7 +70,7 @@ void defineMediaSources(MediaSources &mediaInputStruct) {
 
 void defineProcessingConditions(
 	int batchSize,
-    int featureExtractingThreshold, 
+    int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
     int matcherType,
@@ -514,8 +514,8 @@ void mainCycle(
 
     int requiredframesCount = 5;
     int framesCount = 0;
-//    std::vector<Mat> imagesForReconstruct;
-//    imagesForReconstruct.push_back(lastGoodFrame.clone());
+    std::vector<Mat> imagesForReconstruct;
+    imagesForReconstruct.push_back(lastGoodFrame.clone());
 
     int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
@@ -597,7 +597,7 @@ void mainCycle(
 
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();  // будет ли в будущем освобождаться от старых значений nextGoodFrame?
-//        imagesForReconstruct.push_back(lastGoodFrame.clone());
+        imagesForReconstruct.push_back(lastGoodFrame.clone());
 
         if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
@@ -608,35 +608,10 @@ void mainCycle(
         framesCount++;
 
     }
-	viz::Viz3d window("Coordinate Frame");
-    window.setWindowSize(Size(500,500));
-
-    window.setBackgroundColor(); // black by default
-    
-    // Create the pointcloud
-
-    
-    // recover estimated points3d
-    std::vector<Vec3f> point_cloud_est;
-    for (int i = 0; i < globalDataStruct.spatialPoints.size(); ++i)
-        point_cloud_est.push_back(Vec3f(globalDataStruct.spatialPoints[i]));
-    viz::WCloud cloud_widget(point_cloud_est, viz::Color::green());
-    window.showWidget("point_cloud", cloud_widget);
-
-    std::vector<Affine3d> path;
-    for (size_t i = 0; i < rotations.size(); ++i)
-        path.push_back(Affine3d(rotations[i],globalDataStruct.spatialCameraPositions[i]));
-
-    cv::Matx33f K((float*)dataProcessingConditions.calibrationMatrix.ptr());
-
-    window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
-    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,
-    K, 0.1, viz::Color::yellow()));
-
-    window.setWindowPosition(Point(0,0));
-    window.setViewerPose(path[0]);
-
-    window.spin();
+    vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+                                rotations,
+                                globalDataStruct.spatialCameraPositions,
+                                dataProcessingConditions.calibrationMatrix);
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
