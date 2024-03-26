@@ -33,6 +33,7 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
         std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
         exit(-1);
     }
+    globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(1).rotation);
 
     int lastFrameIdx = 1;
     while (true) {
@@ -77,6 +78,8 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
             temporalImageDataDeque.at(lastFrameIdx+1).motion);
         // Convert rotation vector to rotation matrix
         Rodrigues(rotationVector, temporalImageDataDeque.at(lastFrameIdx+1).rotation);
+        globalDataStruct.cameraRotations.push_back(
+            temporalImageDataDeque.at(lastFrameIdx+1).rotation);
 
 		logStreams.mainReportStream << "Used in solvePnP: " << oldSpatialPointsForNewFrame.size() << std::endl;
 		logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).rotation << std::endl;

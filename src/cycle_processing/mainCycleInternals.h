@@ -150,18 +150,3 @@ void pushNewSpatialPoints(
 	std::vector<int> &prevFrameCorrespondIndices,
 	TemporalImageData &newFrameData
 );
-
-
-/**
- * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
- *
- * @param [in] frame
- * @param [in] matchIdx ABOBA!!!
- * @param [in, out] frameData
- * @param [out] spatialPointColors
- */
-void saveFrameColorOfKeyPoint(
-    const Mat &frame, int matchIdx, 
-    TemporalImageData &frameData, 
-    std::vector<Vec3b> &spatialPointColors
-);
