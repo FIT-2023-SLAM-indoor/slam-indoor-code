@@ -210,7 +210,10 @@ static int fillVideoFrameBatch(
  * @param [in] dataProcessingConditions
  * @param [in,out] currentBatch <ul>
  * 		<li>Input is a batch tail from previous iteration</li>
- * 		<li>Input is a batch tail after new good frame was found</li>
+ * 		<li>
+ * 			Output is a batch tail after new good frame
+ * 			(consequently there will be full batch in case we didn't find new good one)
+* 		</li>
  * </ul>
  * @param [in] previousFrame
  * @param [out] newGoodFrame
