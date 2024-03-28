@@ -10,17 +10,21 @@
 using namespace cv;
 
 void filterVectorByMask(std::vector<Point2f>& vector, const Mat& mask) {
-    std::vector<Point2f> newVector;
 	Mat filterMask = mask;
-	if (filterMask.rows == 1 && filterMask.cols != 1)
+	if (filterMask.rows == 1 && filterMask.cols > 1)
 		filterMask = filterMask.t();
-	int maskSignificantSz = filterMask.rows;
-	if (maskSignificantSz != vector.size()) {
+
+	int maskSignificantSize = filterMask.rows;
+	if (maskSignificantSize != vector.size()) {
 		std::cerr << "Incorrect size of filtering mask" << std::endl;
+		exit(-1);
 	}
-	for (int i = 0; i < filterMask.rows; ++i) {
-            if (filterMask.at<uchar>(i))
-                newVector.push_back(vector[i]);
+
+	std::vector<Point2f> newVector;
+	for (int i = 0; i < filterMask.rows; i++) {
+        if (filterMask.at<uchar>(i)) {
+            newVector.push_back(vector[i]);
+		}
     }
 	vector = newVector;
 }

@@ -12,11 +12,11 @@ using namespace cv;
 typedef struct DataProcessingConditions {
     Mat calibrationMatrix;            // Calibration matrix for camera.
     Mat distortionCoeffs;             // Distortion coefficients for camera.
+	int batchSize;
     int featureExtractingThreshold;   // Threshold for feature extraction.
     int requiredExtractedPointsCount; // Required number of extracted points in frame.
     int requiredMatchedPointsCount;   // Required number of of matched points in frame.
     int matcherType;                  // Type of descriptor matcher to use.
-    float radius;                     // Matching radius.
 } DataProcessingConditions;
 
 /**
@@ -47,6 +47,14 @@ typedef struct GlobalData {
 	std::vector<Mat> spatialCameraPositions;
 } GlobalData;
 
+/**
+ * Structure for batch elements.
+ */
+typedef struct BatchElement {
+	Mat frame;
+	std::vector<KeyPoint> features;
+} BatchElement;
+
 
 /**
  * Defines the processing conditions for data processing.
@@ -55,18 +63,19 @@ typedef struct GlobalData {
  * It sets up calibration matrix, distortion coefficients, feature extracting threshold,
  * required extracted points count, required matched points count, matcher type, and matching radius.
  *
+ * @param [in] batchSize
  * @param [in] featureExtractingThreshold The threshold for feature extraction.
  * @param [in] requiredExtractedPointsCount The required number of extracted points.
  * @param [in] requiredMatchedPointsCount The required number of matched points.
  * @param [in] matcherType The type of descriptor matcher to use.
- * @param [in] radius The matching radius.
  * @param [out] dataProcessingConditions Reference to the struct to store the processing conditions.
  */
 void defineProcessingConditions(
+	int batchSize,
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius,
+    int matcherType,
     DataProcessingConditions &dataProcessingConditions
 );
 
@@ -117,39 +126,6 @@ void matchFramesPairFeatures(
     std::vector<KeyPoint>& secondFeatures,
     DataProcessingConditions &dataProcessingConditions,
     std::vector<DMatch>& matches
-);
-
-
-/**
- * Finds a good video frame from a batch of frames for feature matching.
- *
- * This function retrieves a batch of frames from the video sequence captured by the provided
- * VideoCapture object and selects the most recent frame that meets the required criteria for
- * feature matching. It undistorts each frame, extracts features, matches them with features
- * from the previous frame, and checks if the number of matches meets the specified threshold.
- * If a frame with enough matches is found, it returns true and stores the undistorted frame,
- * its features, and the matches in the output parameters. Otherwise, it continues searching
- * through the batch of frames until a suitable frame is found or the end of the batch is reached.
- *
- * @param [in] frameSequence The video capture object representing the sequence of frames.
- * @param [in] frameBatchSize The number of frames to retrieve in each batch.
- * @param [in] dataProcessingConditions The data processing conditions including calibration matrix,
- *                                 distortion coefficients, feature extracting threshold, and
- *                                 required matched points count.
- * @param [in] previousFrame The previous frame used as a reference for feature matching.
- * @param [out] newGoodFrame Output parameter to store the undistorted good frame.
- * @param [in] previousFeatures The features extracted from the previous frame.
- * @param [out] newFeatures Output parameter to store the features extracted from the new frame.
- * @param [out] matches Output vector to store the matches between the features of the previous and new frames.
- * @return True if a good frame with sufficient matches is found, false otherwise.
- */
-bool findGoodVideoFrameFromBatch(
-    VideoCapture &frameSequence, int frameBatchSize,
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &previousFrame, Mat &newGoodFrame,
-    std::vector<KeyPoint> &previousFeatures, 
-    std::vector<KeyPoint> &newFeatures,
-    std::vector<DMatch> &matches
 );
 
 
@@ -253,12 +229,11 @@ void getMatchedPointCoords(
  * @param [in] requiredExtractedPointsCount Number of required extracted points.
  * @param [in] requiredMatchedPointsCount Number of required matched points.
  * @param [in] matcherType Type of feature matcher.
- * @param [in] radius Radius parameter for feature matching.
  */
 void mainCycle(
     int frameBatchSize, 
     int featureExtractingThreshold, 
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius
+    int matcherType
 );

@@ -17,4 +17,3 @@ public:
 		return config[configFields.at(enumKey).key].template get<T>();
 	}
 };
-
