@@ -25,7 +25,7 @@ add_executable(
     "src/IOmisc.cpp" "src/IOmisc.h"
     "src/vizualizationModule.cpp" "src/vizualizationModule.h"
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
-)
+        src/cycle_processing/mainCycleStructures.h)
 
 target_link_libraries( slam-indoor-code Ceres::ceres )
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )

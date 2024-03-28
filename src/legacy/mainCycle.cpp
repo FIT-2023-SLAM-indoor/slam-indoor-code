@@ -4,16 +4,16 @@
 #include <ceres/ceres.h>
 #include <opencv2/sfm.hpp>
 
-#include "triangulate.h"
-#include "vizualizationModule.h"
-#include "cameraCalibration.h"
-#include "cameraTransition.h"
-#include "fastExtractor.h"
-#include "featureMatching.h"
-#include "IOmisc.h"
-#include "bundleAdjustment.h"
+#include "../triangulate.h"
+#include "../vizualizationModule.h"
+#include "../cameraCalibration.h"
+#include "../cameraTransition.h"
+#include "../fastExtractor.h"
+#include "../featureMatching.h"
+#include "../IOmisc.h"
+#include "../bundleAdjustment.h"
 
-#include "config/config.h"
+#include "../config/config.h"
 
 #include "mainCycle.h"
 
@@ -53,7 +53,7 @@ void defineMediaSources(MediaSources &mediaInputStruct) {
 
     if (mediaInputStruct.isPhotoProcessing) {
 		glob(
-            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
+            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
             mediaInputStruct.photosPaths, false);
 		sortGlobs(mediaInputStruct.photosPaths);
     } else {
@@ -116,9 +116,9 @@ bool findFirstGoodVideoFrameAndFeatures(
 //            dataProcessingConditions.calibrationMatrix,
 //            dataProcessingConditions.distortionCoeffs);
 		goodFrame = candidateFrame;
-        fastExtractor(goodFrame, goodFrameFeatures, 
+        fastExtractor(goodFrame, goodFrameFeatures,
             dataProcessingConditions.featureExtractingThreshold);
-        
+
         // Check if enough features are extracted
         if (goodFrameFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
             return true;
@@ -140,14 +140,14 @@ void matchFramesPairFeatures(
 {
     // Extract descriptors from the key points of the input frames
     Mat firstDescriptor;
-    extractDescriptor(firstFrame, firstFeatures, 
+    extractDescriptor(firstFrame, firstFeatures,
         dataProcessingConditions.matcherType, firstDescriptor);
     Mat secondDescriptor;
-    extractDescriptor(secondFrame, secondFeatures, 
+    extractDescriptor(secondFrame, secondFeatures,
         dataProcessingConditions.matcherType, secondDescriptor);
 
     // Match the descriptors using the specified matcher type
-    matchFeatures(firstDescriptor, secondDescriptor, matches, 
+    matchFeatures(firstDescriptor, secondDescriptor, matches,
         dataProcessingConditions.matcherType);
 }
 
@@ -380,7 +380,7 @@ bool processingFirstPairFrames(
 	)) {
         return false;
     }
-    
+
     // Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
     Mat chiralityMask;
     std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;

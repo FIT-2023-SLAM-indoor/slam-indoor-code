@@ -15,6 +15,17 @@
 
 using namespace cv;
 
+/**
+ * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
+ *
+ * @param [in] frame
+ * @param [in] matchIdx ABOBA!!!
+ * @param [in, out] frameData
+ * @param [out] spatialPointColors
+ */
+static void saveFrameColorOfKeyPoint(
+		const Mat &frame, int matchIdx, TemporalImageData &frameData,
+		std::vector<Vec3b> &spatialPointColors);
 
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
@@ -22,7 +33,7 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
 
     if (mediaInputStruct.isPhotoProcessing) {
         glob(
-            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
+            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
             mediaInputStruct.photosPaths, false);
         sortGlobs(mediaInputStruct.photosPaths);
     } else {
@@ -86,9 +97,6 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     }
 }
 
-///////////////////////////////////////////////////////////////
-// Эта функция должна быть либо в main, либо удалить её надо //
-///////////////////////////////////////////////////////////////
 void defineInitialCameraPosition(TemporalImageData &initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
     initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
@@ -103,9 +111,9 @@ bool findFirstGoodFrame(
     while (getNextFrame(mediaInputStruct, candidateFrame)) {
         /// TODO: In future we can do UNDISTORTION here
         firstGoodFrame = candidateFrame;
-        fastExtractor(firstGoodFrame, goodFrameFeatures, 
+        fastExtractor(firstGoodFrame, goodFrameFeatures,
             dataProcessingConditions.featureExtractingThreshold);
-        
+
         // Check if enough features are extracted
         if (goodFrameFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
             return true;
@@ -118,15 +126,16 @@ bool findFirstGoodFrame(
 
 
 void computeTransformationAndFilterPoints(
-    const DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
+    const DataProcessingConditions &dataProcessingConditions,
     const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,
-    std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
-{
-    getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures, 
-        secondFrameData.allExtractedFeatures, secondFrameData.allMatches, 
+    std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2,
+	Mat &chiralityMask
+) {
+    getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures,
+        secondFrameData.allExtractedFeatures, secondFrameData.allMatches,
         keyPointFrameCoords1, keyPointFrameCoords2);
 
-    estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2, 
+    estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2,
         dataProcessingConditions.calibrationMatrix, secondFrameData.rotation,
         secondFrameData.motion, chiralityMask);
 
@@ -167,7 +176,7 @@ void defineFeaturesCorrespondSpatialIndices(
 
 void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches, const std::vector<int> &prevFrameCorrespondIndices,
-    const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints, 
+    const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints,
     std::vector<Point3f> &oldSpatialPointsForNewFrame, std::vector<Point2f> &newFrameFeatureCoords)
 {
     for (auto &match : matches) {
@@ -181,7 +190,7 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
 
 
 void pushNewSpatialPoints(
-    const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints, 
+    const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints,
     GlobalData &globalDataStruct, std::vector<int> &prevFrameCorrespondIndices,
     TemporalImageData &newFrameData)
 {
@@ -194,12 +203,12 @@ void pushNewSpatialPoints(
             globalDataStruct.spatialPoints.push_back(newSpatialPoints[i]);
             saveFrameColorOfKeyPoint(newFrame, i, newFrameData,
                 globalDataStruct.spatialPointsColors);
-            prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx] = 
+            prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx] =
                 globalDataStruct.spatialPoints.size() - 1;
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] =
                 globalDataStruct.spatialPoints.size() - 1;
         } else {
-            // If the point already exists in space, the space points 
+            // If the point already exists in space, the space points
             // corresponding to the pair of matching points should be the same, with the same index
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] = structId;
         }
@@ -207,16 +216,8 @@ void pushNewSpatialPoints(
 }
 
 
-/**
- * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
- *
- * @param [in] frame
- * @param [in] matchIdx ABOBA!!!
- * @param [in, out] frameData
- * @param [out] spatialPointColors
- */
-void saveFrameColorOfKeyPoint(
-    const Mat &frame, int matchIdx, TemporalImageData &frameData, 
+static void saveFrameColorOfKeyPoint(
+    const Mat &frame, int matchIdx, TemporalImageData &frameData,
     std::vector<Vec3b> &spatialPointColors)
 {
     int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;

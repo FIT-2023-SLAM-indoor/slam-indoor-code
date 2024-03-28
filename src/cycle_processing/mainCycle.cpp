@@ -18,22 +18,86 @@ using namespace cv;
 
 const int OPTIMAL_DEQUE_SIZE = 8;
 
+/**
+ * Fills batch up to dataProcessingConditions.batchSize or while new frames can be obtained.
+ * <br>
+ * Only frames with extracted points count greater or equal to
+ * dataProcessingConditions.requiredExtractedPointsCount will be added to batch
+ *
+ * @param [in] mediaInputStruct
+ * @param [in] dataProcessingConditions
+ * @param [in,out] currentBatch batch can contains some frames which was considered as bad for previous frame
+ *     but can be good for new one
+ *
+ * @return skipped frames count
+ */
+static int fillVideoFrameBatch(
+	MediaSources &mediaInputStruct,
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch
+);
 
-void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct) {
-    MediaSources mediaInputStruct;
-    DataProcessingConditions dataProcessingConditions;
-    defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
+#define EMPTY_BATCH (-2)
+#define FRAME_NOT_FOUND (-1)
+/**
+ * Find new frame from batch which can be up to dataProcessingConditions.batchSize
+ *
+ * @param [in] mediaInputStruct
+ * @param [in] dataProcessingConditions
+ * @param [in,out] currentBatch <ul>
+ * 		<li>Input is a batch tail from previous iteration</li>
+ * 		<li>
+ * 			Output is a batch tail after new good frame
+ * 			(consequently there will be full batch in case we didn't find new good one)
+* 		</li>
+ * </ul>
+ * @param [in] previousFrame
+ * @param [out] newGoodFrame
+ * @param [in] previousFeatures
+ * @param [out] newFeatures
+ * @param [out] matches
+ * @return found frame batch index or some of error codes described above
+ */
+static int findGoodFrameFromBatch(
+	MediaSources &mediaInputStruct,
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame,
+	Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+);
+
+static bool processingFirstPairFrames(
+	MediaSources &mediaInputStruct,
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	std::deque<TemporalImageData> &temporalImageDataDeque,
+	Mat &secondFrame, std::vector<Point3f> &spatialPoints,
+	std::vector<cv::Vec3b> &firstPairSpatialPointColors
+);
+
+bool mainCycle(
+	MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
+	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
+) {
+	std::vector<BatchElement> batch; // Необходимо создавать батч тут, чтобы его не использованный хвост переносился на следующую итерацию
 
     Mat lastGoodFrame;
-    if (!processingFirstPairFrames(mediaInputStruct, dataProcessingConditions,
-            temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints,
-            globalDataStruct.spatialPointsColors)
-    ) {
+    if (!processingFirstPairFrames(
+		mediaInputStruct, dataProcessingConditions, batch,
+		temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints,
+		globalDataStruct.spatialPointsColors
+	)) {
         // Error message if at least two good frames are not found in the video
         std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
         exit(-1);
     }
-    globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(1).rotation);
+	globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
+	globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(1).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(1).motion.clone());
 
     int lastFrameIdx = 1;
     while (true) {
@@ -41,17 +105,22 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
 
         // Find the next good frame batch
         Mat nextGoodFrame;
-        int hasVideoGoodFrames = findGoodFrameFromBatch(mediaInputStruct,
-                                    dataProcessingConditions, lastGoodFrame,
-                                    temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
-                                    nextGoodFrame,
-                                    temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
-                                    temporalImageDataDeque.at(lastFrameIdx+1).allMatches);
-        if (hasVideoGoodFrames == 0) {
-            logStreams.mainReportStream << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-            logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
-        } else if (hasVideoGoodFrames < 0) {
-            std::cerr << "No good frames in batch. Stop video processing" << std::endl;
+		int frameIndex = findGoodFrameFromBatch(
+				mediaInputStruct, dataProcessingConditions, batch,
+				lastGoodFrame, nextGoodFrame,
+				temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
+				temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
+				temporalImageDataDeque.at(lastFrameIdx+1).allMatches
+		);
+        if (frameIndex == EMPTY_BATCH) {
+			std::string msg = "Video is over. No more frames...";
+            logStreams.mainReportStream << msg << std::endl;
+			std::cerr << msg << std::endl;
+			break;
+        } else if (frameIndex == FRAME_NOT_FOUND) {
+			std::string msg = "No good frames in batch. Stop video processing";
+			logStreams.mainReportStream << msg << std::endl;
+			std::cerr << msg << std::endl;
             break;
         }
 
@@ -63,7 +132,8 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
             temporalImageDataDeque.at(lastFrameIdx).correspondSpatialPointIdx,
             globalDataStruct.spatialPoints,
             temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
-            oldSpatialPointsForNewFrame, newFrameFeatureCoords);
+            oldSpatialPointsForNewFrame, newFrameFeatureCoords
+		);
 
         // Find transformation matrix
         if (oldSpatialPointsForNewFrame.size() != newFrameFeatureCoords.size() // А такое вообще может быть???
@@ -73,13 +143,13 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
             break;
         }
         Mat rotationVector;
-        solvePnPRansac(oldSpatialPointsForNewFrame, newFrameFeatureCoords,
+        solvePnPRansac(
+			oldSpatialPointsForNewFrame, newFrameFeatureCoords,
             dataProcessingConditions.calibrationMatrix, noArray(), rotationVector,
-            temporalImageDataDeque.at(lastFrameIdx+1).motion);
+            temporalImageDataDeque.at(lastFrameIdx+1).motion
+		);
         // Convert rotation vector to rotation matrix
         Rodrigues(rotationVector, temporalImageDataDeque.at(lastFrameIdx+1).rotation);
-        globalDataStruct.cameraRotations.push_back(
-            temporalImageDataDeque.at(lastFrameIdx+1).rotation);
 
         logStreams.mainReportStream << "Used in solvePnP: " << oldSpatialPointsForNewFrame.size() << std::endl;
         logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).rotation << std::endl;
@@ -87,6 +157,12 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
         logStreams.mainReportStream.flush();
         rawOutput(temporalImageDataDeque.at(lastFrameIdx+1).motion.t(), logStreams.poseStream);
         logStreams.poseStream.flush();
+		globalDataStruct.spatialCameraPositions.push_back(
+				temporalImageDataDeque.at(lastFrameIdx+1).motion.clone()
+		);
+		globalDataStruct.cameraRotations.push_back(
+				temporalImageDataDeque.at(lastFrameIdx+1).rotation
+		);
 
         // Get matched point coordinates for reconstruction
         std::vector<Point2f> matchedPointCoords1;
@@ -119,118 +195,160 @@ void mainCycle(std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData
 
     rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
     logStreams.pointsStream.flush();
+
+	return false; // TODO: заглушка, чтобы main работал
 }
 
 
 static bool processingFirstPairFrames(
-    MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
-    std::deque<TemporalImageData> &temporalImageDataDeque, Mat &secondFrame,
-    std::vector<Point3f> &spatialPoints, std::vector<cv::Vec3b> &firstPairSpatialPointColors)
-{
-    Mat firstFrame;
-    if (!findFirstGoodFrame(mediaInputStruct, dataProcessingConditions,firstFrame, 
-            temporalImageDataDeque.at(0).allExtractedFeatures)
-    ) {
-        logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-        logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
-        return false;
-    }
+	MediaSources &mediaInputStruct,
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	std::deque<TemporalImageData> &temporalImageDataDeque,
+	Mat &secondFrame, std::vector<Point3f> &spatialPoints,
+	std::vector<cv::Vec3b> &firstPairSpatialPointColors
+) {
+	Mat firstFrame;
+	if (!findFirstGoodFrame(
+		mediaInputStruct, dataProcessingConditions,firstFrame,
+		temporalImageDataDeque.at(0).allExtractedFeatures
+	)) {
+		logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+		logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
+		return false;
+	}
 
-    int videoGoodFramesCnt = findGoodFrameFromBatch(mediaInputStruct, 
-                                dataProcessingConditions, firstFrame,
-                                temporalImageDataDeque.at(0).allExtractedFeatures,
-                                secondFrame,temporalImageDataDeque.at(1).allExtractedFeatures,
-                                temporalImageDataDeque.at(1).allMatches);
-    if (videoGoodFramesCnt == 0) {
-        logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-        logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
-        return false;
-    } else if (videoGoodFramesCnt < 0) {
-        return false;
-    }
+	int frameIndex = findGoodFrameFromBatch(
+		mediaInputStruct, dataProcessingConditions, currentBatch,
+		firstFrame, secondFrame,
+		temporalImageDataDeque.at(0).allExtractedFeatures,
+		temporalImageDataDeque.at(1).allExtractedFeatures,
+		temporalImageDataDeque.at(1).allMatches
+	);
+	if (frameIndex == EMPTY_BATCH) {
+		logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
+		logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
+		return false;
+	} else if (frameIndex == FRAME_NOT_FOUND) {
+		return false;
+	}
 
-    Mat chiralityMask;
-    std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
-    computeTransformationAndFilterPoints(dataProcessingConditions,
-        temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
-        extractedPointCoords1, extractedPointCoords2, chiralityMask);
-    reconstruct(dataProcessingConditions.calibrationMatrix,
-        temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
-        temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
-        extractedPointCoords1, extractedPointCoords2, spatialPoints);
-    defineFeaturesCorrespondSpatialIndices(chiralityMask, secondFrame, temporalImageDataDeque.at(0),
-        temporalImageDataDeque.at(1), firstPairSpatialPointColors);
+	// Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
+	Mat chiralityMask;
+	std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
+	computeTransformationAndFilterPoints(dataProcessingConditions,
+										 temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
+										 extractedPointCoords1, extractedPointCoords2, chiralityMask);
+	reconstruct(dataProcessingConditions.calibrationMatrix,
+				temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
+				temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
+				extractedPointCoords1, extractedPointCoords2, spatialPoints);
+	defineFeaturesCorrespondSpatialIndices(chiralityMask, secondFrame, temporalImageDataDeque.at(0),
+										   temporalImageDataDeque.at(1), firstPairSpatialPointColors);
 
-    return true;
+	return true;
 }
 
+static int fillVideoFrameBatch(
+	MediaSources &mediaInputStruct,
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch
+) {
+	int currentFrameBatchSize = 0;
+	Mat nextFrame;
+
+	std::vector<KeyPoint> nextFeatures;
+	int skippedFrames = 0, skippedFramesForFirstFound = 0;
+	logStreams.mainReportStream << "Features count in frames added to batch: ";
+	while (
+		currentBatch.size() < dataProcessingConditions.frameBatchSize
+		&& getNextFrame(mediaInputStruct, nextFrame)
+	) {
+		// TODO: here can be undistortion
+		fastExtractor(nextFrame, nextFeatures,
+					  dataProcessingConditions.featureExtractingThreshold);
+		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
+			if (currentFrameBatchSize == 0)
+				skippedFramesForFirstFound++;
+			skippedFrames++;
+			continue;
+		}
+		logStreams.mainReportStream << nextFeatures.size() << " ";
+		currentBatch.push_back({
+			nextFrame.clone(),
+			nextFeatures
+		});
+		currentFrameBatchSize++;
+	}
+	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
+	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
+	return skippedFrames;
+}
 
 static int findGoodFrameFromBatch(
-    MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
-    Mat &previousFrame, std::vector<KeyPoint> &previousFeatures, Mat &newGoodFrame,
-    std::vector<KeyPoint> &newFeatures, std::vector<DMatch> &matches)
-{
-    std::vector<Mat> frameBatch;
-    std::vector<std::vector<KeyPoint>> batchFeatures;
-    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatch, batchFeatures);
-    
-    if (frameBatch.size() == 0) {
-        return 0;
-    }
+	MediaSources &mediaInputStruct,
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame,
+	Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+) {
+	int skippedFramesCount = fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, currentBatch);
+	int currentBatchSz = currentBatch.size();
+	if (currentBatchSz == 0)
+		return EMPTY_BATCH;
 
-    logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
-    Mat candidateFrame;
-    std::vector<KeyPoint> candidateFrameFeatures;
-    for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
-        candidateFrame = frameBatch.at(frameIndex).clone();
-        candidateFrameFeatures = batchFeatures.at(frameIndex);
+	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
+	Mat goodFrame;
+	std::vector<KeyPoint> goodFeatures;
+	std::vector<DMatch> goodMatches;
+	int goodIndex = FRAME_NOT_FOUND;
+	Mat candidateFrame;
+	std::vector<KeyPoint> candidateFrameFeatures;
+	std::vector<DMatch> candidateMatches;
+	for (int batchIndex = currentBatchSz - 1; batchIndex >= 0; batchIndex--) {
+		candidateFrame = currentBatch.at(batchIndex).frame.clone();
+		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 
-        matches.clear();
-        // Match features between the previous frame and the new frame
-        matchFramesPairFeatures(previousFrame, candidateFrame,
-                                previousFeatures, candidateFrameFeatures,
-                                dataProcessingConditions.matcherType, matches);
+		matchFramesPairFeatures(previousFrame, candidateFrame,
+								previousFeatures, candidateFrameFeatures,
+								dataProcessingConditions.matcherType, candidateMatches);
 
-        logStreams.mainReportStream << "Batch index: " << frameIndex
-                                    << "; curr. extracted: " << candidateFrameFeatures.size()
-                                    << "; matched " << matches.size() << std::endl;
-        // Check if enough matches are found
-        if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
-            newGoodFrame = candidateFrame.clone();
-            newFeatures.resize(candidateFrameFeatures.size());
-            std::copy(candidateFrameFeatures.begin(), candidateFrameFeatures.end(), newFeatures.begin());
-            return frameBatch.size();
-        }
-    }
+		logStreams.mainReportStream << "Batch index: " << batchIndex
+									<< "; curr. extracted: " << candidateFrameFeatures.size()
+									<< "; matched " << candidateMatches.size() << std::endl;
 
-    // No good frame found in the batch
-    return -1;
-}
+		if (
+			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
+			&& candidateMatches.size() >= goodMatches.size()
+		) {
+			goodIndex = batchIndex;
+			goodFrame = candidateFrame.clone();
+			goodFeatures = candidateFrameFeatures;
+			goodMatches = candidateMatches;
+			break;
+		}
+	}
+	if (goodIndex != FRAME_NOT_FOUND) {
+		newGoodFrame = goodFrame.clone();
+		newFeatures = goodFeatures;
+		matches = goodMatches;
 
+		std::vector<BatchElement> batchTail;
+		for (int i = goodIndex + 1; i < currentBatchSz; ++i)
+			batchTail.push_back(currentBatch.at(i));
+		currentBatch = batchTail;
 
-static void fillVideoFrameBatch(
-    MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
-    std::vector<Mat> &frameBatch, std::vector<std::vector<KeyPoint>> &batchFeatures)
-{
-    logStreams.mainReportStream << "Features count in frames added to batch: ";
-    Mat nextFrame;
-    std::vector<KeyPoint> nextFeatures;
-    int skippedFrames = 0;
-    while (frameBatch.size() < dataProcessingConditions.frameBatchSize 
-           && getNextFrame(mediaInputStruct, nextFrame)
-    ) {
-        /// TODO: In future we can do UNDISTORTION here
-        fastExtractor(nextFrame, nextFeatures, 
-            dataProcessingConditions.featureExtractingThreshold);
-        if (nextFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
-            logStreams.mainReportStream << nextFeatures.size() << " ";
-            frameBatch.push_back(nextFrame.clone());
-            batchFeatures.push_back(nextFeatures);
-        } else {
-            skippedFrames++;
-        }
-    }
+		logStreams.extractedMatchedTable << skippedFramesCount << "; "
+										 << goodIndex << "; "
+										 << previousFeatures.size() << "; "
+										 << goodFeatures.size() << "; "
+										 << matches.size() << ";\n";
+		return goodIndex;
+	}
 
-    logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: ";
-    logStreams.mainReportStream << skippedFrames << std::endl;
+	// No good frame found in the batch
+	return goodIndex;
 }

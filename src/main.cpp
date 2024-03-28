@@ -1,12 +1,14 @@
 #include "fstream"
 #include "ceres/ceres.h"
 
-#include "cameraCalibration.h"
+#include "config/config.h"
 #include "IOmisc.h"
 
+#include "cameraCalibration.h"
+
 #include "cycle_processing/mainCycle.h"
-#include "config/config.h"
-#include "featureMatching.h"
+#include "cycle_processing/mainCycleInternals.h"
+#include "vizualizationModule.h"
 
 using namespace cv;
 
@@ -37,11 +39,22 @@ int main(int argc, char** argv) {
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
 
 	GlobalData globalDataStruct;
+	MediaSources mediaInputStruct;
+	DataProcessingConditions dataProcessingConditions;
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
+	defineInitialCameraPosition(temporalImageDataDeque.at(0));
 	do {
 		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
-	} while (mainCycle(temporalImageDataDeque, globalDataStruct));
+	} while (mainCycle(mediaInputStruct, dataProcessingConditions, temporalImageDataDeque, globalDataStruct));
 
 	closeLogsStreams();
+
+
+	vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+							  globalDataStruct.cameraRotations,
+							  globalDataStruct.spatialCameraPositions,
+							  dataProcessingConditions.calibrationMatrix);
+
     return 0;
 }
