@@ -9,6 +9,7 @@ typedef struct LogFilesStreams {
 	std::ofstream mainReportStream;
 	std::ofstream pointsStream;
 	std::ofstream poseStream;
+	std::ofstream extractedMatchedTable;
 } LogFilesStreams;
 
 extern LogFilesStreams logStreams;

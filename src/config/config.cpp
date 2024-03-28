@@ -1,6 +1,5 @@
 #include "fstream"
 #include "iostream"
-#include "exception"
 
 #include "config.h"
 

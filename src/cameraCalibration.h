@@ -2,7 +2,7 @@
  * Camera calibration header
  */
 #include <opencv2/videoio.hpp>
-#include "main_config.h"
+
 #pragma once
 
 using namespace cv;

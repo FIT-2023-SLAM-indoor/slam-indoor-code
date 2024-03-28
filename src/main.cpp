@@ -1,24 +1,30 @@
-#include "cameraCalibration.h"
-#include "IOmisc.h"
 #include "fstream"
+#include "ceres/ceres.h"
 
-#include "mainCycle.h"
 #include "config/config.h"
-#include "featureMatching.h"
+#include "IOmisc.h"
 
+#include "cameraCalibration.h"
+
+#include "cycle_processing/mainCycle.h"
+#include "cycle_processing/mainCycleInternals.h"
+#include "vizualizationModule.h"
 
 using namespace cv;
+
+const int OPTIMAL_DEQUE_SIZE = 8;
 
 ConfigService configService;
 LogFilesStreams logStreams;
 
-int main(int argc, char** argv)
-{
+
+int main(int argc, char** argv) {
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
 	}
 	configService.setConfigFile(argv[1]);
+	google::InitGoogleLogging("BA");
 	openLogsStreams();
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
@@ -32,18 +38,23 @@ int main(int argc, char** argv)
 	}
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
 
-	/////////////////////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////
-	mainCycle(
-		configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_),
-		configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_),
-		configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_),
-		configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT),
-		getMatcherTypeIndex(),
-		configService.getValue<float>(ConfigFieldEnum::FM_SEARCH_RADIUS_));
-	/////////////////////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////
+	GlobalData globalDataStruct;
+	MediaSources mediaInputStruct;
+	DataProcessingConditions dataProcessingConditions;
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
+	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
+	defineInitialCameraPosition(temporalImageDataDeque.at(0));
+	do {
+		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
+	} while (mainCycle(mediaInputStruct, dataProcessingConditions, temporalImageDataDeque, globalDataStruct));
 
 	closeLogsStreams();
+
+
+	vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+							  globalDataStruct.cameraRotations,
+							  globalDataStruct.spatialCameraPositions,
+							  dataProcessingConditions.calibrationMatrix);
+
     return 0;
 }
