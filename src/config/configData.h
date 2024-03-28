@@ -30,6 +30,7 @@ enum ConfigFieldEnum {
 	FEATURE_EXTRACTING_THRESHOLD_,
 
 	FRAMES_BATCH_SIZE_,
+	MINIMAL_FRAMES_GAP,
 
 	REQUIRED_MATCHED_POINTS_COUNT,
 
@@ -78,6 +79,7 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{FEATURE_EXTRACTING_THRESHOLD_,{"featureExtractingThreshold", INTEGER}},
 
 		{FRAMES_BATCH_SIZE_,{"framesBatchSize", INTEGER}},
+		{MINIMAL_FRAMES_GAP,{"minimalFramesGap", INTEGER}},
 
 		{REQUIRED_MATCHED_POINTS_COUNT,{"requiredMatchedPointsCount", INTEGER}},
 

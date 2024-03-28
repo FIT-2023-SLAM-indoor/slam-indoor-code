@@ -11,20 +11,19 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 find_package(nlohmann_json 3.10.0 REQUIRED)
 
-
 add_executable(
     slam-indoor-code
     "src/main.cpp"
-    "src/mainCycle.cpp" "src/mainCycle.h"
+    "src/cycle_processing/mainCycle.cpp" "src/cycle_processing/mainCycle.h"
+    "src/cycle_processing/mainCycleInternals.cpp" "src/cycle_processing/mainCycleInternals.h"
     "src/fastExtractor.cpp" "src/fastExtractor.h"
     "src/cameraCalibration.cpp" "src/cameraCalibration.h"
     "src/cameraTransition.cpp" "src/cameraTransition.h"
-    "src/featureTracking.cpp" "src/featureTracking.h"
     "src/featureMatching.cpp" "src/featureMatching.h"
     "src/triangulate.cpp" "src/triangulate.h"
     "src/bundleAdjustment.cpp" "src/bundleAdjustment.h"
     "src/IOmisc.cpp" "src/IOmisc.h"
-        "src/vizualizationModule.cpp" "src/vizualizationModule.h"
+    "src/vizualizationModule.cpp" "src/vizualizationModule.h"
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
 )
 

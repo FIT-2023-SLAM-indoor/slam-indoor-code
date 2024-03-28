@@ -19,22 +19,18 @@ MatcherType getMatcherTypeIndex() {
 	throw new std::exception();
 }
 
-void getMatchedPoints(
-	std::vector<KeyPoint>& previousFeatures,
-	std::vector<KeyPoint>& currentFeatures,
-	std::vector<DMatch> matches,
-	std::vector<Point2f>& matchedFeatures,
-	std::vector<Point2f>& newPreviousFeatures
-) {
-	matchedFeatures.clear();
-	newPreviousFeatures.clear();
-	for (int i = 0;i < matches.size();i++) {
-		matchedFeatures.push_back(currentFeatures.at(
-			matches[i].trainIdx).pt);
-		newPreviousFeatures.push_back(previousFeatures.at(
-			matches[i].queryIdx).pt);
+void getKeyPointCoordsFromFramePair(const std::vector<KeyPoint> &prevFrameFeatures, 
+	const std::vector<KeyPoint> &nextFrameFeatures, const std::vector<DMatch> &matches,
+	std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
+{
+	keyPointFrameCoords1.clear();
+	keyPointFrameCoords2.clear();
+	for (int i = 0; i < matches.size(); i++) {
+		keyPointFrameCoords1.push_back(prevFrameFeatures[matches[i].queryIdx].pt);
+		keyPointFrameCoords2.push_back(nextFrameFeatures[matches[i].trainIdx].pt);
 	}
 }
+
 void matchFeatures(
 	Mat& prevDesc, 
 	Mat& curDesc, 
@@ -117,4 +113,28 @@ void showMatchedPointsInTwoFrames(
 		Scalar::all(-1), std::vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS);
 	imshow("matches", output_image);
 	waitKey(3000);
+}
+
+/**
+ * Написать документацию!!!
+*/
+void matchFramesPairFeatures(
+    Mat& firstFrame,
+    Mat& secondFrame,
+    std::vector<KeyPoint>& firstFeatures,
+    std::vector<KeyPoint>& secondFeatures,
+    int matcherType,
+    std::vector<DMatch>& matches)
+{
+    // Extract descriptors from the key points of the input frames
+    Mat firstDescriptor;
+    extractDescriptor(firstFrame, firstFeatures, 
+        matcherType, firstDescriptor);
+    Mat secondDescriptor;
+    extractDescriptor(secondFrame, secondFeatures, 
+        matcherType, secondDescriptor);
+
+    // Match the descriptors using the specified matcher type and radius
+    matchFeatures(firstDescriptor, secondDescriptor, matches,
+        matcherType);
 }
