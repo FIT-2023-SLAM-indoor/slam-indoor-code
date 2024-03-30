@@ -1,15 +1,19 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
+#include <ceres/ceres.h>
+#include <opencv2/sfm.hpp>
 
-#include "cameraCalibration.h"
-#include "cameraTransition.h"
-#include "fastExtractor.h"
-#include "featureMatching.h"
-#include "triangulate.h"
-#include "IOmisc.h"
+#include "../triangulate.h"
+#include "../vizualizationModule.h"
+#include "../cameraCalibration.h"
+#include "../cameraTransition.h"
+#include "../fastExtractor.h"
+#include "../featureMatching.h"
+#include "../IOmisc.h"
+#include "../bundleAdjustment.h"
 
-#include "config/config.h"
+#include "../config/config.h"
 
 #include "mainCycle.h"
 
@@ -49,7 +53,7 @@ void defineMediaSources(MediaSources &mediaInputStruct) {
 
     if (mediaInputStruct.isPhotoProcessing) {
 		glob(
-            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
+            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
             mediaInputStruct.photosPaths, false);
 		sortGlobs(mediaInputStruct.photosPaths);
     } else {
@@ -65,20 +69,21 @@ void defineMediaSources(MediaSources &mediaInputStruct) {
 ///////////////////////////////////////////////////////////////////
 
 void defineProcessingConditions(
-    int featureExtractingThreshold, 
+	int batchSize,
+    int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius,
+    int matcherType,
     DataProcessingConditions &dataProcessingConditions)
 {
     defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
+	dataProcessingConditions.batchSize = batchSize;
     dataProcessingConditions.featureExtractingThreshold = featureExtractingThreshold;
     dataProcessingConditions.requiredExtractedPointsCount = requiredExtractedPointsCount;
     dataProcessingConditions.requiredMatchedPointsCount = requiredMatchedPointsCount;
     dataProcessingConditions.matcherType = matcherType;
-    dataProcessingConditions.radius = radius;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -111,9 +116,9 @@ bool findFirstGoodVideoFrameAndFeatures(
 //            dataProcessingConditions.calibrationMatrix,
 //            dataProcessingConditions.distortionCoeffs);
 		goodFrame = candidateFrame;
-        fastExtractor(goodFrame, goodFrameFeatures, 
+        fastExtractor(goodFrame, goodFrameFeatures,
             dataProcessingConditions.featureExtractingThreshold);
-        
+
         // Check if enough features are extracted
         if (goodFrameFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
             return true;
@@ -135,40 +140,45 @@ void matchFramesPairFeatures(
 {
     // Extract descriptors from the key points of the input frames
     Mat firstDescriptor;
-    extractDescriptor(firstFrame, firstFeatures, 
+    extractDescriptor(firstFrame, firstFeatures,
         dataProcessingConditions.matcherType, firstDescriptor);
     Mat secondDescriptor;
-    extractDescriptor(secondFrame, secondFeatures, 
+    extractDescriptor(secondFrame, secondFeatures,
         dataProcessingConditions.matcherType, secondDescriptor);
 
-    // Match the descriptors using the specified matcher type and radius
-    matchFeatures(firstDescriptor, secondDescriptor, matches, 
-        dataProcessingConditions.matcherType, dataProcessingConditions.radius);
+    // Match the descriptors using the specified matcher type
+    matchFeatures(firstDescriptor, secondDescriptor, matches,
+        dataProcessingConditions.matcherType);
 }
 
 /**
- * Fills new batch up to frameBatchSize or while new frames can be obtained.
+ * Fills batch up to dataProcessingConditions.batchSize or while new frames can be obtained.
  * <br>
  * Only frames with extracted points count greater or equal to
  * dataProcessingConditions.requiredExtractedPointsCount will be added to batch
  *
  * @param [in] mediaInputStruct
  * @param [in] dataProcessingConditions
- * @param [in] frameBatchSize
- * @param [out] frameBatch
- * @param [out] batchFeatures saved features for reason of effective findGoodVideoFrameFromBatch function working
+ * @param [in,out] currentBatch batch can contains some frames which was considered as bad for previous frame
+ *     but can be good for new one
+ *
+ * @return skipped frames count
  */
-static void fillVideoFrameBatch(
+static int fillVideoFrameBatch(
     MediaSources &mediaInputStruct,
 	DataProcessingConditions &dataProcessingConditions,
-	int frameBatchSize, std::vector<Mat> &frameBatch, std::vector<std::vector<KeyPoint>> &batchFeatures
+	std::vector<BatchElement> &currentBatch
 ) {
     int currentFrameBatchSize = 0;
     Mat nextFrame;
+
 	std::vector<KeyPoint> nextFeatures;
-	int skippedFrames = 0;
+	int skippedFrames = 0, skippedFramesForFirstFound = 0;
 	logStreams.mainReportStream << "Features count in frames added to batch: ";
-    while (currentFrameBatchSize < frameBatchSize && getNextFrame(mediaInputStruct, nextFrame)) {
+    while (
+		currentBatch.size() < dataProcessingConditions.batchSize
+		&& getNextFrame(mediaInputStruct, nextFrame)
+	) {
 		// Учитывая новый вариант сбора батча, undistort тоже надо делать тут, если всё же будем им заниматься
 //        undistort(candidateFrame, newGoodFrame,
 //                  dataProcessingConditions.calibrationMatrix,
@@ -176,59 +186,107 @@ static void fillVideoFrameBatch(
 		fastExtractor(nextFrame, nextFeatures,
 					  dataProcessingConditions.featureExtractingThreshold);
 		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
+			if (currentFrameBatchSize == 0)
+				skippedFramesForFirstFound++;
 			skippedFrames++;
 			continue;
 		}
 		logStreams.mainReportStream << nextFeatures.size() << " ";
-        frameBatch.push_back(nextFrame.clone());
-		batchFeatures.push_back(nextFeatures);
+		currentBatch.push_back({
+		   nextFrame.clone(),
+		   nextFeatures
+		});
         currentFrameBatchSize++;
     }
-	logStreams.mainReportStream << std::endl << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
+	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
+	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
+	return skippedFrames;
 }
 
-
-bool findGoodVideoFrameFromBatch(
-    MediaSources &mediaInputStruct, int frameBatchSize,
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &previousFrame, Mat &newGoodFrame,
-    std::vector<KeyPoint> &previousFeatures, 
-    std::vector<KeyPoint> &newFeatures,
-    std::vector<DMatch> &matches)
-{
-    std::vector<Mat> frameBatch;
-	std::vector<std::vector<KeyPoint>> batchFeatures;
-    fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, frameBatchSize, frameBatch, batchFeatures);
+/**
+ * Find new frame from batch which can be up to dataProcessingConditions.batchSize
+ *
+ * @param [in] mediaInputStruct
+ * @param [in] dataProcessingConditions
+ * @param [in,out] currentBatch <ul>
+ * 		<li>Input is a batch tail from previous iteration</li>
+ * 		<li>
+ * 			Output is a batch tail after new good frame
+ * 			(consequently there will be full batch in case we didn't find new good one)
+* 		</li>
+ * </ul>
+ * @param [in] previousFrame
+ * @param [out] newGoodFrame
+ * @param [in] previousFeatures
+ * @param [out] newFeatures
+ * @param [out] matches
+ * @return true when new good frame was found
+ */
+static bool findGoodVideoFrameFromBatch(
+	MediaSources &mediaInputStruct,
+	DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame,
+	Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+) {
+	int skippedFramesCount = fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, currentBatch);
+	int currentBatchSz = currentBatch.size();
 
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
-    Mat candidateFrame;
+	Mat goodFrame;
+	std::vector<KeyPoint> goodFeatures;
+	std::vector<DMatch> goodMatches;
+	int goodIndex = -1;
+	Mat candidateFrame;
 	std::vector<KeyPoint> candidateFrameFeatures;
-    for (int frameIndex = frameBatch.size() - 1; frameIndex >= 0; frameIndex--) {
-		candidateFrame = frameBatch.at(frameIndex).clone();
-		candidateFrameFeatures = batchFeatures.at(frameIndex);
+	std::vector<DMatch> candidateMatches;
+	for (int batchIndex = currentBatchSz - 1; batchIndex >= 0; batchIndex--) {
+		candidateFrame = currentBatch.at(batchIndex).frame.clone();
+		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 
-		matches.clear();
-        // Match features between the previous frame and the new frame
-        matchFramesPairFeatures(previousFrame, candidateFrame,
-                                previousFeatures, candidateFrameFeatures,
-                                dataProcessingConditions, matches);
+		matchFramesPairFeatures(previousFrame, candidateFrame,
+								previousFeatures, candidateFrameFeatures,
+								dataProcessingConditions, candidateMatches);
 
-		logStreams.mainReportStream << "Batch index: " << frameIndex
+		logStreams.mainReportStream << "Batch index: " << batchIndex
 									<< "; curr. extracted: " << candidateFrameFeatures.size()
-									<< "; matched " << matches.size() << std::endl;
-        // Check if enough matches are found
-        if (matches.size() >= dataProcessingConditions.requiredMatchedPointsCount) {
-			newGoodFrame = candidateFrame.clone();
-			newFeatures.resize(candidateFrameFeatures.size());
-			std::copy(candidateFrameFeatures.begin(), candidateFrameFeatures.end(), newFeatures.begin());
-            return true;
-        }
-    }
+									<< "; matched " << candidateMatches.size() << std::endl;
 
-    // No good frame found in the batch
-    return false;
+		if (
+			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
+			&& candidateMatches.size() >= goodMatches.size()
+		) {
+			goodIndex = batchIndex;
+			goodFrame = candidateFrame.clone();
+			goodFeatures = candidateFrameFeatures;
+			goodMatches = candidateMatches;
+			break;
+		}
+	}
+	if (goodIndex != -1) {
+		newGoodFrame = goodFrame.clone();
+		newFeatures = goodFeatures;
+		matches = goodMatches;
+
+		std::vector<BatchElement> batchTail;
+		for (int i = goodIndex + 1; i < currentBatchSz; ++i)
+			batchTail.push_back(currentBatch.at(i));
+		currentBatch = batchTail;
+
+		logStreams.extractedMatchedTable << skippedFramesCount << "; "
+										 << goodIndex << "; "
+										 << previousFeatures.size() << "; "
+										 << goodFeatures.size() << "; "
+										 << matches.size() << ";\n";
+		return true;
+	}
+
+	// No good frame found in the batch
+	return false;
 }
-
 
 void defineInitialCameraPosition(TemporalImageData &initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
@@ -299,11 +357,12 @@ void defineCorrespondenceIndices(
 
 
 bool processingFirstPairFrames(
-    MediaSources &mediaInputStruct, int frameBatchSize,
+    MediaSources &mediaInputStruct,
     DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
     std::deque<TemporalImageData> &temporalImageDataDeque,
-    Mat &secondFrame, std::vector<Point3f> &spatialPoints)
-{
+    Mat &secondFrame, std::vector<Point3f> &spatialPoints
+) {
     Mat firstFrame;
     if (!findFirstGoodVideoFrameAndFeatures(mediaInputStruct, dataProcessingConditions,
             firstFrame, temporalImageDataDeque.at(0).allExtractedFeatures)
@@ -312,11 +371,13 @@ bool processingFirstPairFrames(
     }
     defineInitialCameraPosition(temporalImageDataDeque.at(0));
 
-    if (!findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,dataProcessingConditions,
-            firstFrame, secondFrame,temporalImageDataDeque.at(0).allExtractedFeatures,
-            temporalImageDataDeque.at(1).allExtractedFeatures,
-            temporalImageDataDeque.at(1).allMatches)
-    ) {
+    if (!findGoodVideoFrameFromBatch(
+		mediaInputStruct, dataProcessingConditions, currentBatch,
+		firstFrame, secondFrame,
+		temporalImageDataDeque.at(0).allExtractedFeatures,
+		temporalImageDataDeque.at(1).allExtractedFeatures,
+		temporalImageDataDeque.at(1).allMatches
+	)) {
         return false;
     }
 
@@ -326,6 +387,7 @@ bool processingFirstPairFrames(
     computeTransformationAndMaskPoints(dataProcessingConditions, chiralityMask,
         temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
         extractedPointCoords1, extractedPointCoords2);
+
     reconstruct(dataProcessingConditions.calibrationMatrix,
         temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
         temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
@@ -422,41 +484,58 @@ void mainCycle(
     int featureExtractingThreshold,
     int requiredExtractedPointsCount,
     int requiredMatchedPointsCount,
-    int matcherType, float radius)
-{
+    int matcherType
+) {
     MediaSources mediaInputStruct;
     defineMediaSources(mediaInputStruct);
 
     DataProcessingConditions dataProcessingConditions;
-    defineProcessingConditions(featureExtractingThreshold, requiredExtractedPointsCount,
-        requiredMatchedPointsCount, matcherType, radius, dataProcessingConditions);
+    defineProcessingConditions(frameBatchSize, featureExtractingThreshold, requiredExtractedPointsCount,
+        requiredMatchedPointsCount, matcherType, dataProcessingConditions);
 
     Mat lastGoodFrame;
     GlobalData globalDataStruct;
     std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
+	std::vector<BatchElement> batch; // Необходимо создавать батч тут, чтобы его не использованный хвост переносился на следующую итерацию
     initTemporalImageDataDeque(temporalImageDataDeque);
 
     // Process the first pair of frames
-    if (!processingFirstPairFrames(mediaInputStruct, frameBatchSize, dataProcessingConditions,
-            temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints)
-    ) {
+    if (!processingFirstPairFrames(
+		mediaInputStruct, dataProcessingConditions, batch,
+		temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints
+	)) {
         // Error message if at least two good frames are not found in the video
         std::cerr << "Couldn't find at least two good frames in video" << std::endl;
         exit(-1);
     }
 
+	std::vector<Mat> rotations;
+	rotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
+	rotations.push_back(temporalImageDataDeque.at(1).rotation.clone());
+	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(1).motion.clone());
+
+    int requiredframesCount = 5;
+    int framesCount = 0;
+    std::vector<Mat> imagesForReconstruct;
+    imagesForReconstruct.push_back(lastGoodFrame.clone());
+
     int lastGoodFrameIdx = 1;
     Mat nextGoodFrame;
+
+
     bool hasVideoGoodFrames;
     while (true) {
 		logStreams.mainReportStream << std::endl << "================================================================" << std::endl << std::endl;
 
         // Find the next good frame batch
-        hasVideoGoodFrames = findGoodVideoFrameFromBatch(mediaInputStruct, frameBatchSize,
-                                dataProcessingConditions, lastGoodFrame, nextGoodFrame,
-                                temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
-                                temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
-                                temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches);
+        hasVideoGoodFrames = findGoodVideoFrameFromBatch(
+			mediaInputStruct, dataProcessingConditions, batch,
+			lastGoodFrame, nextGoodFrame,
+			temporalImageDataDeque.at(lastGoodFrameIdx).allExtractedFeatures,
+			temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures,
+			temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches
+		);
         if (!hasVideoGoodFrames) {
             std::cerr << "No good frames in batch. Stop video processing" << std::endl;
             break;
@@ -510,6 +589,10 @@ void mainCycle(
 		temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx.resize(
 				temporalImageDataDeque.at(lastGoodFrameIdx+1).allExtractedFeatures.size(), -1
 		);
+        rotations.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).rotation.clone());
+		globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(lastGoodFrameIdx+1).motion.clone());
+
+
 		pushNewSpatialPoints(temporalImageDataDeque.at(lastGoodFrameIdx+1).allMatches,
 							 temporalImageDataDeque.at(lastGoodFrameIdx).correspondSpatialPointIdx,
 							 temporalImageDataDeque.at(lastGoodFrameIdx+1).correspondSpatialPointIdx,
@@ -517,13 +600,21 @@ void mainCycle(
 
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();  // будет ли в будущем освобождаться от старых значений nextGoodFrame?
+        imagesForReconstruct.push_back(lastGoodFrame.clone());
+
         if (lastGoodFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
             temporalImageDataDeque.pop_front();
 			temporalImageDataDeque.push_back({});
         } else {
             lastGoodFrameIdx++;
         }
+        framesCount++;
+
     }
+    vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+                                rotations,
+                                globalDataStruct.spatialCameraPositions,
+                                dataProcessingConditions.calibrationMatrix);
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
