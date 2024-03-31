@@ -3,6 +3,8 @@
 #include <fstream>
 
 #include "config/config.h"
+#include "./cycle_processing/mainCycleStructures.h"
+
 #include "IOmisc.h"
 
 void openLogsStreams() {
@@ -104,6 +106,12 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
         // Flush the stream to ensure data is written immediately
         fileStream.flush();
     }
+}
+
+void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream) {
+	Mat pointsMat = Mat(vector);
+	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
+	rawOutput(pointsMat, fileStream);
 }
 
 void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream) {

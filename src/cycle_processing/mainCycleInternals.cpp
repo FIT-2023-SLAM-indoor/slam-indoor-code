@@ -176,7 +176,7 @@ void defineFeaturesCorrespondSpatialIndices(
 
 void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches, const std::vector<int> &prevFrameCorrespondIndices,
-    const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints,
+    const SpatialPointsVector &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints,
     std::vector<Point3f> &oldSpatialPointsForNewFrame, std::vector<Point2f> &newFrameFeatureCoords)
 {
     for (auto &match : matches) {
@@ -190,7 +190,7 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
 
 
 void pushNewSpatialPoints(
-    const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints,
+    const Mat &newFrame, const SpatialPointsVector &newSpatialPoints,
     GlobalData &globalDataStruct, std::vector<int> &prevFrameCorrespondIndices,
     TemporalImageData &newFrameData)
 {

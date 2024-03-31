@@ -2,7 +2,7 @@ data/
 
 *.sfk
 config.py
-/src/main_config.h
+/**/main_config.h
 config.json
 
 .idea

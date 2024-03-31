@@ -3,6 +3,8 @@
 #include <opencv2/videoio.hpp>
 #include "fstream"
 
+#include "./cycle_processing/mainCycleStructures.h"
+
 using namespace cv;
 
 typedef struct LogFilesStreams {
@@ -72,6 +74,14 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixK
  * @throws std::runtime_error if the file stream is not opened or if an error occurs during writing.
  */
 void rawOutput(const Mat &matrix, std::ofstream &fileStream);
+
+/**
+ * Works as function above but at first converts vector to matrix.
+ *
+ * @param [in] vector
+ * @param [out] fileStream
+ */
+void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream);
 
 /**
  * Works as function above but at first converts vector to matrix.

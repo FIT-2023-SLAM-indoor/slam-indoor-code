@@ -52,8 +52,11 @@ int main(int argc, char** argv) {
 
 	closeLogsStreams();
 
+	std::vector<Point3f> convertedSpatialPoints;
+	for (auto point : globalDataStruct.spatialPoints)
+		convertedSpatialPoints.push_back(Point3f(point));
 
-	vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+	vizualizePointsAndCameras(convertedSpatialPoints,
 							  globalDataStruct.cameraRotations,
 							  globalDataStruct.spatialCameraPositions,
 							  globalDataStruct.spatialPointsColors,

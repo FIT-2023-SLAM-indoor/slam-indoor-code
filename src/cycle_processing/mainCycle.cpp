@@ -1,13 +1,12 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
 
-#include "../cameraCalibration.h"
 #include "../cameraTransition.h"
 #include "../fastExtractor.h"
 #include "../featureMatching.h"
 #include "../triangulate.h"
 #include "../IOmisc.h"
+#include "../bundleAdjustment/bundleAdjustment.h"
 
 #include "../config/config.h"
 
@@ -74,7 +73,7 @@ static bool processingFirstPairFrames(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::deque<TemporalImageData> &temporalImageDataDeque,
-	Mat &secondFrame, std::vector<Point3f> &spatialPoints,
+	Mat &secondFrame, SpatialPointsVector &spatialPoints,
 	std::vector<cv::Vec3b> &firstPairSpatialPointColors
 );
 
@@ -83,6 +82,7 @@ bool mainCycle(
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
 ) {
 	std::vector<BatchElement> batch; // Необходимо создавать батч тут, чтобы его не использованный хвост переносился на следующую итерацию
+	std::vector<TemporalImageData> vectorForBA;
 
     Mat lastGoodFrame;
     if (!processingFirstPairFrames(
@@ -167,7 +167,7 @@ bool mainCycle(
         // Get matched point coordinates for reconstruction
         std::vector<Point2f> matchedPointCoords1;
         std::vector<Point2f> matchedPointCoords2;
-        std::vector<Point3f> newSpatialPoints;
+		SpatialPointsVector newSpatialPoints;
         getKeyPointCoordsFromFramePair(
             temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
             temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
@@ -186,14 +186,26 @@ bool mainCycle(
         // Update last good frame
         lastGoodFrame = nextGoodFrame.clone();
         if (lastFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
-            temporalImageDataDeque.pop_front();
+			TemporalImageData extractedData = temporalImageDataDeque.at(0);
+			vectorForBA.push_back(extractedData);
+			temporalImageDataDeque.pop_front();
             temporalImageDataDeque.push_back({});
         } else {
             lastFrameIdx++;
         }
     }
 
-    rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
+	for (int i = 0; i < temporalImageDataDeque.size(); ++i) {
+		if (temporalImageDataDeque.at(i).rotation.empty())
+			break;
+		TemporalImageData extractedData = temporalImageDataDeque.at(i);
+		vectorForBA.push_back(extractedData);
+	}
+	Mat calibration = dataProcessingConditions.calibrationMatrix.clone();
+	bundleAdjustment(
+		calibration, vectorForBA, globalDataStruct
+	);
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
     logStreams.pointsStream.flush();
 
 	return false; // TODO: заглушка, чтобы main работал
@@ -205,7 +217,7 @@ static bool processingFirstPairFrames(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::deque<TemporalImageData> &temporalImageDataDeque,
-	Mat &secondFrame, std::vector<Point3f> &spatialPoints,
+	Mat &secondFrame, SpatialPointsVector &spatialPoints,
 	std::vector<cv::Vec3b> &firstPairSpatialPointColors
 ) {
 	Mat firstFrame;
