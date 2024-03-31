@@ -54,19 +54,21 @@ int main(int argc, char** argv) {
 		temporalImageDataDeque, globalDataStruct
 	));
 
-	closeLogsStreams();
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
+	logStreams.pointsStream.flush();
 
+	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;
 	for (auto point : globalDataStruct.spatialPoints)
 		convertedSpatialPoints.push_back(Point3f(point));
 
-	std::cout << calibrationMatrix << std::endl;
-//	defineCalibrationMatrix(calibrationMatrix);
 	vizualizePointsAndCameras(convertedSpatialPoints,
 							  globalDataStruct.cameraRotations,
 							  globalDataStruct.spatialCameraPositions,
 							  globalDataStruct.spatialPointsColors,
 							  calibrationMatrix);
+
+	closeLogsStreams();
 
     return 0;
 }
