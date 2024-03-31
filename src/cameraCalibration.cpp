@@ -7,12 +7,18 @@
 #include <iostream>
 
 #include "config/config.h"
-#include "cameraCalibration.h"
 #include "IOmisc.h"
+
+#include "cameraCalibration.h"
 
 #define MINIMAL_FOUND_FRAMES_COUNT 10
 
 using namespace cv;
+
+void defineCalibrationMatrix(Mat &calibrationMatrix) {
+	calibrationMatrix.create(3, 3, CV_64F);
+	calibration(calibrationMatrix, CalibrationOption::load);
+}
 
 void calibration(Mat& cameraMatrix, CalibrationOption option) {
     VideoCapture cap;

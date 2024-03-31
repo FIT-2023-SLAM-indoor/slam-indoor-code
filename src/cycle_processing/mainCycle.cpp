@@ -70,6 +70,7 @@ static int findGoodFrameFromBatch(
 
 static bool processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
+	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::deque<TemporalImageData> &temporalImageDataDeque,
@@ -78,7 +79,8 @@ static bool processingFirstPairFrames(
 );
 
 bool mainCycle(
-	MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
+	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
+	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
 ) {
 	std::vector<BatchElement> batch; // Необходимо создавать батч тут, чтобы его не использованный хвост переносился на следующую итерацию
@@ -86,7 +88,7 @@ bool mainCycle(
 
     Mat lastGoodFrame;
     if (!processingFirstPairFrames(
-		mediaInputStruct, dataProcessingConditions, batch,
+		mediaInputStruct, calibrationMatrix, dataProcessingConditions, batch,
 		temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints,
 		globalDataStruct.spatialPointsColors
 	)) {
@@ -145,7 +147,7 @@ bool mainCycle(
         Mat rotationVector;
         solvePnPRansac(
 			oldSpatialPointsForNewFrame, newFrameFeatureCoords,
-            dataProcessingConditions.calibrationMatrix, noArray(), rotationVector,
+            calibrationMatrix, noArray(), rotationVector,
             temporalImageDataDeque.at(lastFrameIdx+1).motion
 		);
         // Convert rotation vector to rotation matrix
@@ -173,7 +175,7 @@ bool mainCycle(
             temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
             temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
             matchedPointCoords1, matchedPointCoords2);
-        reconstruct(dataProcessingConditions.calibrationMatrix,
+        reconstruct(calibrationMatrix,
             temporalImageDataDeque.at(lastFrameIdx).rotation,
             temporalImageDataDeque.at(lastFrameIdx).motion,
             temporalImageDataDeque.at(lastFrameIdx+1).rotation,
@@ -201,9 +203,8 @@ bool mainCycle(
 		TemporalImageData extractedData = temporalImageDataDeque.at(i);
 		vectorForBA.push_back(extractedData);
 	}
-	Mat calibration = dataProcessingConditions.calibrationMatrix.clone();
 	bundleAdjustment(
-		calibration, vectorForBA, globalDataStruct
+		calibrationMatrix, vectorForBA, globalDataStruct
 	);
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
     logStreams.pointsStream.flush();
@@ -214,6 +215,7 @@ bool mainCycle(
 
 static bool processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
+	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::deque<TemporalImageData> &temporalImageDataDeque,
@@ -248,10 +250,10 @@ static bool processingFirstPairFrames(
 	// Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
 	Mat chiralityMask;
 	std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
-	computeTransformationAndFilterPoints(dataProcessingConditions,
+	computeTransformationAndFilterPoints(dataProcessingConditions, calibrationMatrix,
 										 temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
 										 extractedPointCoords1, extractedPointCoords2, chiralityMask);
-	reconstruct(dataProcessingConditions.calibrationMatrix,
+	reconstruct(calibrationMatrix,
 				temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
 				temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
 				extractedPointCoords1, extractedPointCoords2, spatialPoints);

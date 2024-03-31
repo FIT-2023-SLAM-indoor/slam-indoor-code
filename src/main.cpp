@@ -3,7 +3,6 @@
 
 #include "config/config.h"
 #include "IOmisc.h"
-
 #include "cameraCalibration.h"
 
 #include "cycle_processing/mainCycle.h"
@@ -44,11 +43,16 @@ int main(int argc, char** argv) {
 	MediaSources mediaInputStruct;
 	DataProcessingConditions dataProcessingConditions;
 	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
+	Mat calibrationMatrix;
+	defineCalibrationMatrix(calibrationMatrix);
 	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
 	defineInitialCameraPosition(temporalImageDataDeque.at(0));
 	do {
 		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
-	} while (mainCycle(mediaInputStruct, dataProcessingConditions, temporalImageDataDeque, globalDataStruct));
+	} while (mainCycle(
+		mediaInputStruct, calibrationMatrix, dataProcessingConditions,
+		temporalImageDataDeque, globalDataStruct
+	));
 
 	closeLogsStreams();
 
@@ -56,11 +60,13 @@ int main(int argc, char** argv) {
 	for (auto point : globalDataStruct.spatialPoints)
 		convertedSpatialPoints.push_back(Point3f(point));
 
+	std::cout << calibrationMatrix << std::endl;
+//	defineCalibrationMatrix(calibrationMatrix);
 	vizualizePointsAndCameras(convertedSpatialPoints,
 							  globalDataStruct.cameraRotations,
 							  globalDataStruct.spatialCameraPositions,
 							  globalDataStruct.spatialPointsColors,
-							  dataProcessingConditions.calibrationMatrix);
+							  calibrationMatrix);
 
     return 0;
 }

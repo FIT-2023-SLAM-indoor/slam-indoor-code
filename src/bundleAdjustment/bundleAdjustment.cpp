@@ -63,7 +63,7 @@ static void convertDataForBA(
  * @param [out] imagesDataForAdjustment
  */
 static void convertDataFromBA(
-	double* calibration, std::vector<double*> &extrinsicsVector,
+	double* &calibration, std::vector<double*> &extrinsicsVector,
 	cv::Mat& calibrationMatrix, std::vector<TemporalImageData> &imagesDataForAdjustment
 );
 
@@ -152,13 +152,13 @@ static void convertDataForBA(
 }
 
 static void convertDataFromBA(
-	double* calibration, std::vector<double*> &extrinsicsVector,
+	double* &calibration, std::vector<double*> &extrinsicsVector,
 	cv::Mat& calibrationMatrix, std::vector<TemporalImageData> &imagesDataForAdjustment
 ) {
 	calibrationMatrix.at<double>(0, 0) = calibration[0];
-	calibrationMatrix.at<double>(1, 1) = calibration[0];
-	calibrationMatrix.at<double>(0, 2) = calibration[0];
-	calibrationMatrix.at<double>(1, 2) = calibration[0];
+	calibrationMatrix.at<double>(1, 1) = calibration[1];
+	calibrationMatrix.at<double>(0, 2) = calibration[2];
+	calibrationMatrix.at<double>(1, 2) = calibration[3];
 	delete calibration;
 
 	for (int i = 0; i < extrinsicsVector.size(); ++i) {

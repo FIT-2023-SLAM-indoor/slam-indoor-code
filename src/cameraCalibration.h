@@ -16,6 +16,13 @@ enum CalibrationOption {
 };
 
 /**
+ * Сreates a new matrix or changing the type and size of an existing one.
+ *
+ * @param [out] calibrationMatrix
+ */
+void defineCalibrationMatrix(Mat &calibrationMatrix);
+
+/**
  * Calibration wrapper.
  *
  * Regarding to `option`, loads to `cameraMatrix` camera intrinsic matrix from file specified by `pathToXML`

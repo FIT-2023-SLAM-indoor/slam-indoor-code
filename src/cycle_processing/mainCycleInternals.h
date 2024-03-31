@@ -62,6 +62,7 @@ bool findFirstGoodFrame(
  * координаты не попадут в выходные вектора.
  *
  * @param [in] dataProcessingConditions
+ * @param [in] calibrationMatrix
  * @param [in] firstFrameData
  * @param [out] secondFrameData
  * @param [in, out] keyPointFrameCoords1
@@ -70,6 +71,7 @@ bool findFirstGoodFrame(
  */
 void computeTransformationAndFilterPoints(
     const DataProcessingConditions &dataProcessingConditions,
+	Mat &calibrationMatrix,
     const TemporalImageData &firstFrameData,
     TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1,

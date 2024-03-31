@@ -46,12 +46,6 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
     }
 }
 
-static void defineCalibrationMatrix(Mat &calibrationMatrix) {
-    // Сreating a new matrix or changing the type and size of an existing one
-    calibrationMatrix.create(3, 3, CV_64F);
-    calibration(calibrationMatrix, CalibrationOption::load);
-}
-
 static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
@@ -68,7 +62,6 @@ void defineProcessingEnvironment(
 {
     defineMediaSources(mediaInputStruct);
 
-    defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
     dataProcessingConditions.featureExtractingThreshold =
@@ -126,7 +119,7 @@ bool findFirstGoodFrame(
 
 
 void computeTransformationAndFilterPoints(
-    const DataProcessingConditions &dataProcessingConditions,
+    const DataProcessingConditions &dataProcessingConditions, Mat &calibrationMatrix,
     const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2,
 	Mat &chiralityMask
@@ -136,7 +129,7 @@ void computeTransformationAndFilterPoints(
         keyPointFrameCoords1, keyPointFrameCoords2);
 
     estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2,
-        dataProcessingConditions.calibrationMatrix, secondFrameData.rotation,
+        calibrationMatrix, secondFrameData.rotation,
         secondFrameData.motion, chiralityMask);
 
     // Apply the chirality mask to the points from the frames
