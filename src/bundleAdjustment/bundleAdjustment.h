@@ -2,7 +2,7 @@
 
 #include "opencv2/core.hpp"
 #include "ceres/ceres.h"
-#include "mainCycle.h"
+#include "cycle_processing/mainCycleStructures.h"
 
 /**
  * Functor class for re-projection cost function `project(K*[R|T]*P3d) - p2d`

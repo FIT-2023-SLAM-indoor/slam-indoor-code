@@ -22,7 +22,7 @@ add_executable(
     src/cameraTransition.cpp src/cameraTransition.h
     src/featureMatching.cpp src/featureMatching.h
     src/triangulate.cpp src/triangulate.h
-    src/bundleAdjustment.cpp src/bundleAdjustment.h
+    src/bundleAdjustment/bundleAdjustment.cpp src/bundleAdjustment/bundleAdjustment.h
     src/IOmisc.cpp src/IOmisc.h
     src/vizualizationModule.cpp src/vizualizationModule.h
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
