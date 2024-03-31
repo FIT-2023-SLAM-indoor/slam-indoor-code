@@ -19,10 +19,12 @@ LogFilesStreams logStreams;
 
 
 int main(int argc, char** argv) {
+	
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
 	}
+
 	configService.setConfigFile(argv[1]);
 	google::InitGoogleLogging("BA");
 	openLogsStreams();
@@ -54,6 +56,7 @@ int main(int argc, char** argv) {
 	vizualizePointsAndCameras(globalDataStruct.spatialPoints,
 							  globalDataStruct.cameraRotations,
 							  globalDataStruct.spatialCameraPositions,
+							  globalDataStruct.spatialPointsColors,
 							  dataProcessingConditions.calibrationMatrix);
 
     return 0;
