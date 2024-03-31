@@ -83,10 +83,12 @@ static bool processingFirstPairFrames(
  *
  * @param [in,out] processedFramesData
  * @param [in,out] globalDataStruct
+ * @param [in] bundleAdjustmentWasUsed if true, print saved rotations and motions
  */
 static void moveProcessedDataToGlobalStruct(
 	std::vector<TemporalImageData> &processedFramesData,
-	GlobalData &globalDataStruct
+	GlobalData &globalDataStruct,
+	bool bundleAdjustmentWasUsed = false
 );
 
 bool mainCycle(
@@ -192,7 +194,9 @@ bool mainCycle(
 		if (processedFramesData.size() >= dataProcessingConditions.maxProcessedFramesVectorSz) {
 			if (dataProcessingConditions.useBundleAdjustment)
 				bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
-			moveProcessedDataToGlobalStruct(processedFramesData, globalDataStruct);
+			moveProcessedDataToGlobalStruct(
+				processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
+			);
 		}
 
 		// Update last good frame
@@ -207,7 +211,9 @@ bool mainCycle(
 	if (!processedFramesData.empty()) {
 		if (dataProcessingConditions.useBundleAdjustment)
 			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
-		moveProcessedDataToGlobalStruct(processedFramesData, globalDataStruct);
+		moveProcessedDataToGlobalStruct(
+			processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
+		);
 	}
 
 	return false; // TODO: заглушка, чтобы main работал
@@ -370,11 +376,21 @@ static int findGoodFrameFromBatch(
 
 static void moveProcessedDataToGlobalStruct(
 	std::vector<TemporalImageData> &processedFramesData,
-	GlobalData &globalDataStruct
+	GlobalData &globalDataStruct,
+	bool bundleAdjustmentWasUsed
 ) {
-	for (auto &frameData : processedFramesData) {
+	logStreams.mainReportStream << (bundleAdjustmentWasUsed ? "Projections after BA:\n" : "");
+	for (int i = 0; i < processedFramesData.size(); ++i) {
+		auto &frameData = processedFramesData.at(i);
 		globalDataStruct.cameraRotations.push_back(frameData.rotation.clone());
 		globalDataStruct.spatialCameraPositions.push_back(frameData.motion.clone());
+		if (bundleAdjustmentWasUsed) {
+			logStreams.mainReportStream
+				<< "Processed frame " << i << ": "
+				<< "\nRotation:\n" << frameData.rotation
+				<< "\nMotion:\n" << frameData.motion
+				<< "\n\n";
+		}
 	}
 
 	processedFramesData.clear();

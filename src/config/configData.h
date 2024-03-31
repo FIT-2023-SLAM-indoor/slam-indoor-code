@@ -59,6 +59,7 @@ enum ConfigFieldEnum {
 
 	USE_BUNDLE_ADJUSTMENT,
 	BA_MAX_FRAMES_CNT,
+	BA_USE_HUBER_LOSS,
 	BA_HUBER_LOSS_FUNCTION_PARAMETER,
 	BA_THREADS_CNT
 };
@@ -106,6 +107,7 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 
 		{USE_BUNDLE_ADJUSTMENT, {"useBundleAdjustment", BOOL}},
 		{BA_MAX_FRAMES_CNT, {"BAMaxFramesCnt", INTEGER}},
+		{BA_USE_HUBER_LOSS, {"BAUseHuberLossFunction", BOOL}},
 		{BA_HUBER_LOSS_FUNCTION_PARAMETER,{"BAHuberLossFunctionParameter", FLOATING}},
 		{BA_THREADS_CNT,{"BAThreadsCnt", INTEGER}}
 };

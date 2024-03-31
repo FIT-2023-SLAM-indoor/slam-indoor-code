@@ -6,6 +6,7 @@
 
 #include "../config/config.h"
 #include "../cycle_processing/mainCycleStructures.h"
+#include "../IOmisc.h"
 
 #include "bundleAdjustment.h"
 
@@ -67,15 +68,8 @@ static void convertDataFromBA(
 	cv::Mat& calibrationMatrix, std::vector<TemporalImageData> &imagesDataForAdjustment
 );
 
-/**
- * Make bundle adjustment.
- * <br>
- * WARNING: due to algorithm ALL intrinsic and extrinsic parameters are bound to be changed!!!
- *
- * @param [in,out] calibrationMatrix
- * @param [in,out] imagesDataForAdjustment
- * @param [in,out] globalData
- */
+static ceres::LossFunction* getLossFunction();
+
 void bundleAdjustment(
 	cv::Mat& calibrationMatrix,
 	std::vector<TemporalImageData> &imagesDataForAdjustment,
@@ -91,9 +85,7 @@ void bundleAdjustment(
 		problem.AddParameterBlock(extrinsics, 6);
 	problem.SetParameterBlockConstant(extrinsicsVector[0]);
 
-	ceres::LossFunction *lossFunction = new ceres::HuberLoss(
-		configService.getValue<double>(ConfigFieldEnum::BA_HUBER_LOSS_FUNCTION_PARAMETER)
-	);
+	ceres::LossFunction *lossFunction = getLossFunction();
     for (int i = 0; i < extrinsicsVector.size(); ++i) {
 		auto &imageData = imagesDataForAdjustment.at(i);
 		std::vector<int> corresponds = imageData.correspondSpatialPointIdx;
@@ -125,14 +117,23 @@ void bundleAdjustment(
     ceres::Solve(ceres_config_options, &problem, &summary);
 
 	if (!summary.IsSolutionUsable())
-		std::cout << "BA failed" << std::endl;
+		logStreams.mainReportStream << "BA failed" << std::endl;
 	else
-	    std::cout << "Bundle Adjustment statistics (approximated RMSE):" << std::endl
-				  << " #residuals: " << summary.num_residuals << std::endl
-				  << " Initial RMSE: " << std::sqrt(summary.initial_cost / summary.num_residuals) << std::endl
-				  << " Final RMSE: " << std::sqrt(summary.final_cost / summary.num_residuals) << std::endl
-				  << " Time (s): " << summary.total_time_in_seconds << std::endl;
+		logStreams.mainReportStream
+			<< "Bundle Adjustment statistics (approximated RMSE):" << std::endl
+			<< " #residuals: " << summary.num_residuals << std::endl
+			<< " Initial RMSE: " << std::sqrt(summary.initial_cost / summary.num_residuals) << std::endl
+			<< " Final RMSE: " << std::sqrt(summary.final_cost / summary.num_residuals) << std::endl
+			<< " Time (s): " << summary.total_time_in_seconds << std::endl;
 	convertDataFromBA(calibration, extrinsicsVector, calibrationMatrix, imagesDataForAdjustment);
+}
+
+static ceres::LossFunction* getLossFunction() {
+	if (configService.getValue<bool>(ConfigFieldEnum::BA_USE_HUBER_LOSS))
+		return new ceres::HuberLoss(
+			configService.getValue<double>(ConfigFieldEnum::BA_HUBER_LOSS_FUNCTION_PARAMETER)
+		);
+	return nullptr;
 }
 
 static void convertDataForBA(

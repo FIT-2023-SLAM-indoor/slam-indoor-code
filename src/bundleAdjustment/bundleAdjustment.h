@@ -38,6 +38,15 @@ public:
     static ceres::CostFunction* createFunctor(cv::Point2d imagePoint);
 };
 
+/**
+ * Make bundle adjustment.
+ * <br>
+ * WARNING: due to algorithm ALL intrinsic and extrinsic parameters are bound to be changed!!!
+ *
+ * @param [in,out] calibrationMatrix
+ * @param [in,out] imagesDataForAdjustment
+ * @param [in,out] globalData
+ */
 void bundleAdjustment(
 	cv::Mat& calibrationMatrix,
 	std::vector<TemporalImageData> &imagesDataForAdjustment,
