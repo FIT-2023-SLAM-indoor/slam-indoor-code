@@ -16,7 +16,6 @@
 using namespace cv;
 
 const int OPTIMAL_DEQUE_SIZE = 8;
-const int FRAMES_FOR_BA = 8;
 
 /**
  * Fills batch up to dataProcessingConditions.batchSize or while new frames can be obtained.
@@ -190,8 +189,9 @@ bool mainCycle(
             temporalImageDataDeque.at(lastFrameIdx+1));
 
 		processedFramesData.push_back(temporalImageDataDeque.at(lastFrameIdx+1));
-		if (processedFramesData.size() >= FRAMES_FOR_BA) {
-			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+		if (processedFramesData.size() >= dataProcessingConditions.maxProcessedFramesVectorSz) {
+			if (dataProcessingConditions.useBundleAdjustment)
+				bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
 			moveProcessedDataToGlobalStruct(processedFramesData, globalDataStruct);
 		}
 
@@ -205,7 +205,8 @@ bool mainCycle(
 		}
     }
 	if (!processedFramesData.empty()) {
-		bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+		if (dataProcessingConditions.useBundleAdjustment)
+			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
 		moveProcessedDataToGlobalStruct(processedFramesData, globalDataStruct);
 	}
 

@@ -106,7 +106,7 @@ void bundleAdjustment(
             cv::Point2d point2d = points[pointIdx].pt;
             ceres::CostFunction *costFunction = ProjectionCostFunctor::createFunctor(point2d);
             problem.AddResidualBlock(
-				costFunction, nullptr,
+				costFunction, lossFunction,
 				calibration, extrinsicsVector.at(i),
 				&(globalData.spatialPoints[correspondIdx].x)
             );

@@ -73,6 +73,10 @@ void defineProcessingEnvironment(
     dataProcessingConditions.requiredMatchedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT);
     dataProcessingConditions.matcherType = getMatcherTypeIndex();
+	dataProcessingConditions.useBundleAdjustment =
+		configService.getValue<bool>(ConfigFieldEnum::USE_BUNDLE_ADJUSTMENT);
+	dataProcessingConditions.maxProcessedFramesVectorSz =
+		configService.getValue<int>(ConfigFieldEnum::BA_MAX_FRAMES_CNT);
 }
 
 

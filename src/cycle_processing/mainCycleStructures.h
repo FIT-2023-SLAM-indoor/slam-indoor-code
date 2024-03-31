@@ -25,6 +25,8 @@ struct DataProcessingConditions {
 	int requiredExtractedPointsCount; // Required number of extracted points in frame.
 	int requiredMatchedPointsCount;   // Required number of matched points in frame.
 	int matcherType;                  // Type of descriptor matcher to use.
+	bool useBundleAdjustment;
+	int maxProcessedFramesVectorSz;   // This parameter also specifes max frames datas cnt which will be used for bundle adjustment
 };
 
 /**
