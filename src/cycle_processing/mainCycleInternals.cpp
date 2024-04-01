@@ -10,8 +10,8 @@
 
 #include "../config/config.h"
 
-#include "mainCycle.h"
 #include "mainCycleInternals.h"
+#include "mainCycleStructures.h"
 
 using namespace cv;
 
@@ -19,13 +19,19 @@ using namespace cv;
  * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
  *
  * @param [in] frame
- * @param [in] matchIdx ABOBA!!!
+ * @param [in] matchIdx ABOBA!
  * @param [in, out] frameData
  * @param [out] spatialPointColors
  */
 static void saveFrameColorOfKeyPoint(
-		const Mat &frame, int matchIdx, TemporalImageData &frameData,
-		std::vector<Vec3b> &spatialPointColors);
+    const Mat &frame, int matchIdx, TemporalImageData &frameData,
+    std::vector<Vec3b> &spatialPointColors)
+{
+    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
+    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
+    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
+}
+
 
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
@@ -96,6 +102,7 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
         return mediaInputStruct.frameSequence.read(nextFrame);
     }
 }
+
 
 void defineInitialCameraPosition(TemporalImageData &initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
@@ -213,14 +220,4 @@ void pushNewSpatialPoints(
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] = structId;
         }
     }
-}
-
-
-static void saveFrameColorOfKeyPoint(
-    const Mat &frame, int matchIdx, TemporalImageData &frameData,
-    std::vector<Vec3b> &spatialPointColors)
-{
-    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
-    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
-    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
 }
