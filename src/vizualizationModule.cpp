@@ -66,6 +66,11 @@ void startWindowSpin(
 {
     window.registerKeyboardCallback(KeyboardViz3d, &window);
     window.setWindowPosition(Point(0, 0));
+    window.spinOnce();
+    viz::Camera cam = viz::Camera(Vec2d(1.0,1.0), window.getWindowSize());
+    window.setCamera(cam);
+    std::cout << cam.getFov() << std::endl;
+    std::cout << window.getCamera().getFov() << std::endl;
     window.spin();
 }
 
@@ -126,6 +131,7 @@ void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
     Vec3d newTranslation;
     if (w.action)
     {
+        //std::cout <<  cam.getFov() << std::endl;
         //std::cout << "you pressed " << w.symbol << " " << (int)w.code << std::endl;
         switch ((int)w.code)
         {
