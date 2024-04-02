@@ -5,8 +5,8 @@
 #include "IOmisc.h"
 #include "cameraCalibration.h"
 
-#include "cycle_processing/mainCycle.h"
-#include "cycle_processing/mainCycleInternals.h"
+#include "cycleProcessing/mainCycle.h"
+#include "cycleProcessing/mainCycleInternals.h"
 #include "vizualizationModule.h"
 
 using namespace cv;
@@ -48,7 +48,11 @@ int main(int argc, char** argv) {
 	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
 	defineInitialCameraPosition(temporalImageDataDeque.at(0));
 	do {
-		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
+		/* 
+		
+		Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры 
+		
+		*/
 	} while (mainCycle(
 		mediaInputStruct, calibrationMatrix, dataProcessingConditions,
 		temporalImageDataDeque, globalDataStruct

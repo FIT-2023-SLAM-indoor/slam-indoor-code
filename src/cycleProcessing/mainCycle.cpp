@@ -70,7 +70,19 @@ static int findGoodFrameFromBatch(
 
 
 /**
- * 
+ * Функция по умному ищет подходящие для реконструкции первые два кадра. Если второй хороший кадр
+ * не удалось найти сразу, то мы вынимаем первый кадр из батча, но при этом добавляем в батч
+ * следующее изображение из последовательности с достаточным количеством фич.
+ * Функция в качестве числа вернет либо индекс второго хорошего кадра из батча, либо константу о
+ * том, что видео кончилось, других варианов нет. (*Эта функция нужна как раз для исключения
+ * варианта не нахождения в батче второго кадра при поиске первой пары).
+ *
+ * @param [in] dataProcessingConditions
+ * @param [in] mediaInputStruct
+ * @param [in, out] currentBatch
+ * @param [out] temporalImageDataDeque
+ * @param [out] secondFrame
+ * @return EMPTY_BATCH or frameIndex.
  */
 static int defineFirstPairFrames( 
 	const DataProcessingConditions &dataProcessingConditions,
@@ -105,7 +117,7 @@ static void moveProcessedDataToGlobalStruct(
 );
 
 
-int mainCycle(
+bool mainCycle(
 	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
@@ -143,12 +155,12 @@ int mainCycle(
 			std::string msg = "Video is over. No more frames...";
             logStreams.mainReportStream << msg << std::endl;
 			std::cerr << msg << std::endl;
-			break;
+			return false;
         } else if (frameIndex == FRAME_NOT_FOUND) {
-			std::string msg = "No good frames in batch. Stop video processing";
+			std::string msg = "No good frames in batch. Interrupt video processing";
 			logStreams.mainReportStream << msg << std::endl;
 			std::cerr << msg << std::endl;
-            break;
+            return true;
         }
 
         // Get object and image points for reconstruction
@@ -228,7 +240,7 @@ int mainCycle(
 		);
 	}
 
-	return false; // TODO: заглушка, чтобы main работал
+	return false;
 }
 
 
@@ -302,7 +314,9 @@ static int fillVideoFrameBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch
 ) {
+	int currentFrameBatchSize = 0;
 	Mat nextFrame;
+
 	std::vector<KeyPoint> nextFeatures;
 	int skippedFrames = 0, skippedFramesForFirstFound = 0;
 	logStreams.mainReportStream << "Features count in frames added to batch: ";
@@ -314,7 +328,7 @@ static int fillVideoFrameBatch(
 		fastExtractor(nextFrame, nextFeatures,
 					  dataProcessingConditions.featureExtractingThreshold);
 		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
-			if (currentBatch.size() == 0)
+			if (currentFrameBatchSize == 0)
 				skippedFramesForFirstFound++;
 			skippedFrames++;
 			continue;
@@ -324,14 +338,13 @@ static int fillVideoFrameBatch(
 			nextFrame.clone(),
 			nextFeatures
 		});
+		currentFrameBatchSize++;
 	}
-	// Я решил использовать эту функцию не только для конструирования батча с нуля, но и еще для
-	// дополнения хвоста батча до нужного количества кадров. Поэтому лог ниже может немного вводить
-	// в заблуждение.
 	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
 	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
 	return skippedFrames;
 }
+
 
 static int findGoodFrameFromBatch(
 	MediaSources &mediaInputStruct,
