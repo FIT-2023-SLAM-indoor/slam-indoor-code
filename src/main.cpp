@@ -39,24 +39,31 @@ int main(int argc, char** argv) {
 	}
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 
-	GlobalData globalDataStruct;
 	MediaSources mediaInputStruct;
 	DataProcessingConditions dataProcessingConditions;
 	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 	Mat calibrationMatrix;
 	defineCalibrationMatrix(calibrationMatrix);
+	GlobalData globalDataStruct;
+	GlobalData newGlobalData;
 	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
 	defineInitialCameraPosition(temporalImageDataDeque.at(0));
-	do {
-		/* 
-		
-		Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры 
-		
-		*/
-	} while (mainCycle(
+	while (int lastGoodFrameId = mainCycle(
 		mediaInputStruct, calibrationMatrix, dataProcessingConditions,
-		temporalImageDataDeque, globalDataStruct
-	));
+		temporalImageDataDeque, newGlobalData) > 0
+	) {
+		std::deque<TemporalImageData> oldTempImageData = temporalImageDataDeque;
+		temporalImageDataDeque.clear();
+		temporalImageDataDeque.resize(OPTIMAL_DEQUE_SIZE);
+		temporalImageDataDeque.at(0).rotation = oldTempImageData.at(lastGoodFrameId).rotation;
+		temporalImageDataDeque.at(0).motion = oldTempImageData.at(lastGoodFrameId).motion;
+
+		transferGlobalData(globalDataStruct, newGlobalData);
+		newGlobalData.cameraRotations.clear();
+		newGlobalData.spatialCameraPositions.clear();
+		newGlobalData.spatialPoints.clear();
+		newGlobalData.spatialPointsColors.clear();
+	}
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();

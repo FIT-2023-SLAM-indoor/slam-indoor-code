@@ -218,3 +218,27 @@ void pushNewSpatialPoints(
         }
     }
 }
+
+
+void transferGlobalData(GlobalData mainGlobalData, GlobalData newGlobalData) {
+    mainGlobalData.spatialPoints.insert(
+        mainGlobalData.spatialPoints.end(),
+        newGlobalData.spatialPoints.begin(),
+        newGlobalData.spatialPoints.end()
+    );
+    mainGlobalData.spatialPointsColors.insert(
+        mainGlobalData.spatialPointsColors.end(),
+        newGlobalData.spatialPointsColors.begin(),
+        newGlobalData.spatialPointsColors.end()
+    );
+    mainGlobalData.spatialCameraPositions.insert(
+        mainGlobalData.spatialCameraPositions.end(),
+        newGlobalData.spatialCameraPositions.begin(),
+        newGlobalData.spatialCameraPositions.end()
+    );
+    mainGlobalData.cameraRotations.insert(
+        mainGlobalData.cameraRotations.end(),
+        newGlobalData.cameraRotations.begin(),
+        newGlobalData.cameraRotations.end()
+    );
+}

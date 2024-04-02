@@ -117,7 +117,7 @@ static void moveProcessedDataToGlobalStruct(
 );
 
 
-bool mainCycle(
+int mainCycle(
 	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
@@ -155,12 +155,12 @@ bool mainCycle(
 			std::string msg = "Video is over. No more frames...";
             logStreams.mainReportStream << msg << std::endl;
 			std::cerr << msg << std::endl;
-			return false;
+			return EMPTY_BATCH;
         } else if (frameIndex == FRAME_NOT_FOUND) {
 			std::string msg = "No good frames in batch. Interrupt video processing";
 			logStreams.mainReportStream << msg << std::endl;
 			std::cerr << msg << std::endl;
-            return true;
+            return lastFrameIdx;
         }
 
         // Get object and image points for reconstruction
@@ -240,7 +240,7 @@ bool mainCycle(
 		);
 	}
 
-	return false;
+	return lastFrameIdx;
 }
 
 
@@ -253,7 +253,7 @@ static bool processingFirstPairFrames(
 	Mat &secondFrame, SpatialPointsVector &spatialPoints,
 	std::vector<cv::Vec3b> &firstPairSpatialPointColors
 ) {
-	int frameIndex = defineFirstPairFrames(mediaInputStruct, dataProcessingConditions, currentBatch,
+	int frameIndex = defineFirstPairFrames(dataProcessingConditions, mediaInputStruct, currentBatch,
 										   temporalImageDataDeque, secondFrame);
 	if (frameIndex == EMPTY_BATCH) {
 		return false;
