@@ -267,9 +267,7 @@ static int fillVideoFrameBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch
 ) {
-	int currentFrameBatchSize = 0;
 	Mat nextFrame;
-
 	std::vector<KeyPoint> nextFeatures;
 	int skippedFrames = 0, skippedFramesForFirstFound = 0;
 	logStreams.mainReportStream << "Features count in frames added to batch: ";
@@ -281,7 +279,7 @@ static int fillVideoFrameBatch(
 		fastExtractor(nextFrame, nextFeatures,
 					  dataProcessingConditions.featureExtractingThreshold);
 		if (nextFeatures.size() < dataProcessingConditions.requiredExtractedPointsCount) {
-			if (currentFrameBatchSize == 0)
+			if (currentBatch.size() == 0)
 				skippedFramesForFirstFound++;
 			skippedFrames++;
 			continue;
@@ -291,8 +289,10 @@ static int fillVideoFrameBatch(
 			nextFrame.clone(),
 			nextFeatures
 		});
-		currentFrameBatchSize++;
 	}
+	// Я решил использовать эту функцию не только для конструирования батча с нуля, но и еще для
+	// дополнения хвоста батча до нужного количества кадров. Поэтому лог ниже может немного вводить
+	// в заблуждение.
 	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
 	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
 	return skippedFrames;
