@@ -218,7 +218,7 @@ bool mainCycle(
 }
 
 
-static bool processingFirstPairFrames(
+static int processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
 	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
@@ -232,9 +232,7 @@ static bool processingFirstPairFrames(
 		mediaInputStruct, dataProcessingConditions,firstFrame,
 		temporalImageDataDeque.at(0).allExtractedFeatures
 	)) {
-		logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-		logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
-		return false;
+		return EMPTY_BATCH;
 	}
 
 	int frameIndex = findGoodFrameFromBatch(
@@ -244,12 +242,8 @@ static bool processingFirstPairFrames(
 		temporalImageDataDeque.at(1).allExtractedFeatures,
 		temporalImageDataDeque.at(1).allMatches
 	);
-	if (frameIndex == EMPTY_BATCH) {
-		logStreams.mainReportStream << std::endl << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-		logStreams.mainReportStream << "Video is over. No more frames..." << std::endl;
-		return false;
-	} else if (frameIndex == FRAME_NOT_FOUND) {
-		return false;
+	if (frameIndex == EMPTY_BATCH || frameIndex == FRAME_NOT_FOUND) {
+		return frameIndex;
 	}
 
 	// Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
@@ -265,7 +259,7 @@ static bool processingFirstPairFrames(
 	defineFeaturesCorrespondSpatialIndices(chiralityMask, secondFrame, temporalImageDataDeque.at(0),
 										   temporalImageDataDeque.at(1), firstPairSpatialPointColors);
 
-	return true;
+	return frameIndex;
 }
 
 static int fillVideoFrameBatch(
@@ -308,13 +302,13 @@ static int findGoodFrameFromBatch(
 	MediaSources &mediaInputStruct,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
-	Mat &previousFrame,
-	Mat &newGoodFrame,
+	Mat &previousFrame, Mat &newGoodFrame,
 	std::vector<KeyPoint> &previousFeatures,
 	std::vector<KeyPoint> &newFeatures,
 	std::vector<DMatch> &matches
 ) {
-	int skippedFramesCount = fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, currentBatch);
+	int skippedFramesCount =
+		fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, currentBatch);
 	int currentBatchSz = currentBatch.size();
 	if (currentBatchSz == 0)
 		return EMPTY_BATCH;
