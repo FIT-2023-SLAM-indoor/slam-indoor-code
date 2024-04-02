@@ -4,8 +4,8 @@
 using namespace cv;
 double speed = 0.5;
 void vizualizeOnlyPoints(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Vec3b> colors)
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors)
 {
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
@@ -13,8 +13,8 @@ void vizualizeOnlyPoints(
 }
 
 viz::WCloud getPointCloudFromPoints(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Vec3b> colors)
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors)
 {
     std::vector<Vec3f> point_cloud_est;
     for (int i = 0; i < spatialPoints.size(); ++i)
@@ -30,14 +30,14 @@ viz::Viz3d makeWindow()
 {
     viz::Viz3d window("Coordinate Frame");
     window.setWindowSize(Size(1000, 1000));
-    window.setBackgroundColor(); 
+    window.setBackgroundColor(viz::Color(200, 200, 200));
     return window;
 }
 void vizualizeCameras(
     viz::Viz3d& window,
-    std::vector<Mat> rotations,
-    std::vector<Mat> transitions, 
-    Mat calibration)
+    std::vector<Mat>& rotations,
+    std::vector<Mat>& transitions, 
+    Mat& calibration)
 {
     std::vector<Affine3d> path;
     for (size_t i = 0; i < rotations.size(); ++i)
@@ -49,11 +49,11 @@ void vizualizeCameras(
 
 }
 void vizualizePointsAndCameras(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Mat> rotations,
-    std::vector<Mat> transitions,
-    std::vector<Vec3b> colors,
-    Mat calibration)
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Mat>& rotations,
+    std::vector<Mat>& transitions,
+    std::vector<Vec3b>& colors,
+    Mat& calibration)
 {
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
@@ -67,11 +67,11 @@ void startWindowSpin(
     window.registerKeyboardCallback(KeyboardViz3d, &window);
     window.setWindowPosition(Point(0, 0));
     window.spinOnce();
-    viz::Camera cam = viz::Camera(Vec2d(1.0,1.0), window.getWindowSize());
+    viz::Camera cam = viz::Camera(Vec2d(1.0,1.0),cv::Size(1000,1000));
     window.setCamera(cam);
     std::cout << cam.getFov() << std::endl;
     std::cout << window.getCamera().getFov() << std::endl;
-    window.spin();
+    window.spinOnce(3600000,true);
 }
 
 Vec3f rotationMatrixToEulerAngles(
