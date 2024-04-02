@@ -92,7 +92,7 @@ bool mainCycle(
 	)) {
         // Error message if at least two good frames are not found in the video
         std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
-        exit(-1);
+        exit(-1);	
     }
 	globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
 	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
@@ -136,9 +136,7 @@ bool mainCycle(
 		);
 
         // Find transformation matrix
-        if (oldSpatialPointsForNewFrame.size() != newFrameFeatureCoords.size() // А такое вообще может быть???
-            || oldSpatialPointsForNewFrame.size() < 4
-        ) {
+        if (oldSpatialPointsForNewFrame.size() < 4) {
             logStreams.mainReportStream << "Not enough corresponding points for solvePnP RANSAC" << std::endl;
             break;
         }
