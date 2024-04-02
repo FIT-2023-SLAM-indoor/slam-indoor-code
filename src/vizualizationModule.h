@@ -8,20 +8,20 @@ using namespace cv;
     @param spatialPoints points to vizualize
 */
 void vizualizeOnlyPoints(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Vec3b> colors);
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors);
 
 viz::WCloud getPointCloudFromPoints(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Vec3b> colors);
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors);
 
 viz::Viz3d makeWindow();
 
 void vizualizeCameras(
     viz::Viz3d& window,
-    std::vector<Mat> rotations,
-    std::vector<Mat> transitions, 
-    Mat calibration);
+    std::vector<Mat>& rotations,
+    std::vector<Mat>& transitions, 
+    Mat& calibration);
 
 
 
@@ -34,11 +34,11 @@ void vizualizeCameras(
     @param calibration camera calibration matrix
 */
 void vizualizePointsAndCameras(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Mat> rotations, 
-    std::vector<Mat> transitions, 
-    std::vector<Vec3b> colors,
-    Mat calibration
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Mat>& rotations, 
+    std::vector<Mat>& transitions, 
+    std::vector<Vec3b>& colors,
+    Mat& calibration
     );
 
 void startWindowSpin(
