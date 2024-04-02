@@ -30,7 +30,7 @@ viz::Viz3d makeWindow()
 {
     viz::Viz3d window("Coordinate Frame");
     window.setWindowSize(Size(1000, 1000));
-    window.setBackgroundColor(viz::Color::white()); 
+    window.setBackgroundColor(viz::Color(200, 200, 200));
     return window;
 }
 void vizualizeCameras(
