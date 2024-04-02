@@ -129,6 +129,30 @@ bool findFirstGoodFrame(
 }
 
 
+bool findFirstGoodFrame(
+    const DataProcessingConditions &dataProcessingConditions, 
+    std::vector<BatchElement> &currentBatch, Mat &firstGoodFrame, 
+    std::vector<KeyPoint> &goodFrameFeatures)
+{
+    int frameCandidateId = 0;
+    while (frameCandidateId < currentBatch.size()) {
+        if (currentBatch.at(frameCandidateId).features.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
+            firstGoodFrame = currentBatch.at(frameCandidateId).frame.clone();
+            goodFrameFeatures = currentBatch.at(frameCandidateId).features;
+
+            std::vector<BatchElement> batchTail;
+		    for (int i = frameCandidateId + 1; i < currentBatch.size(); i++)
+			    batchTail.push_back(currentBatch.at(i));
+		    currentBatch = batchTail;
+            return true;
+        }
+        frameCandidateId++;
+    }
+
+    return false;
+}
+
+
 void computeTransformationAndFilterPoints(
     const DataProcessingConditions &dataProcessingConditions, Mat &calibrationMatrix,
     const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,

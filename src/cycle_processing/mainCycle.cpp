@@ -91,7 +91,7 @@ static void moveProcessedDataToGlobalStruct(
 	bool bundleAdjustmentWasUsed = false
 );
 
-bool mainCycle(
+int mainCycle(
 	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
