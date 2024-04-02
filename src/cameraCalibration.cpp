@@ -38,7 +38,7 @@ void calibration(Mat& cameraMatrix, CalibrationOption option) {
             break;
         default:;
     }
-	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
     loadMatrixFromXML(pathToXML.c_str(), cameraMatrix);
 }
 
@@ -119,7 +119,7 @@ void chessboardVideoCalibration(
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
 	saveCalibParametersToXML(pathToXML.c_str(), cameraMatrixK, distortionCoeffs, R, T);
 }
 
@@ -182,6 +182,6 @@ void chessboardPhotosCalibration(
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
 	saveCalibParametersToXML(pathToXML.c_str(), cameraMatrixK, distortionCoeffs, R, T);
 }

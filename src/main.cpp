@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 		chessboardPhotosCalibration(files, 13);
 		return 0;
 	}
-	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 
 	GlobalData globalDataStruct;
 	MediaSources mediaInputStruct;

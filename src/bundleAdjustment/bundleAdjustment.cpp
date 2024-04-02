@@ -129,9 +129,23 @@ void bundleAdjustment(
 }
 
 static ceres::LossFunction* getLossFunction() {
+	if (configService.getValue<bool>(ConfigFieldEnum::BA_USE_TRIVIAL_LOSS))
+		return new ceres::TrivialLoss();
 	if (configService.getValue<bool>(ConfigFieldEnum::BA_USE_HUBER_LOSS))
 		return new ceres::HuberLoss(
-			configService.getValue<double>(ConfigFieldEnum::BA_HUBER_LOSS_FUNCTION_PARAMETER)
+			configService.getValue<double>(ConfigFieldEnum::BA_HUBER_LOSS_PARAMETER)
+		);
+	if (configService.getValue<bool>(ConfigFieldEnum::BA_USE_CAUCHY_LOSS))
+		return new ceres::CauchyLoss(
+			configService.getValue<double>(ConfigFieldEnum::BA_CAUCHY_LOSS_PARAMETER)
+		);
+	if (configService.getValue<bool>(ConfigFieldEnum::BA_USE_ARCTAN_LOSS))
+		return new ceres::ArctanLoss(
+			configService.getValue<double>(ConfigFieldEnum::BA_ARCTAN_LOSS_PARAMETER)
+		);
+	if (configService.getValue<bool>(ConfigFieldEnum::BA_USE_TUKEY_LOSS))
+		return new ceres::TukeyLoss(
+			configService.getValue<double>(ConfigFieldEnum::BA_TUKEY_LOSS_PARAMETER)
 		);
 	return nullptr;
 }

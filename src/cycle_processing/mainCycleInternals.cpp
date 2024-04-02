@@ -38,7 +38,7 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
         sortGlobs(mediaInputStruct.photosPaths);
     } else {
         mediaInputStruct.frameSequence.open(
-            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
+            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH));
         if (!mediaInputStruct.frameSequence.isOpened()) {
             std::cerr << "Video wasn't opened" << std::endl;
             exit(-1);
@@ -50,7 +50,7 @@ static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
     loadMatrixFromXML(
-        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
+        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH).c_str(),
         distortionCoeffs, "DC"
     );
 }
@@ -65,11 +65,11 @@ void defineProcessingEnvironment(
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
     dataProcessingConditions.featureExtractingThreshold =
-        configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_);
+        configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
     dataProcessingConditions.frameBatchSize =
-        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_);
+        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
     dataProcessingConditions.requiredExtractedPointsCount =
-        configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_);
+        configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT);
     dataProcessingConditions.requiredMatchedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT);
     dataProcessingConditions.matcherType = getMatcherTypeIndex();

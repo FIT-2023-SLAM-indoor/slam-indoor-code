@@ -9,7 +9,7 @@
 
 void openLogsStreams() {
 	char tmp[256] = "";
-	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 	sprintf(tmp, "%s/main.txt", path.c_str());
 	logStreams.mainReportStream.open(tmp);
 	sprintf(tmp, "%s/points.txt", path.c_str());
