@@ -44,7 +44,7 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
         sortGlobs(mediaInputStruct.photosPaths);
     } else {
         mediaInputStruct.frameSequence.open(
-            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
+            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH));
         if (!mediaInputStruct.frameSequence.isOpened()) {
             std::cerr << "Video wasn't opened" << std::endl;
             exit(-1);
@@ -52,17 +52,11 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
     }
 }
 
-static void defineCalibrationMatrix(Mat &calibrationMatrix) {
-    // Сreating a new matrix or changing the type and size of an existing one
-    calibrationMatrix.create(3, 3, CV_64F);
-    calibration(calibrationMatrix, CalibrationOption::load);
-}
-
 static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
     loadMatrixFromXML(
-        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
+        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH).c_str(),
         distortionCoeffs, "DC"
     );
 }
@@ -74,18 +68,21 @@ void defineProcessingEnvironment(
 {
     defineMediaSources(mediaInputStruct);
 
-    defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
     dataProcessingConditions.featureExtractingThreshold =
-        configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_);
+        configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
     dataProcessingConditions.frameBatchSize =
-        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_);
+        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
     dataProcessingConditions.requiredExtractedPointsCount =
-        configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_);
+        configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT);
     dataProcessingConditions.requiredMatchedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT);
     dataProcessingConditions.matcherType = getMatcherTypeIndex();
+	dataProcessingConditions.useBundleAdjustment =
+		configService.getValue<bool>(ConfigFieldEnum::USE_BUNDLE_ADJUSTMENT);
+	dataProcessingConditions.maxProcessedFramesVectorSz =
+		configService.getValue<int>(ConfigFieldEnum::BA_MAX_FRAMES_CNT);
 }
 
 
@@ -133,7 +130,7 @@ bool findFirstGoodFrame(
 
 
 void computeTransformationAndFilterPoints(
-    const DataProcessingConditions &dataProcessingConditions,
+    const DataProcessingConditions &dataProcessingConditions, Mat &calibrationMatrix,
     const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2,
 	Mat &chiralityMask
@@ -143,7 +140,7 @@ void computeTransformationAndFilterPoints(
         keyPointFrameCoords1, keyPointFrameCoords2);
 
     estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2,
-        dataProcessingConditions.calibrationMatrix, secondFrameData.rotation,
+        calibrationMatrix, secondFrameData.rotation,
         secondFrameData.motion, chiralityMask);
 
     // Apply the chirality mask to the points from the frames
@@ -183,7 +180,7 @@ void defineFeaturesCorrespondSpatialIndices(
 
 void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches, const std::vector<int> &prevFrameCorrespondIndices,
-    const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints,
+    const SpatialPointsVector &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints,
     std::vector<Point3f> &oldSpatialPointsForNewFrame, std::vector<Point2f> &newFrameFeatureCoords)
 {
     for (auto &match : matches) {
@@ -197,7 +194,7 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
 
 
 void pushNewSpatialPoints(
-    const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints,
+    const Mat &newFrame, const SpatialPointsVector &newSpatialPoints,
     GlobalData &globalDataStruct, std::vector<int> &prevFrameCorrespondIndices,
     TemporalImageData &newFrameData)
 {

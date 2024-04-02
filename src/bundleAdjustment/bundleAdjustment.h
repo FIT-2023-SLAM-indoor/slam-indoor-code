@@ -2,7 +2,7 @@
 
 #include "opencv2/core.hpp"
 #include "ceres/ceres.h"
-#include "mainCycle.h"
+#include "../cycle_processing/mainCycleStructures.h"
 
 /**
  * Functor class for re-projection cost function `project(K*[R|T]*P3d) - p2d`
@@ -16,7 +16,7 @@ public:
      *
      * @param imagePoint known 2d point position.
      */
-    ProjectionCostFunctor(cv::Point2d imagePoint);
+    explicit ProjectionCostFunctor(cv::Point2d &imagePoint);
 
     /**
      * Operator with main part of cost function
@@ -31,15 +31,24 @@ public:
      */
     template<typename T>
     bool operator()(
-            const T* const calibration, const T* const rotation, const T* const transition,
-            const T* const point3d, T *residuals
+		const T* const calibration, const T* const extrinsics,
+		const T* const point3d, T *residuals
     ) const;
 
     static ceres::CostFunction* createFunctor(cv::Point2d imagePoint);
 };
 
+/**
+ * Make bundle adjustment.
+ * <br>
+ * WARNING: due to algorithm ALL intrinsic and extrinsic parameters are bound to be changed!!!
+ *
+ * @param [in,out] calibrationMatrix
+ * @param [in,out] imagesDataForAdjustment
+ * @param [in,out] globalData
+ */
 void bundleAdjustment(
-        cv::Mat& calibrationMatrix,
-		std::vector<TemporalImageData> &imagesDataForAdjustment,
-		GlobalData &globalData
+	cv::Mat& calibrationMatrix,
+	std::vector<TemporalImageData> &imagesDataForAdjustment,
+	GlobalData &globalData
 );

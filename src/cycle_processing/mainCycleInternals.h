@@ -62,6 +62,7 @@ bool findFirstGoodFrame(
  * координаты не попадут в выходные вектора.
  *
  * @param [in] dataProcessingConditions
+ * @param [in] calibrationMatrix
  * @param [in] firstFrameData
  * @param [out] secondFrameData
  * @param [in, out] keyPointFrameCoords1
@@ -70,6 +71,7 @@ bool findFirstGoodFrame(
  */
 void computeTransformationAndFilterPoints(
     const DataProcessingConditions &dataProcessingConditions,
+	Mat &calibrationMatrix,
     const TemporalImageData &firstFrameData,
     TemporalImageData &secondFrameData,
     std::vector<Point2f> &keyPointFrameCoords1,
@@ -118,7 +120,7 @@ void defineFeaturesCorrespondSpatialIndices(
 void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches,
     const std::vector<int> &prevFrameCorrespondIndices,
-    const std::vector<Point3f> &allSpatialPoints,
+    const SpatialPointsVector &allSpatialPoints,
     const std::vector<KeyPoint> &newFrameKeyPoints,
     std::vector<Point3f> &oldSpatialPointsForNewFrame,
     std::vector<Point2f> &newFrameFeatureCoords
@@ -139,7 +141,7 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
  */
 void pushNewSpatialPoints(
     const Mat &newFrame,
-    const std::vector<Point3f> &newSpatialPoints,
+    const SpatialPointsVector &newSpatialPoints,
 	GlobalData &globalDataStruct,
 	std::vector<int> &prevFrameCorrespondIndices,
 	TemporalImageData &newFrameData

@@ -1,13 +1,12 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
 
-#include "../cameraCalibration.h"
 #include "../cameraTransition.h"
 #include "../fastExtractor.h"
 #include "../featureMatching.h"
 #include "../triangulate.h"
 #include "../IOmisc.h"
+#include "../bundleAdjustment/bundleAdjustment.h"
 
 #include "../config/config.h"
 
@@ -71,22 +70,38 @@ static int findGoodFrameFromBatch(
 
 static bool processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
+	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::deque<TemporalImageData> &temporalImageDataDeque,
-	Mat &secondFrame, std::vector<Point3f> &spatialPoints,
+	Mat &secondFrame, SpatialPointsVector &spatialPoints,
 	std::vector<cv::Vec3b> &firstPairSpatialPointColors
 );
 
+/**
+ * Adds rotations and motions to global struct and clears processed frames datas' vector.
+ *
+ * @param [in,out] processedFramesData
+ * @param [in,out] globalDataStruct
+ * @param [in] bundleAdjustmentWasUsed if true, print saved rotations and motions
+ */
+static void moveProcessedDataToGlobalStruct(
+	std::vector<TemporalImageData> &processedFramesData,
+	GlobalData &globalDataStruct,
+	bool bundleAdjustmentWasUsed = false
+);
+
 bool mainCycle(
-	MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
+	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
+	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
 ) {
 	std::vector<BatchElement> batch; // Необходимо создавать батч тут, чтобы его не использованный хвост переносился на следующую итерацию
+	std::vector<TemporalImageData> processedFramesData; // Used for BA or just for saving data to global struct
 
     Mat lastGoodFrame;
     if (!processingFirstPairFrames(
-		mediaInputStruct, dataProcessingConditions, batch,
+		mediaInputStruct, calibrationMatrix, dataProcessingConditions, batch,
 		temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints,
 		globalDataStruct.spatialPointsColors
 	)) {
@@ -94,10 +109,8 @@ bool mainCycle(
         std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
         exit(-1);	
     }
-	globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(0).rotation.clone());
-	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(0).motion.clone());
-	globalDataStruct.cameraRotations.push_back(temporalImageDataDeque.at(1).rotation.clone());
-	globalDataStruct.spatialCameraPositions.push_back(temporalImageDataDeque.at(1).motion.clone());
+	processedFramesData.push_back(temporalImageDataDeque.at(0));
+	processedFramesData.push_back(temporalImageDataDeque.at(1));
 
     int lastFrameIdx = 1;
     while (true) {
@@ -143,7 +156,7 @@ bool mainCycle(
         Mat rotationVector;
         solvePnPRansac(
 			oldSpatialPointsForNewFrame, newFrameFeatureCoords,
-            dataProcessingConditions.calibrationMatrix, noArray(), rotationVector,
+            calibrationMatrix, noArray(), rotationVector,
             temporalImageDataDeque.at(lastFrameIdx+1).motion
 		);
         // Convert rotation vector to rotation matrix
@@ -155,23 +168,17 @@ bool mainCycle(
         logStreams.mainReportStream.flush();
         rawOutput(temporalImageDataDeque.at(lastFrameIdx+1).motion.t(), logStreams.poseStream);
         logStreams.poseStream.flush();
-		globalDataStruct.spatialCameraPositions.push_back(
-				temporalImageDataDeque.at(lastFrameIdx+1).motion.clone()
-		);
-		globalDataStruct.cameraRotations.push_back(
-				temporalImageDataDeque.at(lastFrameIdx+1).rotation
-		);
 
         // Get matched point coordinates for reconstruction
         std::vector<Point2f> matchedPointCoords1;
         std::vector<Point2f> matchedPointCoords2;
-        std::vector<Point3f> newSpatialPoints;
+		SpatialPointsVector newSpatialPoints;
         getKeyPointCoordsFromFramePair(
             temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
             temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
             temporalImageDataDeque.at(lastFrameIdx+1).allMatches,
             matchedPointCoords1, matchedPointCoords2);
-        reconstruct(dataProcessingConditions.calibrationMatrix,
+        reconstruct(calibrationMatrix,
             temporalImageDataDeque.at(lastFrameIdx).rotation,
             temporalImageDataDeque.at(lastFrameIdx).motion,
             temporalImageDataDeque.at(lastFrameIdx+1).rotation,
@@ -181,18 +188,31 @@ bool mainCycle(
             temporalImageDataDeque.at(lastFrameIdx).correspondSpatialPointIdx,
             temporalImageDataDeque.at(lastFrameIdx+1));
 
-        // Update last good frame
-        lastGoodFrame = nextGoodFrame.clone();
-        if (lastFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
-            temporalImageDataDeque.pop_front();
-            temporalImageDataDeque.push_back({});
-        } else {
-            lastFrameIdx++;
-        }
-    }
+		processedFramesData.push_back(temporalImageDataDeque.at(lastFrameIdx+1));
+		if (processedFramesData.size() >= dataProcessingConditions.maxProcessedFramesVectorSz) {
+			if (dataProcessingConditions.useBundleAdjustment)
+				bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+			moveProcessedDataToGlobalStruct(
+				processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
+			);
+		}
 
-    rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
-    logStreams.pointsStream.flush();
+		// Update last good frame
+		lastGoodFrame = nextGoodFrame.clone();
+		if (lastFrameIdx == OPTIMAL_DEQUE_SIZE - 2) {
+			temporalImageDataDeque.pop_front();
+			temporalImageDataDeque.push_back({});
+		} else {
+			lastFrameIdx++;
+		}
+    }
+	if (!processedFramesData.empty()) {
+		if (dataProcessingConditions.useBundleAdjustment)
+			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+		moveProcessedDataToGlobalStruct(
+			processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
+		);
+	}
 
 	return false; // TODO: заглушка, чтобы main работал
 }
@@ -200,10 +220,11 @@ bool mainCycle(
 
 static bool processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
+	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::deque<TemporalImageData> &temporalImageDataDeque,
-	Mat &secondFrame, std::vector<Point3f> &spatialPoints,
+	Mat &secondFrame, SpatialPointsVector &spatialPoints,
 	std::vector<cv::Vec3b> &firstPairSpatialPointColors
 ) {
 	Mat firstFrame;
@@ -234,10 +255,10 @@ static bool processingFirstPairFrames(
 	// Из докстрингов хэдеров OpenCV я не понял нужно ли мне задавать размерность этой матрице
 	Mat chiralityMask;
 	std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
-	computeTransformationAndFilterPoints(dataProcessingConditions,
+	computeTransformationAndFilterPoints(dataProcessingConditions, calibrationMatrix,
 										 temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
 										 extractedPointCoords1, extractedPointCoords2, chiralityMask);
-	reconstruct(dataProcessingConditions.calibrationMatrix,
+	reconstruct(calibrationMatrix,
 				temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
 				temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
 				extractedPointCoords1, extractedPointCoords2, spatialPoints);
@@ -349,4 +370,26 @@ static int findGoodFrameFromBatch(
 
 	// No good frame found in the batch
 	return goodIndex;
+}
+
+static void moveProcessedDataToGlobalStruct(
+	std::vector<TemporalImageData> &processedFramesData,
+	GlobalData &globalDataStruct,
+	bool bundleAdjustmentWasUsed
+) {
+	logStreams.mainReportStream << (bundleAdjustmentWasUsed ? "Projections after BA:\n" : "");
+	for (int i = 0; i < processedFramesData.size(); ++i) {
+		auto &frameData = processedFramesData.at(i);
+		globalDataStruct.cameraRotations.push_back(frameData.rotation.clone());
+		globalDataStruct.spatialCameraPositions.push_back(frameData.motion.clone());
+		if (bundleAdjustmentWasUsed) {
+			logStreams.mainReportStream
+				<< "Processed frame " << i << ": "
+				<< "\nRotation:\n" << frameData.rotation
+				<< "\nMotion:\n" << frameData.motion
+				<< "\n\n";
+		}
+	}
+
+	processedFramesData.clear();
 }

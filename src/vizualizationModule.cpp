@@ -3,52 +3,79 @@
 #include "vizualizationModule.h"
 using namespace cv;
 double speed = 0.5;
-void vizualizePoints(std::vector<Point3f> spatialPoints)
+void vizualizeOnlyPoints(
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors)
 {
-    viz::Viz3d window("Coordinate Frame");
-    window.setWindowSize(Size(1000, 1000));
-    window.setBackgroundColor(); // black by default
-    std::vector<Vec3f> point_cloud_est;
-    for (int i = 0; i < spatialPoints.size(); ++i)
-        point_cloud_est.push_back(Vec3f(spatialPoints[i]));
-    viz::WCloud cloud_widget(point_cloud_est, viz::Color::green());
-    window.showWidget("point_cloud", cloud_widget);
-    window.setWindowPosition(Point(0, 0));
-    window.spin();
+    viz::Viz3d window = makeWindow();
+    viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
+    window.showWidget("point_cloud", cloudWidget);
 }
-void vizualizePointsAndCameras(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Mat> rotations,
-    std::vector<Mat> transitions,
-    Mat calibration)
-{
-    viz::Viz3d window("Coordinate Frame");
-    window.setWindowSize(Size(1000, 1000));
 
-    window.setBackgroundColor(); // black by default
+viz::WCloud getPointCloudFromPoints(
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors)
+{
     std::vector<Vec3f> point_cloud_est;
     for (int i = 0; i < spatialPoints.size(); ++i)
         point_cloud_est.push_back(Vec3f(spatialPoints[i]));
+    if (colors.size()  == spatialPoints.size()){
+        viz::WCloud cloud_widget(point_cloud_est, colors);
+        return cloud_widget;
+    }
     viz::WCloud cloud_widget(point_cloud_est, viz::Color::green());
-    window.showWidget("point_cloud", cloud_widget);
-
+    return cloud_widget;
+}
+viz::Viz3d makeWindow()
+{
+    viz::Viz3d window("Coordinate Frame");
+    window.setWindowSize(Size(1000, 1000));
+    window.setBackgroundColor(viz::Color(200, 200, 200));
+    return window;
+}
+void vizualizeCameras(
+    viz::Viz3d& window,
+    std::vector<Mat>& rotations,
+    std::vector<Mat>& transitions, 
+    Mat& calibration)
+{
     std::vector<Affine3d> path;
     for (size_t i = 0; i < rotations.size(); ++i)
         path.push_back(Affine3d(rotations[i], transitions[i]));
-
     cv::Matx33f K((float *)calibration.ptr());
-
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
-    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,
-                                                                   K, 0.1, viz::Color::yellow()));
+    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,K, 0.1, viz::Color::yellow()));
+    window.setViewerPose(path[0]);
 
+}
+void vizualizePointsAndCameras(
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Mat>& rotations,
+    std::vector<Mat>& transitions,
+    std::vector<Vec3b>& colors,
+    Mat& calibration)
+{
+    viz::Viz3d window = makeWindow();
+    viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
+    window.showWidget("point_cloud", cloudWidget);
+    vizualizeCameras(window,rotations,transitions,calibration);
+    startWindowSpin(window);
+}
+void startWindowSpin(
+    viz::Viz3d& window)
+{
     window.registerKeyboardCallback(KeyboardViz3d, &window);
     window.setWindowPosition(Point(0, 0));
-    window.setViewerPose(path[0]);
-    window.spin();
+    window.spinOnce();
+    viz::Camera cam = viz::Camera(Vec2d(1.0,1.0),cv::Size(1000,1000));
+    window.setCamera(cam);
+    std::cout << cam.getFov() << std::endl;
+    std::cout << window.getCamera().getFov() << std::endl;
+    window.spinOnce(3600000,true);
 }
 
-Vec3f rotationMatrixToEulerAngles(Mat &rotationMatrix)
+Vec3f rotationMatrixToEulerAngles(
+    Mat &rotationMatrix)
 {
     cv::Mat euler(3, 1, CV_64F);
     double m00 = rotationMatrix.at<double>(0, 0);
@@ -58,9 +85,7 @@ Vec3f rotationMatrixToEulerAngles(Mat &rotationMatrix)
     double m12 = rotationMatrix.at<double>(1, 2);
     double m20 = rotationMatrix.at<double>(2, 0);
     double m22 = rotationMatrix.at<double>(2, 2);
-
     double bank, attitude, heading;
-
     // Assuming the angles are in radians.
     if (m10 > 0.998)
     { // singularity at north pole
@@ -106,6 +131,7 @@ void KeyboardViz3d(const viz::KeyboardEvent &w, void *window)
     Vec3d newTranslation;
     if (w.action)
     {
+        //std::cout <<  cam.getFov() << std::endl;
         //std::cout << "you pressed " << w.symbol << " " << (int)w.code << std::endl;
         switch ((int)w.code)
         {
