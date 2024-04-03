@@ -220,25 +220,15 @@ void pushNewSpatialPoints(
 }
 
 
-void transferGlobalData(GlobalData mainGlobalData, GlobalData newGlobalData) {
-    mainGlobalData.spatialPoints.insert(
-        mainGlobalData.spatialPoints.end(),
-        newGlobalData.spatialPoints.begin(),
-        newGlobalData.spatialPoints.end()
-    );
-    mainGlobalData.spatialPointsColors.insert(
-        mainGlobalData.spatialPointsColors.end(),
-        newGlobalData.spatialPointsColors.begin(),
-        newGlobalData.spatialPointsColors.end()
-    );
-    mainGlobalData.spatialCameraPositions.insert(
-        mainGlobalData.spatialCameraPositions.end(),
-        newGlobalData.spatialCameraPositions.begin(),
-        newGlobalData.spatialCameraPositions.end()
-    );
-    mainGlobalData.cameraRotations.insert(
-        mainGlobalData.cameraRotations.end(),
-        newGlobalData.cameraRotations.begin(),
-        newGlobalData.cameraRotations.end()
-    );
+void insertNewGlobalData(GlobalData mainGlobalData, GlobalData newGlobalData) {
+    for (int pointId = 0; pointId < newGlobalData.spatialPoints.size(); pointId++) {
+        mainGlobalData.spatialPoints.push_back(newGlobalData.spatialPoints.at(pointId));
+        mainGlobalData.spatialPointsColors.push_back(
+            newGlobalData.spatialPointsColors.at(pointId));
+    }
+    for (int cameraId = 0; cameraId < newGlobalData.cameraRotations.size(); cameraId++) {
+        mainGlobalData.cameraRotations.push_back(newGlobalData.cameraRotations.at(cameraId));
+        mainGlobalData.spatialCameraPositions.push_back(
+            newGlobalData.spatialCameraPositions.at(cameraId));
+    }
 }

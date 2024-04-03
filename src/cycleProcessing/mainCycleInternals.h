@@ -146,3 +146,6 @@ void pushNewSpatialPoints(
 	std::vector<int> &prevFrameCorrespondIndices,
 	TemporalImageData &newFrameData
 );
+
+// POKA CHTO BUDET TAK!
+void insertNewGlobalData(GlobalData mainGlobalData, GlobalData newGlobalData);
