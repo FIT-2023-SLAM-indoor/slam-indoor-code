@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
 	while (lastGoodFrameId >= 0) {
 		GlobalData newGlobalData;
 		lastGoodFrameId = mainCycle(mediaInputStruct, calibrationMatrix, dataProcessingConditions,
-									temporalImageDataDeque, newGlobalData);
+                                    temporalImageDataDeque, newGlobalData);
 
 		std::deque<TemporalImageData> oldTempImageData = temporalImageDataDeque;
 		temporalImageDataDeque.clear();
