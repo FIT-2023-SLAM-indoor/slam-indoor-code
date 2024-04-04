@@ -76,7 +76,7 @@ void reconstruct(
 	const Mat& rotation1, const Mat& transition1,
 	const Mat& rotation2, const Mat& transition2,
 	const std::vector<Point2f>& points1, const std::vector<Point2f>& points2,
-	std::vector<Point3f>& spatialPoints
+	std::vector<Point3d>& spatialPoints
 ) {
 	Mat projection1(3, 4, CV_64F);
 	Mat projection2(3, 4, CV_64F);
@@ -100,7 +100,7 @@ void reconstruct(
 }
 
 void convertHomogeneousPointsMatrixToSpatialPointsVector(
-	const Mat& homogeneous3DPoints, std::vector<Point3f>& spatialPoints
+	const Mat& homogeneous3DPoints, std::vector<Point3d> &spatialPoints
 )
 {
 	spatialPoints.clear();

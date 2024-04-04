@@ -18,6 +18,7 @@ using namespace cv;
  * @return IN PROGRESS
  */
 bool mainCycle(
-	MediaSources &mediaInputStruct, const DataProcessingConditions &dataProcessingConditions,
+	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
+	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
 );

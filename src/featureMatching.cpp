@@ -10,11 +10,11 @@
 using namespace cv;
 
 MatcherType getMatcherTypeIndex() {
-	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_BF_))
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_BF))
 		return MatcherType::SIFT_BF;
-	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_FLANN_))
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_SIFT_FLANN))
 		return MatcherType::SIFT_FLANN;
-	if (configService.getValue<bool>(ConfigFieldEnum::FM_ORB_))
+	if (configService.getValue<bool>(ConfigFieldEnum::FM_ORB))
 		return MatcherType::ORB_BF;
 	throw new std::exception();
 }

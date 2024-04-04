@@ -3,11 +3,13 @@
 #include <fstream>
 
 #include "config/config.h"
+#include "./cycle_processing/mainCycleStructures.h"
+
 #include "IOmisc.h"
 
 void openLogsStreams() {
 	char tmp[256] = "";
-	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 	sprintf(tmp, "%s/main.txt", path.c_str());
 	logStreams.mainReportStream.open(tmp);
 	sprintf(tmp, "%s/points.txt", path.c_str());
@@ -104,6 +106,12 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
         // Flush the stream to ensure data is written immediately
         fileStream.flush();
     }
+}
+
+void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream) {
+	Mat pointsMat = Mat(vector);
+	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
+	rawOutput(pointsMat, fileStream);
 }
 
 void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream) {

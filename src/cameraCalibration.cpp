@@ -7,12 +7,18 @@
 #include <iostream>
 
 #include "config/config.h"
-#include "cameraCalibration.h"
 #include "IOmisc.h"
+
+#include "cameraCalibration.h"
 
 #define MINIMAL_FOUND_FRAMES_COUNT 10
 
 using namespace cv;
+
+void defineCalibrationMatrix(Mat &calibrationMatrix) {
+	calibrationMatrix.create(3, 3, CV_64F);
+	calibration(calibrationMatrix, CalibrationOption::load);
+}
 
 void calibration(Mat& cameraMatrix, CalibrationOption option) {
     VideoCapture cap;
@@ -32,7 +38,7 @@ void calibration(Mat& cameraMatrix, CalibrationOption option) {
             break;
         default:;
     }
-	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
     loadMatrixFromXML(pathToXML.c_str(), cameraMatrix);
 }
 
@@ -113,7 +119,7 @@ void chessboardVideoCalibration(
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
 	saveCalibParametersToXML(pathToXML.c_str(), cameraMatrixK, distortionCoeffs, R, T);
 }
 
@@ -176,6 +182,6 @@ void chessboardPhotosCalibration(
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
 	saveCalibParametersToXML(pathToXML.c_str(), cameraMatrixK, distortionCoeffs, R, T);
 }

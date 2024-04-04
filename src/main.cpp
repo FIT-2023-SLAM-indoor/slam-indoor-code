@@ -3,7 +3,6 @@
 
 #include "config/config.h"
 #include "IOmisc.h"
-
 #include "cameraCalibration.h"
 
 #include "cycle_processing/mainCycle.h"
@@ -19,10 +18,12 @@ LogFilesStreams logStreams;
 
 
 int main(int argc, char** argv) {
+	
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
 	}
+
 	configService.setConfigFile(argv[1]);
 	google::InitGoogleLogging("BA");
 	openLogsStreams();
@@ -36,25 +37,38 @@ int main(int argc, char** argv) {
 		chessboardPhotosCalibration(files, 13);
 		return 0;
 	}
-	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR_);
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 
 	GlobalData globalDataStruct;
 	MediaSources mediaInputStruct;
 	DataProcessingConditions dataProcessingConditions;
 	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
+	Mat calibrationMatrix;
+	defineCalibrationMatrix(calibrationMatrix);
 	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
 	defineInitialCameraPosition(temporalImageDataDeque.at(0));
 	do {
 		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
-	} while (mainCycle(mediaInputStruct, dataProcessingConditions, temporalImageDataDeque, globalDataStruct));
+	} while (mainCycle(
+		mediaInputStruct, calibrationMatrix, dataProcessingConditions,
+		temporalImageDataDeque, globalDataStruct
+	));
 
-	closeLogsStreams();
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
+	logStreams.pointsStream.flush();
 
+	// Kostil for Points3f in visualizer
+	std::vector<Point3f> convertedSpatialPoints;
+	for (auto point : globalDataStruct.spatialPoints)
+		convertedSpatialPoints.push_back(Point3f(point));
 
-	vizualizePointsAndCameras(globalDataStruct.spatialPoints,
+	vizualizePointsAndCameras(convertedSpatialPoints,
 							  globalDataStruct.cameraRotations,
 							  globalDataStruct.spatialCameraPositions,
-							  dataProcessingConditions.calibrationMatrix);
+							  globalDataStruct.spatialPointsColors,
+							  calibrationMatrix);
+
+	closeLogsStreams();
 
     return 0;
 }

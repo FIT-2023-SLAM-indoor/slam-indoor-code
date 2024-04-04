@@ -3,26 +3,46 @@
 #include <opencv2/viz.hpp>
 using namespace cv;
 /*
-    Vizualize only points with no trajectory of cameras
+    Vizualize only points with no trajectory of cameras.
+    If you dont need points colors you need to give this function an empty colors vector.
     @param spatialPoints points to vizualize
 */
-void vizualizePoints(
-    std::vector<Point3f> spatialPoints
-    );
+void vizualizeOnlyPoints(
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors);
+
+viz::WCloud getPointCloudFromPoints(
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Vec3b>& colors);
+
+viz::Viz3d makeWindow();
+
+void vizualizeCameras(
+    viz::Viz3d& window,
+    std::vector<Mat>& rotations,
+    std::vector<Mat>& transitions, 
+    Mat& calibration);
+
+
 
 /*
-    Vizualize points with trajectory of camera
+    Vizualize points with trajectory of camera.
+    If you dont need points colors you need to give this function an empty colors vector.
     @param spatialPoints points to vizualize
     @param rotations camera rotations vector
     @param transitions camera transitions vector
     @param calibration camera calibration matrix
 */
 void vizualizePointsAndCameras(
-    std::vector<Point3f> spatialPoints,
-    std::vector<Mat> rotations, 
-    std::vector<Mat> transitions, 
-    Mat calibration
+    std::vector<Point3f>& spatialPoints,
+    std::vector<Mat>& rotations, 
+    std::vector<Mat>& transitions, 
+    std::vector<Vec3b>& colors,
+    Mat& calibration
     );
+
+void startWindowSpin(
+    viz::Viz3d& window);
 
 /*
     Get euler angles by rotation matrix;
