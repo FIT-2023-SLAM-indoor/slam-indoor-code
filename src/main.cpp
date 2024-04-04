@@ -45,6 +45,7 @@ int main(int argc, char** argv) {
 	Mat calibrationMatrix;
 	defineCalibrationMatrix(calibrationMatrix);
 	GlobalData globalDataStruct;
+	std::deque<TemporalImageData> oldTempImageDataDeque;
 	int lastFrameOfLaunchId = -1;
 	do {
 		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
@@ -61,6 +62,7 @@ int main(int argc, char** argv) {
 		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
 										dataProcessingConditions, newTempImageDataDeque,
 										newGlobalData);
+		oldTempImageDataDeque = newTempImageDataDeque;
 		insertNewGlobalData(globalDataStruct, newGlobalData);
 	} while (lastFrameOfLaunchId > 0);
 
