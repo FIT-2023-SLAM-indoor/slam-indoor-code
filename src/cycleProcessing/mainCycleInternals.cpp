@@ -220,7 +220,7 @@ void pushNewSpatialPoints(
 }
 
 
-void insertNewGlobalData(GlobalData mainGlobalData, GlobalData newGlobalData) {
+void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData) {
     for (int pointId = 0; pointId < newGlobalData.spatialPoints.size(); pointId++) {
         mainGlobalData.spatialPoints.push_back(newGlobalData.spatialPoints.at(pointId));
         mainGlobalData.spatialPointsColors.push_back(

@@ -45,27 +45,24 @@ int main(int argc, char** argv) {
 	Mat calibrationMatrix;
 	defineCalibrationMatrix(calibrationMatrix);
 	GlobalData globalDataStruct;
-	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
-	defineInitialCameraPosition(temporalImageDataDeque.at(0));
-	int lastGoodFrameId = 0;
-	while (lastGoodFrameId >= 0) {
+	int lastFrameOfLaunchId = -1;
+	do {
+		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
+		defineInitialCameraPosition(newTempImageDataDeque.at(0));
+		/*
+		std::deque<TemporalImageData> oldTempImageData = newTempImageDataDeque;
+		newTempImageDataDeque.clear();
+		newTempImageDataDeque.resize(OPTIMAL_DEQUE_SIZE);
+		newTempImageDataDeque.at(0).rotation = oldTempImageData.at(lastFrameOfLaunchId).rotation;
+		newTempImageDataDeque.at(0).motion = oldTempImageData.at(lastFrameOfLaunchId).motion;
+		*/
+
 		GlobalData newGlobalData;
-		lastGoodFrameId = mainCycle(mediaInputStruct, calibrationMatrix, dataProcessingConditions,
-                                    temporalImageDataDeque, newGlobalData);
-
-		std::deque<TemporalImageData> oldTempImageData = temporalImageDataDeque;
-		temporalImageDataDeque.clear();
-		temporalImageDataDeque.resize(OPTIMAL_DEQUE_SIZE);
-		temporalImageDataDeque.at(0).rotation = oldTempImageData.at(lastGoodFrameId).rotation;
-		temporalImageDataDeque.at(0).motion = oldTempImageData.at(lastGoodFrameId).motion;
-
+		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
+										dataProcessingConditions, newTempImageDataDeque,
+										newGlobalData);
 		insertNewGlobalData(globalDataStruct, newGlobalData);
-	}
-
-	assert(!globalDataStruct.spatialPoints.empty());
-	assert(!globalDataStruct.cameraRotations.empty());
-	assert(!globalDataStruct.spatialCameraPositions.empty());
-	assert(!globalDataStruct.spatialPointsColors.empty());
+	} while (lastFrameOfLaunchId > 0);
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();

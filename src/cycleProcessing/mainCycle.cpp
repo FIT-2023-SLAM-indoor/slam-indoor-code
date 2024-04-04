@@ -290,7 +290,7 @@ static int defineFirstPairFrames(
 
 	int frameIndex = FRAME_NOT_FOUND;
 	while (frameIndex == FRAME_NOT_FOUND) {
-		int frameIndex = findGoodFrameFromBatch(
+		frameIndex = findGoodFrameFromBatch(
 			mediaInputStruct, dataProcessingConditions, currentBatch,
 			firstFrame, secondFrame,
 			temporalImageDataDeque.at(0).allExtractedFeatures,
@@ -342,6 +342,7 @@ static int fillVideoFrameBatch(
 	}
 	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
 	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
+	logStreams.mainReportStream << "Batch size: " << currentBatch.size() << std::endl;
 	return skippedFrames;
 }
 

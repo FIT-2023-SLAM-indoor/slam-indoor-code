@@ -148,4 +148,4 @@ void pushNewSpatialPoints(
 );
 
 // POKA CHTO BUDET TAK!
-void insertNewGlobalData(GlobalData mainGlobalData, GlobalData newGlobalData);
+void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData);
