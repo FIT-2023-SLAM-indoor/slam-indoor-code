@@ -236,8 +236,9 @@ void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData) 
             newGlobalData.spatialPointsColors.at(pointId));
     }
     for (int cameraId = 0; cameraId < newGlobalData.cameraRotations.size(); cameraId++) {
-        mainGlobalData.cameraRotations.push_back(newGlobalData.cameraRotations.at(cameraId));
+        mainGlobalData.cameraRotations.push_back(
+            newGlobalData.cameraRotations.at(cameraId).clone());
         mainGlobalData.spatialCameraPositions.push_back(
-            newGlobalData.spatialCameraPositions.at(cameraId));
+            newGlobalData.spatialCameraPositions.at(cameraId).clone());
     }
 }

@@ -51,19 +51,25 @@ int main(int argc, char** argv) {
 		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
 		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
 						     newTempImageDataDeque.at(0));
+		std::cout << "####\n";
+		std::cout << newTempImageDataDeque.at(0).rotation << std::endl;
 
 		GlobalData newGlobalData;
 		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
 										dataProcessingConditions, newTempImageDataDeque,
 										newGlobalData);
 		oldTempImageDataDeque = newTempImageDataDeque;
+
+		std::cout << "====\n";
+		std::cout << newGlobalData.cameraRotations.size() << std::endl;
 		insertNewGlobalData(globalDataStruct, newGlobalData);
+		std::cout << "----\n";
 	} while (lastFrameOfLaunchId > 0);
 
-	assert(!globalDataStruct.cameraRotations.empty());
-	assert(!globalDataStruct.spatialCameraPositions.empty());
 	assert(!globalDataStruct.spatialPoints.empty());
 	assert(!globalDataStruct.spatialPointsColors.empty());
+	assert(!globalDataStruct.cameraRotations.empty());
+	assert(!globalDataStruct.spatialCameraPositions.empty());
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
