@@ -101,9 +101,18 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
 }
 
 
-void defineInitialCameraPosition(TemporalImageData &initialFrame) {
-    initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
-    initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
+void defineCameraPosition(
+    const std::deque<TemporalImageData> &oldImageDataDeque,
+    int lastFrameOfLaunchId,
+    TemporalImageData &frameData)
+{
+    if (lastFrameOfLaunchId < 0 || oldImageDataDeque.size() == 0) {
+        frameData.rotation = Mat::eye(3, 3, CV_64FC1);
+        frameData.motion = Mat::zeros(3, 1, CV_64FC1);
+    } else {
+        frameData.rotation = oldImageDataDeque.at(lastFrameOfLaunchId).rotation.clone();
+        frameData.motion = oldImageDataDeque.at(lastFrameOfLaunchId).motion.clone();
+    }
 }
 
 

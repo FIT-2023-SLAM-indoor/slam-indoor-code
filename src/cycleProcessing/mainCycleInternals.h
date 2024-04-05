@@ -19,11 +19,15 @@ void defineProcessingEnvironment(
 );
 
 /**
- * ADD DOCUMENTATION
+ * TODO: ADD DOCUMENTATION
  *
  * @param initialFrame
  */
-void defineInitialCameraPosition(TemporalImageData &initialFrame);
+void defineCameraPosition(
+    const std::deque<TemporalImageData> &oldImageDataDeque, 
+    int lastFrameOfLaunchId, 
+    TemporalImageData &frameData
+);
 
 /**
  * Функция достает (и удаляет) из структуры слдующее изображение.
