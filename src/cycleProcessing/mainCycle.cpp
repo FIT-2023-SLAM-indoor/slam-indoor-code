@@ -93,7 +93,7 @@ static int defineFirstPairFrames(
 );
 
 
-static bool processingFirstPairFrames(
+static int processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
 	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
@@ -250,7 +250,7 @@ int mainCycle(
 }
 
 
-static bool processingFirstPairFrames(
+static int processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
 	Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
@@ -262,7 +262,7 @@ static bool processingFirstPairFrames(
 	int frameIndex = defineFirstPairFrames(dataProcessingConditions, mediaInputStruct, currentBatch,
 										   temporalImageDataDeque, secondFrame);
 	if (frameIndex == EMPTY_BATCH) {
-		return false;
+		return EMPTY_BATCH;
 	}
 
 	Mat chiralityMask;
@@ -277,7 +277,7 @@ static bool processingFirstPairFrames(
 	defineFeaturesCorrespondSpatialIndices(chiralityMask, secondFrame, temporalImageDataDeque.at(0),
 										   temporalImageDataDeque.at(1), firstPairSpatialPointColors);
 
-	return true;
+	return frameIndex;
 }
 
 
