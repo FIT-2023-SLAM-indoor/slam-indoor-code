@@ -138,29 +138,27 @@ int mainCycle(
 	processedFramesData.push_back(temporalImageDataDeque.at(0));
 	processedFramesData.push_back(temporalImageDataDeque.at(1));
 
+	int batchFrameIndex;
     int lastFrameIdx = 1;
     while (true) {
         logStreams.mainReportStream << std::endl << "================================================================\n" << std::endl;
 
         // Find the next good frame batch
         Mat nextGoodFrame;
-		int frameIndex = findGoodFrameFromBatch(
+		batchFrameIndex = findGoodFrameFromBatch(
 				mediaInputStruct, dataProcessingConditions, batch,
 				lastGoodFrame, nextGoodFrame,
 				temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
 				temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
 				temporalImageDataDeque.at(lastFrameIdx+1).allMatches
 		);
-        if (frameIndex == EMPTY_BATCH) {
-			std::string msg = "Video is over. No more frames...";
-            logStreams.mainReportStream << msg << std::endl;
-			std::cerr << msg << std::endl;
-			return EMPTY_BATCH;
-        } else if (frameIndex == FRAME_NOT_FOUND) {
+        if (batchFrameIndex == EMPTY_BATCH) {
+			break;
+        } else if (batchFrameIndex == FRAME_NOT_FOUND) {
 			std::string msg = "No good frames in batch. Interrupt video processing";
 			logStreams.mainReportStream << msg << std::endl;
 			std::cerr << msg << std::endl;
-            return lastFrameIdx;
+            break;
         }
 
         // Get object and image points for reconstruction
@@ -232,16 +230,24 @@ int mainCycle(
 			lastFrameIdx++;
 		}
     }
-	assert(false);
+	//assert(false);
 
 	if (!processedFramesData.empty()) {
-		if (dataProcessingConditions.useBundleAdjustment)
+		if (dataProcessingConditions.useBundleAdjustment) {
 			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+		}
+
 		moveProcessedDataToGlobalStruct(
 			processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
 		);
 	}
 
+	if (batchFrameIndex == EMPTY_BATCH) {
+		std::string msg = "Video is over. No more frames...";
+		logStreams.mainReportStream << msg << std::endl;
+		std::cerr << msg << std::endl;
+		return EMPTY_BATCH;
+	}
 	return lastFrameIdx;
 }
 
