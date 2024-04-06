@@ -230,13 +230,11 @@ int mainCycle(
 			lastFrameIdx++;
 		}
     }
-	//assert(false);
 
 	if (!processedFramesData.empty()) {
 		if (dataProcessingConditions.useBundleAdjustment) {
 			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
 		}
-
 		moveProcessedDataToGlobalStruct(
 			processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
 		);
