@@ -178,9 +178,9 @@ int mainCycle(
         }
         Mat rotationVector;
         solvePnPRansac(
-			oldSpatialPointsForNewFrame, newFrameFeatureCoords,
-            calibrationMatrix, noArray(), rotationVector,
-            temporalImageDataDeque.at(lastFrameIdx+1).motion
+			oldSpatialPointsForNewFrame, newFrameFeatureCoords, calibrationMatrix,
+			dataProcessingConditions.distortionCoeffs, rotationVector,
+			temporalImageDataDeque.at(lastFrameIdx+1).motion
 		);
         // Convert rotation vector to rotation matrix
         Rodrigues(rotationVector, temporalImageDataDeque.at(lastFrameIdx+1).rotation);
