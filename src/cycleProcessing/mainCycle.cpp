@@ -126,14 +126,13 @@ int mainCycle(
 	std::vector<TemporalImageData> processedFramesData; // Used for BA or just for saving data to global struct
 
     Mat lastGoodFrame;
-    if (!processingFirstPairFrames(
+    if (processingFirstPairFrames(
 		mediaInputStruct, calibrationMatrix, dataProcessingConditions, batch,
 		temporalImageDataDeque, lastGoodFrame, globalDataStruct.spatialPoints,
-		globalDataStruct.spatialPointsColors
-	)) {
+		globalDataStruct.spatialPointsColors) == EMPTY_BATCH
+	) {
         // Error message if at least two good frames are not found in the video
-        std::cerr << "Couldn't find at least two good frames in fitst video batch" << std::endl;
-        exit(-1);
+        return EMPTY_BATCH;
     }
 	processedFramesData.push_back(temporalImageDataDeque.at(0));
 	processedFramesData.push_back(temporalImageDataDeque.at(1));
@@ -417,7 +416,6 @@ static int findGoodFrameFromBatch(
 		return goodIndex;
 	}
 
-	// No good frame found in the batch
 	return goodIndex;
 }
 

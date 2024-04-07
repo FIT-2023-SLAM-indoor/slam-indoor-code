@@ -64,6 +64,8 @@ int main(int argc, char** argv) {
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
 
+	if ("Пустой globalDataStruct");
+
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;
 	for (auto point : globalDataStruct.spatialPoints)
