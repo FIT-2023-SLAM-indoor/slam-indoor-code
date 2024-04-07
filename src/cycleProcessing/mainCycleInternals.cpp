@@ -64,11 +64,12 @@ static void defineDistortionCoeffs(Mat &distortionCoeffs) {
 
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions)
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &calibrationMatrix)
 {
     defineMediaSources(mediaInputStruct);
-
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
+    defineCalibrationMatrix(calibrationMatrix);
 
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
@@ -240,5 +241,19 @@ void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData) 
             newGlobalData.cameraRotations.at(cameraId).clone());
         mainGlobalData.spatialCameraPositions.push_back(
             newGlobalData.spatialCameraPositions.at(cameraId).clone());
+    }
+}
+
+
+void checkGlobalDataStruct(GlobalData &globalDataStruct) {
+    if (
+        globalDataStruct.cameraRotations.size() == 0 ||
+        globalDataStruct.spatialCameraPositions.size() == 0 ||
+        globalDataStruct.spatialPoints.size() == 0 ||
+        globalDataStruct.spatialPointsColors.size() == 0
+    ) {
+        logStreams.mainReportStream << "Couldn't process image sequence. Too little data.\n";
+        logStreams.mainReportStream.flush();
+        exit(-1);
     }
 }

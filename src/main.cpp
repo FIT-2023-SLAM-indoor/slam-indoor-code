@@ -41,9 +41,9 @@ int main(int argc, char** argv) {
 
 	MediaSources mediaInputStruct;
 	DataProcessingConditions dataProcessingConditions;
-	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 	Mat calibrationMatrix;
-	defineCalibrationMatrix(calibrationMatrix);
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions, calibrationMatrix);
+	
 	GlobalData globalDataStruct;
 	std::deque<TemporalImageData> oldTempImageDataDeque;
 	int lastFrameOfLaunchId = -1;
@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
 
-	if ("Пустой globalDataStruct");
+	checkGlobalDataStruct(globalDataStruct);
 
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;

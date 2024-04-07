@@ -12,10 +12,12 @@ using namespace cv;
  *
  * @param [out] mediaInputStruct так называемый интерефейс для универсальной работы с медиа
  * @param [out] dataProcessingConditions
+ * @param [out] calibrationMatrix
  */
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &calibrationMatrix
 );
 
 /**
@@ -153,3 +155,6 @@ void pushNewSpatialPoints(
 
 // POKA CHTO BUDET TAK!
 void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData);
+
+// NAPISAT DOCSTRING
+void checkGlobalDataStruct(GlobalData &globalDataStruct);
