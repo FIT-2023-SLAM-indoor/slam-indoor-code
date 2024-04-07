@@ -29,14 +29,10 @@ int main(int argc, char** argv) {
 	openLogsStreams();
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
-		std::vector<String> files;
-		glob(
-			configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
-			files, false
-		);
-		chessboardPhotosCalibration(files, 13);
+		mainCalibrationEntryPoint();
 		return 0;
 	}
+
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 
 	GlobalData globalDataStruct;
