@@ -122,6 +122,8 @@ int mainCycle(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct
 ) {
+	logStreams.mainReportStream << "Launching main cycle..." << std::endl;
+
 	std::vector<BatchElement> batch; // Необходимо создавать батч тут, чтобы его не использованный хвост переносился на следующую итерацию
 	std::vector<TemporalImageData> processedFramesData; // Used for BA or just for saving data to global struct
 
@@ -136,6 +138,17 @@ int mainCycle(
     }
 	processedFramesData.push_back(temporalImageDataDeque.at(0));
 	processedFramesData.push_back(temporalImageDataDeque.at(1));
+
+	logStreams.mainReportStream << "The first frame transformation:" << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(0).rotation << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(0).motion.t() << std::endl;
+	logStreams.mainReportStream << "The second frame transformation:" << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(1).rotation << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(1).motion.t() << std::endl;
+	rawOutput(temporalImageDataDeque.at(0).motion.t(), logStreams.poseStream);
+	rawOutput(temporalImageDataDeque.at(1).motion.t(), logStreams.poseStream);
+	logStreams.mainReportStream.flush();
+	logStreams.poseStream.flush();
 
 	int batchFrameIndex;
     int lastFrameIdx = 1;
@@ -269,6 +282,10 @@ static int processingFirstPairFrames(
 	computeTransformationAndFilterPoints(dataProcessingConditions, calibrationMatrix,
 										 temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
 										 extractedPointCoords1, extractedPointCoords2, chiralityMask);
+	refineWorldCameraPose(
+		temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
+		temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion
+	); // Places relative second matrix to global coords. Essential for restarted cycle
 	reconstruct(calibrationMatrix,
 				temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
 				temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion,
