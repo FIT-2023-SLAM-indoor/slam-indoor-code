@@ -12,18 +12,24 @@ using namespace cv;
  *
  * @param [out] mediaInputStruct так называемый интерефейс для универсальной работы с медиа
  * @param [out] dataProcessingConditions
+ * @param [out] calibrationMatrix
  */
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &calibrationMatrix
 );
 
 /**
- * ADD DOCUMENTATION
+ * TODO: ADD DOCUMENTATION
  *
  * @param initialFrame
  */
-void defineInitialCameraPosition(TemporalImageData &initialFrame);
+void defineCameraPosition(
+    const std::deque<TemporalImageData> &oldImageDataDeque, 
+    int lastFrameOfLaunchId, 
+    TemporalImageData &frameData
+);
 
 /**
  * Функция достает (и удаляет) из структуры слдующее изображение.
@@ -146,3 +152,9 @@ void pushNewSpatialPoints(
 	std::vector<int> &prevFrameCorrespondIndices,
 	TemporalImageData &newFrameData
 );
+
+// POKA CHTO BUDET TAK!
+void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData);
+
+// NAPISAT DOCSTRING
+void checkGlobalDataStruct(GlobalData &globalDataStruct);

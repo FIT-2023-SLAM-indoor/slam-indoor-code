@@ -10,8 +10,8 @@
 
 #include "../config/config.h"
 
-#include "mainCycle.h"
 #include "mainCycleInternals.h"
+#include "mainCycleStructures.h"
 
 using namespace cv;
 
@@ -19,13 +19,19 @@ using namespace cv;
  * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
  *
  * @param [in] frame
- * @param [in] matchIdx ABOBA!!!
+ * @param [in] matchIdx ABOBA!
  * @param [in, out] frameData
  * @param [out] spatialPointColors
  */
 static void saveFrameColorOfKeyPoint(
-		const Mat &frame, int matchIdx, TemporalImageData &frameData,
-		std::vector<Vec3b> &spatialPointColors);
+    const Mat &frame, int matchIdx, TemporalImageData &frameData,
+    std::vector<Vec3b> &spatialPointColors)
+{
+    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
+    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
+    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
+}
+
 
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
@@ -94,6 +100,7 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     }
 }
 
+
 void defineInitialCameraPosition(TemporalImageData &initialFrame) {
     initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
     initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
@@ -118,6 +125,30 @@ bool findFirstGoodFrame(
     }
 
     // No good frame found
+    return false;
+}
+
+
+bool findFirstGoodFrame(
+    const DataProcessingConditions &dataProcessingConditions, 
+    std::vector<BatchElement> &currentBatch, Mat &firstGoodFrame, 
+    std::vector<KeyPoint> &goodFrameFeatures)
+{
+    int frameCandidateId = 0;
+    while (frameCandidateId < currentBatch.size()) {
+        if (currentBatch.at(frameCandidateId).features.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
+            firstGoodFrame = currentBatch.at(frameCandidateId).frame.clone();
+            goodFrameFeatures = currentBatch.at(frameCandidateId).features;
+
+            std::vector<BatchElement> batchTail;
+		    for (int i = frameCandidateId + 1; i < currentBatch.size(); i++)
+			    batchTail.push_back(currentBatch.at(i));
+		    currentBatch = batchTail;
+            return true;
+        }
+        frameCandidateId++;
+    }
+
     return false;
 }
 
@@ -210,14 +241,4 @@ void pushNewSpatialPoints(
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] = structId;
         }
     }
-}
-
-
-static void saveFrameColorOfKeyPoint(
-    const Mat &frame, int matchIdx, TemporalImageData &frameData,
-    std::vector<Vec3b> &spatialPointColors)
-{
-    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
-    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
-    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
 }

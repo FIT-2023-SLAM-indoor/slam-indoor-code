@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "config/config.h"
-#include "./cycle_processing/mainCycleStructures.h"
+#include "./cycleProcessing/mainCycleStructures.h"
 
 #include "IOmisc.h"
 

@@ -68,10 +68,10 @@ bool estimateTransformation(
 	return passedPointsCount > 0;
 }
 
-void refineWorldCameraPose(Mat& rotationMatrix, Mat& translationVector,
-                           Mat& worldCameraPose, Mat& worldCameraRotation)
-{
-//    std::cout << (rotationMatrix.type() == CV_64F) << " " << (worldCameraRotation.type() == CV_32F) << std::endl;
+void refineWorldCameraPose(
+	Mat& rotationMatrix, Mat& translationVector,
+	Mat& worldCameraRotation, Mat& worldCameraPose
+) {
     worldCameraRotation = rotationMatrix * worldCameraRotation;
     worldCameraPose += worldCameraRotation * translationVector;
 }

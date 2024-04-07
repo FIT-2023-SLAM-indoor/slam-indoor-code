@@ -17,7 +17,7 @@ using namespace cv;
  * @param [out] globalDataStruct 
  * @return IN PROGRESS
  */
-bool mainCycle(
+int mainCycle(
 	MediaSources &mediaInputStruct, Mat &calibrationMatrix,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::deque<TemporalImageData> &temporalImageDataDeque, GlobalData &globalDataStruct

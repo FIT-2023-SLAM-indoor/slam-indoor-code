@@ -36,13 +36,13 @@ void filterVectorByMask(std::vector<Point2f>& vector, const Mat& mask);
  *
  * @param [out] rotationMatrix 3x3 rotation matrix
  * @param [out] translationVector 3x1 translation vector-matrix
+ * @param [in,out] worldCameraRotation 3x3 global rotation matrix
  * @param [in,out] worldCameraPose 1x3 vector-matrix with camera world pose which will be refined by estimated rotation and
  *     translation
- * @param [in,out] worldCameraRotation 3x3 global rotation matrix
  */
 void refineWorldCameraPose(
 	Mat& rotationMatrix, Mat& translationVector,
-	Mat& worldCameraPose, Mat& worldCameraRotation
+	Mat& worldCameraRotation, Mat& worldCameraPose
 );
 
 /**
