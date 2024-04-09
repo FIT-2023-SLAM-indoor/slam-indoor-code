@@ -3,7 +3,7 @@
 #include <opencv2/videoio.hpp>
 #include "fstream"
 
-#include "./cycle_processing/mainCycleStructures.h"
+#include "./cycleProcessing/mainCycleStructures.h"
 
 using namespace cv;
 

@@ -10,8 +10,8 @@
 
 #include "../config/config.h"
 
-#include "mainCycle.h"
 #include "mainCycleInternals.h"
+#include "mainCycleStructures.h"
 
 using namespace cv;
 
@@ -19,13 +19,19 @@ using namespace cv;
  * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
  *
  * @param [in] frame
- * @param [in] matchIdx ABOBA!!!
+ * @param [in] matchIdx ABOBA!
  * @param [in, out] frameData
  * @param [out] spatialPointColors
  */
 static void saveFrameColorOfKeyPoint(
-		const Mat &frame, int matchIdx, TemporalImageData &frameData,
-		std::vector<Vec3b> &spatialPointColors);
+    const Mat &frame, int matchIdx, TemporalImageData &frameData,
+    std::vector<Vec3b> &spatialPointColors)
+{
+    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
+    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
+    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
+}
+
 
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
@@ -58,11 +64,12 @@ static void defineDistortionCoeffs(Mat &distortionCoeffs) {
 
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions)
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &calibrationMatrix)
 {
     defineMediaSources(mediaInputStruct);
-
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
+    defineCalibrationMatrix(calibrationMatrix);
 
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
@@ -98,9 +105,19 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     }
 }
 
-void defineInitialCameraPosition(TemporalImageData &initialFrame) {
-    initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
-    initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
+
+void defineCameraPosition(
+    const std::deque<TemporalImageData> &oldImageDataDeque,
+    int lastFrameOfLaunchId,
+    TemporalImageData &frameData)
+{
+    if (lastFrameOfLaunchId < 0 || oldImageDataDeque.size() == 0) {
+        frameData.rotation = Mat::eye(3, 3, CV_64FC1);
+        frameData.motion = Mat::zeros(3, 1, CV_64FC1);
+    } else {
+        frameData.rotation = oldImageDataDeque.at(lastFrameOfLaunchId).rotation.clone();
+        frameData.motion = oldImageDataDeque.at(lastFrameOfLaunchId).motion.clone();
+    }
 }
 
 
@@ -217,11 +234,30 @@ void pushNewSpatialPoints(
 }
 
 
-static void saveFrameColorOfKeyPoint(
-    const Mat &frame, int matchIdx, TemporalImageData &frameData,
-    std::vector<Vec3b> &spatialPointColors)
-{
-    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
-    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
-    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
+void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData) {
+    for (int pointId = 0; pointId < newGlobalData.spatialPoints.size(); pointId++) {
+        mainGlobalData.spatialPoints.push_back(newGlobalData.spatialPoints.at(pointId));
+        mainGlobalData.spatialPointsColors.push_back(
+            newGlobalData.spatialPointsColors.at(pointId));
+    }
+    for (int cameraId = 0; cameraId < newGlobalData.cameraRotations.size(); cameraId++) {
+        mainGlobalData.cameraRotations.push_back(
+            newGlobalData.cameraRotations.at(cameraId).clone());
+        mainGlobalData.spatialCameraPositions.push_back(
+            newGlobalData.spatialCameraPositions.at(cameraId).clone());
+    }
+}
+
+
+void checkGlobalDataStruct(GlobalData &globalDataStruct) {
+    if (
+        globalDataStruct.cameraRotations.size() == 0 ||
+        globalDataStruct.spatialCameraPositions.size() == 0 ||
+        globalDataStruct.spatialPoints.size() == 0 ||
+        globalDataStruct.spatialPointsColors.size() == 0
+    ) {
+        logStreams.mainReportStream << "Couldn't process image sequence. Too little data.\n";
+        logStreams.mainReportStream.flush();
+        exit(-1);
+    }
 }

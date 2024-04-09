@@ -5,8 +5,8 @@
 #include "IOmisc.h"
 #include "cameraCalibration.h"
 
-#include "cycle_processing/mainCycle.h"
-#include "cycle_processing/mainCycleInternals.h"
+#include "cycleProcessing/mainCycle.h"
+#include "cycleProcessing/mainCycleInternals.h"
 #include "vizualizationModule.h"
 
 using namespace cv;
@@ -35,23 +35,32 @@ int main(int argc, char** argv) {
 
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 
-	GlobalData globalDataStruct;
 	MediaSources mediaInputStruct;
 	DataProcessingConditions dataProcessingConditions;
-	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 	Mat calibrationMatrix;
-	defineCalibrationMatrix(calibrationMatrix);
-	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
-	defineInitialCameraPosition(temporalImageDataDeque.at(0));
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions, calibrationMatrix);
+	
+	GlobalData globalDataStruct;
+	std::deque<TemporalImageData> oldTempImageDataDeque;
+	int lastFrameOfLaunchId = -1;
 	do {
-		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
-	} while (mainCycle(
-		mediaInputStruct, calibrationMatrix, dataProcessingConditions,
-		temporalImageDataDeque, globalDataStruct
-	));
+		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
+		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
+						     newTempImageDataDeque.at(0));
+
+		GlobalData newGlobalData;
+		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
+										dataProcessingConditions, newTempImageDataDeque,
+										newGlobalData);
+		oldTempImageDataDeque = newTempImageDataDeque;
+
+		insertNewGlobalData(globalDataStruct, newGlobalData);
+	} while (lastFrameOfLaunchId > 0);
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
+
+	checkGlobalDataStruct(globalDataStruct);
 
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;
@@ -63,7 +72,6 @@ int main(int argc, char** argv) {
 							  globalDataStruct.spatialCameraPositions,
 							  globalDataStruct.spatialPointsColors,
 							  calibrationMatrix);
-
 	closeLogsStreams();
 
     return 0;

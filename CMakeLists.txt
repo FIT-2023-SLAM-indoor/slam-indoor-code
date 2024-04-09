@@ -14,9 +14,9 @@ find_package(nlohmann_json 3.10.0 REQUIRED)
 add_executable(
     slam-indoor-code
     src/main.cpp
-    src/cycle_processing/mainCycleStructures.h
-    src/cycle_processing/mainCycle.cpp src/cycle_processing/mainCycle.h
-    src/cycle_processing/mainCycleInternals.cpp src/cycle_processing/mainCycleInternals.h
+    src/cycleProcessing/mainCycleStructures.h
+    src/cycleProcessing/mainCycle.cpp src/cycleProcessing/mainCycle.h
+    src/cycleProcessing/mainCycleInternals.cpp src/cycleProcessing/mainCycleInternals.h
     src/fastExtractor.cpp src/fastExtractor.h
     src/cameraCalibration.cpp src/cameraCalibration.h
     src/cameraTransition.cpp src/cameraTransition.h
