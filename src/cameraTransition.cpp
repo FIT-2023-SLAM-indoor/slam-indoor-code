@@ -68,12 +68,12 @@ bool estimateTransformation(
 	return passedPointsCount > 0;
 }
 
-void refineWorldCameraPose(
-	Mat& rotationMatrix, Mat& translationVector,
-	Mat& worldCameraRotation, Mat& worldCameraPose
+void refineTransformationForGlobalCoords(
+	Mat& worldCameraRotation, Mat& worldCameraPose,
+	Mat& rotationMatrix, Mat& translationVector
 ) {
-    worldCameraRotation = rotationMatrix * worldCameraRotation;
-    worldCameraPose += worldCameraRotation * translationVector;
+	translationVector = worldCameraPose + rotationMatrix * translationVector;
+	rotationMatrix = worldCameraRotation * rotationMatrix;
 }
 
 void addHomogeneousRow(Mat& m) {

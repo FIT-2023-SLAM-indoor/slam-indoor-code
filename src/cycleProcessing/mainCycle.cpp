@@ -282,7 +282,10 @@ static int processingFirstPairFrames(
 	computeTransformationAndFilterPoints(dataProcessingConditions, calibrationMatrix,
 										 temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
 										 extractedPointCoords1, extractedPointCoords2, chiralityMask);
-	refineWorldCameraPose(
+	logStreams.mainReportStream << "Second transformation before refinement:" << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(1).rotation << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(1).motion.t() << std::endl;
+	refineTransformationForGlobalCoords(
 		temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
 		temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion
 	); // Places relative second matrix to global coords. Essential for restarted cycle

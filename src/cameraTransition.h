@@ -31,18 +31,16 @@ void filterVectorByMask(std::vector<Point2f>& vector, const Mat& mask);
 
 
 /**
- * Refiner for world point nad world rotation.
- * In common case, updates any 3D point by rotation and translation
  *
- * @param [out] rotationMatrix 3x3 rotation matrix
- * @param [out] translationVector 3x1 translation vector-matrix
- * @param [in,out] worldCameraRotation 3x3 global rotation matrix
- * @param [in,out] worldCameraPose 1x3 vector-matrix with camera world pose which will be refined by estimated rotation and
- *     translation
+ * @param [in] worldCameraRotation 3x3 rotation matrix
+ * @param [out] worldCameraPose 3x1 translation vector-matrix
+ * @param [in,out] rotationMatrix 3x3 rotation matrix which will be refine by local rotation
+ * @param [in,out] translationVector 3x1 translation vector-matrix which will be refined by estimated
+ * 	   combination of local rotation and translation
  */
-void refineWorldCameraPose(
-	Mat& rotationMatrix, Mat& translationVector,
-	Mat& worldCameraRotation, Mat& worldCameraPose
+void refineTransformationForGlobalCoords(
+	Mat& worldCameraRotation, Mat& worldCameraPose,
+	Mat& rotationMatrix, Mat& translationVector
 );
 
 /**
