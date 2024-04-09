@@ -16,6 +16,11 @@ enum CalibrationOption {
 };
 
 /**
+ * Entry point for calibration in main function.
+ */
+void mainCalibrationEntryPoint();
+
+/**
  * Сreates a new matrix or changing the type and size of an existing one.
  *
  * @param [out] calibrationMatrix
@@ -48,7 +53,7 @@ void calibration(Mat& cameraMatrix, CalibrationOption option);
  * @param [in] boardSize Shape of board (`Size(int width, int height)`)
  * @param [in] pathToXML Oath to XML for saving got matrix
  */
-void chessboardVideoCalibration(VideoCapture capture, int itersCount= 10, double delay= 3,
+void chessboardVideoCalibration(VideoCapture capture, int itersCount= 15, double delay= 5,
                                 double squareSize= 23.0, Size boardSize= Size(7, 7));
 /**
  * Chessboard calibration from photos.
