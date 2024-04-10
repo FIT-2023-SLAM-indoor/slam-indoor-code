@@ -153,8 +153,14 @@ void pushNewSpatialPoints(
 	TemporalImageData &newFrameData
 );
 
-// POKA CHTO BUDET TAK!
+
+/**
+ * 
+ */
 void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData);
 
-// NAPISAT DOCSTRING
+
+/**
+ * 
+ */
 void checkGlobalDataStruct(GlobalData &globalDataStruct);

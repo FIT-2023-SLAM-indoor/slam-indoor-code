@@ -17,6 +17,7 @@ using namespace cv;
 
 const int OPTIMAL_DEQUE_SIZE = 8;
 
+
 /**
  * Fills batch up to dataProcessingConditions.batchSize or while new frames can be obtained.
  * <br>
@@ -38,6 +39,7 @@ static int fillVideoFrameBatch(
 
 #define EMPTY_BATCH (-2)
 #define FRAME_NOT_FOUND (-1)
+
 /**
  * Find new frame from batch which can be up to dataProcessingConditions.batchSize
  *
@@ -48,7 +50,7 @@ static int fillVideoFrameBatch(
  * 		<li>
  * 			Output is a batch tail after new good frame
  * 			(consequently there will be full batch in case we didn't find new good one)
-* 		</li>
+ * 		</li>
  * </ul>
  * @param [in] previousFrame
  * @param [out] newGoodFrame
@@ -93,6 +95,9 @@ static int defineFirstPairFrames(
 );
 
 
+/**
+ * 
+ */
 static int processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
 	Mat &calibrationMatrix,
@@ -435,6 +440,7 @@ static int findGoodFrameFromBatch(
 
 	return goodIndex;
 }
+
 
 static void moveProcessedDataToGlobalStruct(
 	std::vector<TemporalImageData> &processedFramesData,

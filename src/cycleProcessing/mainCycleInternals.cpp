@@ -15,11 +15,12 @@
 
 using namespace cv;
 
+
 /**
  * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
  *
  * @param [in] frame
- * @param [in] matchIdx ABOBA!
+ * @param [in] matchIdx #############################################################################
  * @param [in, out] frameData
  * @param [out] spatialPointColors
  */
@@ -33,6 +34,9 @@ static void saveFrameColorOfKeyPoint(
 }
 
 
+/**
+ * 
+ */
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
         ConfigFieldEnum::USE_PHOTOS_CYCLE);
@@ -52,6 +56,9 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
     }
 }
 
+/**
+ * 
+ */
 static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
