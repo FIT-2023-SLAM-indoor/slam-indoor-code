@@ -287,7 +287,10 @@ static int processingFirstPairFrames(
 	computeTransformationAndFilterPoints(dataProcessingConditions, calibrationMatrix,
 										 temporalImageDataDeque.at(0),temporalImageDataDeque.at(1),
 										 extractedPointCoords1, extractedPointCoords2, chiralityMask);
-	refineWorldCameraPose(
+	logStreams.mainReportStream << "Second transformation before refinement:" << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(1).rotation << std::endl;
+	logStreams.mainReportStream << temporalImageDataDeque.at(1).motion.t() << std::endl;
+	refineTransformationForGlobalCoords(
 		temporalImageDataDeque.at(0).rotation, temporalImageDataDeque.at(0).motion,
 		temporalImageDataDeque.at(1).rotation, temporalImageDataDeque.at(1).motion
 	); // Places relative second matrix to global coords. Essential for restarted cycle
@@ -397,7 +400,11 @@ static int findGoodFrameFromBatch(
 	Mat candidateFrame;
 	std::vector<KeyPoint> candidateFrameFeatures;
 	std::vector<DMatch> candidateMatches;
-	for (int batchIndex = currentBatchSz - 1; batchIndex >= 0; batchIndex--) {
+	for (
+		int batchIndex = currentBatchSz - 1;
+		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
+		batchIndex--
+	) {
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 
@@ -413,11 +420,13 @@ static int findGoodFrameFromBatch(
 			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
 			&& candidateMatches.size() >= goodMatches.size()
 		) {
+			logStreams.mainReportStream << "Frame " << batchIndex << " is a good" << std::endl;
 			goodIndex = batchIndex;
 			goodFrame = candidateFrame.clone();
 			goodFeatures = candidateFrameFeatures;
 			goodMatches = candidateMatches;
-			break;
+			if (dataProcessingConditions.useFirstFitInBath)
+				break;
 		}
 	}
 	if (goodIndex != FRAME_NOT_FOUND) {

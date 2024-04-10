@@ -43,7 +43,7 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
 
     if (mediaInputStruct.isPhotoProcessing) {
         glob(
-            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
+            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN),
             mediaInputStruct.photosPaths, false);
         sortGlobs(mediaInputStruct.photosPaths);
     } else {
@@ -82,6 +82,10 @@ void defineProcessingEnvironment(
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
     dataProcessingConditions.frameBatchSize =
         configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
+	dataProcessingConditions.skipFramesFromBatchHead =
+		configService.getValue<int>(ConfigFieldEnum::SKIP_FRAMES_FROM_BATCH_HEAD);
+	dataProcessingConditions.useFirstFitInBath =
+		configService.getValue<bool>(ConfigFieldEnum::USE_FIRST_FIT_IN_BATCH);
     dataProcessingConditions.requiredExtractedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT);
     dataProcessingConditions.requiredMatchedPointsCount =
