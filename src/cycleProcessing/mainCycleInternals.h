@@ -21,9 +21,12 @@ void defineProcessingEnvironment(
 );
 
 /**
- * TODO: ADD DOCUMENTATION
+ * Определяет поля позиции камеры в TemporalImageData. Функция универсально работает с начальным
+ * кадром и последующими.
  *
- * @param initialFrame
+ * @param [in] oldImageDataDeque
+ * @param [in] lastFrameOfLaunchId
+ * @param [out] frameData
  */
 void defineCameraPosition(
     const std::deque<TemporalImageData> &oldImageDataDeque, 
@@ -155,12 +158,18 @@ void pushNewSpatialPoints(
 
 
 /**
- * 
+ * Функция копирует общие данные об обработанном медиа из newGlobalData в mainGlobalData.
+ *
+ * @param [out] mainGlobalData
+ * @param [in] newGlobalData
  */
 void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData);
 
 
 /**
- * 
+ * Функция проверяет была ли заполнена структура GlobalData после обработки медиа. Если структура
+ * осталась пуста, то будет вызвано падение программы.
+ *
+ * @param [in] globalDataStruct
  */
 void checkGlobalDataStruct(GlobalData &globalDataStruct);
