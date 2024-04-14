@@ -16,6 +16,7 @@ add_executable(
     src/main.cpp
     src/cycleProcessing/mainCycleStructures.h
     src/cycleProcessing/mainCycle.cpp src/cycleProcessing/mainCycle.h
+    src/cycleProcessing/batch.cpp src/cycleProcessing/batch.h
     src/cycleProcessing/mainCycleInternals.cpp src/cycleProcessing/mainCycleInternals.h
     src/fastExtractor.cpp src/fastExtractor.h
     src/cameraCalibration.cpp src/cameraCalibration.h
