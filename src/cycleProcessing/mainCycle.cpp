@@ -41,6 +41,9 @@ static int defineFirstPairFrames(
 );
 
 
+/**
+ *
+ */
 static int processingFirstPairFrames(
 	MediaSources &mediaInputStruct,
 	Mat &calibrationMatrix,

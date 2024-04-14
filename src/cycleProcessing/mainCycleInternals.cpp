@@ -15,11 +15,12 @@
 
 using namespace cv;
 
+
 /**
  * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
  *
  * @param [in] frame
- * @param [in] matchIdx ABOBA!
+ * @param [in] matchIdx идентификатор нужного матча, который прошел chirality mask
  * @param [in, out] frameData
  * @param [out] spatialPointColors
  */
@@ -33,6 +34,12 @@ static void saveFrameColorOfKeyPoint(
 }
 
 
+/**
+ * Загружает данные о том, работаем мы с видео или фото, из конфига и сохраняет их в структуру
+ * медиа данных.
+ *
+ * @param [out] mediaInputStruct
+ */
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
         ConfigFieldEnum::USE_PHOTOS_CYCLE);
@@ -52,6 +59,11 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
     }
 }
 
+/**
+ * Загружает данные о матрице калибровки камеры из конфига.
+ *
+ * @param [out] distortionCoeffs
+ */
 static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
@@ -109,8 +121,7 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
 
 
 void defineCameraPosition(
-    const std::deque<TemporalImageData> &oldImageDataDeque,
-    int lastFrameOfLaunchId,
+    const std::deque<TemporalImageData> &oldImageDataDeque, int lastFrameOfLaunchId,
     TemporalImageData &frameData)
 {
     if (lastFrameOfLaunchId < 0 || oldImageDataDeque.size() == 0) {
