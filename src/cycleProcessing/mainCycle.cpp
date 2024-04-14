@@ -1,5 +1,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
+#include "thread"
+#include "chrono"
+#include "atomic"
 
 #include "../cameraTransition.h"
 #include "../fastExtractor.h"
@@ -339,6 +342,7 @@ static int fillVideoFrameBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch
 ) {
+	std::clock_t start = clock();
 	int currentFrameBatchSize = 0;
 	Mat nextFrame;
 
@@ -368,6 +372,7 @@ static int fillVideoFrameBatch(
 	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
 	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
 	logStreams.mainReportStream << "Batch size: " << currentBatch.size() << std::endl;
+	std::cout << "Extracting time: " << (clock() - start) / CLOCKS_PER_SEC << std::endl;
 	return skippedFrames;
 }
 
@@ -388,6 +393,32 @@ static int findGoodFrameFromBatch(
 		return EMPTY_BATCH;
 
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	// In the future this must
+//	std::vector<std::atomic_flag> isMatchesEstimated(currentBatchSz);
+	std::vector<bool> isMatchesEstimated(currentBatchSz, false);
+	int threadsCnt = dataProcessingConditions.threadsCount;
+	std::vector<std::thread> threads;
+	std::vector<bool> threadShouldDieFlags(threadsCnt, false);
+	std::vector<std::vector<DMatch>> estimatedMatches(currentBatchSz, std::vector<DMatch>());
+	for (int i = 0; i < threadsCnt; ++i) {
+		threads.emplace_back(std::thread([&](int threadIndex) {
+			for (
+				int batchIndex = currentBatchSz - 1 - threadIndex;
+				batchIndex >= 0;
+				batchIndex -= threadsCnt
+			) {
+				matchFramesPairFeatures(previousFrame, currentBatch.at(batchIndex).frame,
+					previousFeatures, currentBatch.at(batchIndex).features,
+					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex));
+				isMatchesEstimated.at(batchIndex) = true;
+				if (threadShouldDieFlags.at(threadIndex))
+					break;
+			}
+		}, i));
+	}
+
 	Mat goodFrame;
 	std::vector<KeyPoint> goodFeatures;
 	std::vector<DMatch> goodMatches;
@@ -400,12 +431,10 @@ static int findGoodFrameFromBatch(
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
 	) {
+		while (!isMatchesEstimated.at(batchIndex)); // Dmitry Valentinovich, I'm sorry...
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
-
-		matchFramesPairFeatures(previousFrame, candidateFrame,
-								previousFeatures, candidateFrameFeatures,
-								dataProcessingConditions.matcherType, candidateMatches);
+		candidateMatches = estimatedMatches.at(batchIndex);
 
 		logStreams.mainReportStream << "Batch index: " << batchIndex
 									<< "; curr. extracted: " << candidateFrameFeatures.size()
@@ -424,6 +453,18 @@ static int findGoodFrameFromBatch(
 				break;
 		}
 	}
+	std::cout << "Matching time for index " << goodIndex << ": "
+		<< std::chrono::duration_cast<std::chrono::milliseconds>(
+			std::chrono::high_resolution_clock::now() - start
+		).count() << std::endl;
+	for (int i = threadShouldDieFlags.size() - 1; i >= 0; --i)
+		threadShouldDieFlags.at(i) = true;
+	for (auto& thread : threads)
+		thread.join();
+	std::cout << "Threads terminated: "
+			  << std::chrono::duration_cast<std::chrono::milliseconds>(
+				  std::chrono::high_resolution_clock::now() - start
+			  ).count() << std::endl;
 	if (goodIndex != FRAME_NOT_FOUND) {
 		newGoodFrame = goodFrame.clone();
 		newFeatures = goodFeatures;

@@ -24,6 +24,8 @@ enum ConfigFieldEnum {
 	VIDEO_SOURCE_PATH,
 	OUTPUT_DATA_DIR,
 
+	THREADS_COUNT,
+
 	USE_UNDISTORTION,
 
 	REQUIRED_EXTRACTED_POINTS_COUNT,
@@ -83,6 +85,8 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{PHOTOS_PATH_PATTERN,             {"photosPathPattern",            STRING}},
 		{VIDEO_SOURCE_PATH,               {"videoSourcePath",              STRING}},
 		{OUTPUT_DATA_DIR,                 {"outputDataDir",                STRING}},
+
+		{THREADS_COUNT,                   {"threadsCount",                 INTEGER}},
 
 		{USE_UNDISTORTION,                {"useUndistortion",              BOOL}},
 

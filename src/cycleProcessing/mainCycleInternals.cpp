@@ -73,6 +73,8 @@ void defineProcessingEnvironment(
 
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
+	dataProcessingConditions.threadsCount =
+		configService.getValue<int>(ConfigFieldEnum::THREADS_COUNT);
     dataProcessingConditions.frameBatchSize =
         configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
 	dataProcessingConditions.skipFramesFromBatchHead =
