@@ -79,7 +79,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 	std::vector<bool> isMatchesEstimated(currentBatchSz, false);
 	int threadsCnt = dataProcessingConditions.threadsCount;
 	std::vector<std::thread> threads;
-	std::vector<bool> threadShouldDieFlags(threadsCnt, false);
+	volatile bool threadsShouldDie = false;
 	std::vector<std::vector<DMatch>> estimatedMatches(currentBatchSz, std::vector<DMatch>());
 	for (int i = 0; i < threadsCnt; ++i) {
 		threads.emplace_back(std::thread([&](int threadIndex) {
@@ -92,7 +92,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 					previousFeatures, currentBatch.at(batchIndex).features,
 					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex));
 				isMatchesEstimated.at(batchIndex) = true;
-				if (threadShouldDieFlags.at(threadIndex))
+				if (threadsShouldDie)
 					break;
 			}
 		}, i));
@@ -110,8 +110,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 			  << std::chrono::duration_cast<std::chrono::milliseconds>(
 				  std::chrono::high_resolution_clock::now() - start
 			  ).count() << std::endl;
-	for (int i = threadShouldDieFlags.size() - 1; i >= 0; --i)
-		threadShouldDieFlags.at(i) = true;
+	threadsShouldDie = true;
 	for (auto& thread : threads)
 		thread.join();
 	std::cout << "Threads terminated: "
