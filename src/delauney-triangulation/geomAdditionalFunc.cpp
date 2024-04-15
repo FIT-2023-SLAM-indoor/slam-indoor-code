@@ -2,17 +2,17 @@
 #include <opencv2/opencv.hpp>
 #include "bestFittingPlane.h"
 using namespace cv;
-void projectPointOnPlane(Point3f& point, Mat& normal, Point3f& centroid, Point3f& projectedPoint){
+void projectPointOnPlane(Point3f& point, Vec3d& normal, Point3f& centroid, Point3f& projectedPoint){
     double x = 
-        ((point.x - centroid.x)*normal.at<double>(0,0) + 
-        (point.y - centroid.y)*normal.at<double>(1,0) + 
-        (point.z - centroid.z)*normal.at<double>(2,0))/
-     (normal.at<double>(0,0) * normal.at<double>(0,0) + 
-      normal.at<double>(1,0) *normal.at<double>(1,0) +
-        normal.at<double>(2,0) *normal.at<double>(2,0));
+        ((point.x - centroid.x)*normal[0] + 
+        (point.y - centroid.y)*normal[1] + 
+        (point.z - centroid.z)*normal[2])/
+     (normal[0] * normal[0] + 
+     normal[1]*normal[1] +
+        normal[2] *normal[2]);
 
-    projectedPoint.x = point.x - normal.at<double>(0,0)*x;
-    projectedPoint.y = point.y - normal.at<double>(1,0)*x;
-    projectedPoint.z = point.z - normal.at<double>(2,0)*x;
+    projectedPoint.x = point.x - normal[0]*x;
+    projectedPoint.y = point.y - normal[1]*x;
+    projectedPoint.z = point.z - normal[2]*x;
 }
 

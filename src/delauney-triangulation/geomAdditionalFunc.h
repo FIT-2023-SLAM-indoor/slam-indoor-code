@@ -4,6 +4,6 @@
 using namespace cv;
 void projectPointOnPlane(
     Point3f& point,
-    Mat& normal,
+    Vec3d& normal,
     Point3f& centroid,
     Point3f& projectedPoint);

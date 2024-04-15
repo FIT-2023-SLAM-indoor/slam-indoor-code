@@ -7,7 +7,7 @@
 
 using namespace cv;
 using namespace std;
-void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid, Mat& normal){
+void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid, Vec3d& normal){
     Mat A = Mat(points.size(),3,CV_32F,points.data());
     transpose(A,A);
     cout<< A <<endl;
@@ -21,7 +21,7 @@ void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid
     A.row(0) = A.row(0) - mean(A.row(0));
     A.row(1) = A.row(1) - mean(A.row(1));
     A.row(2) = A.row(2) - mean(A.row(2));
-    cout<< A <<endl;
+    
 
     SVD::compute(A,leftSingularValues, leftSingularVectors, transposedMatrixOfRightSingularVectors);
 
@@ -30,8 +30,12 @@ void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid
 
     cout << "leftSingularValues:" << endl;
     cout << leftSingularValues << endl << endl;
-    
-    normal = Mat(leftSingularVectors.col(2));
+     normal = Vec3d(
+        leftSingularVectors.col(2).at<double>(0,0),
+        leftSingularVectors.col(2).at<double>(1,0),
+        leftSingularVectors.col(2).at<double>(2,0)
+     );
+   
 }
 int test() {
     vector<Point3f> points;
@@ -58,7 +62,7 @@ int test() {
 
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(points,colors);
-    Mat normal;
+    Vec3d normal;
     Point3f centroid;
     getBestFittingPlaneByPoints(points,centroid,normal);
     cout<< "normal: " <<endl;
