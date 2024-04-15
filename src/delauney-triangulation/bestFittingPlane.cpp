@@ -44,15 +44,14 @@ int test() {
     points.push_back(Point3f(5.0, 90.0, 10.0));
     points.push_back(Point3f(60.0, 90.0, 10.0));
 
-    points.push_back(Point3f(5.0, 60.0, 100.0));
-    points.push_back(Point3f(70.0, 60.0, 100.0));
-    points.push_back(Point3f(5.0, 90.0, 100.0));
-    points.push_back(Point3f(60.0, 90.0, 100.0));
 
-    points.push_back(Point3f(75.0, 60.0, 10.0));
-    points.push_back(Point3f(140.0, 60.0, 10.0));
-    points.push_back(Point3f(75.0, 90.0, 10.0));
-    points.push_back(Point3f(130.0, 90.0, 10.0));
+    points.push_back(Point3f(95.0, 60.0, 10.0));
+    points.push_back(Point3f(150.0, 60.0, 12.0));
+
+    points.push_back(Point3f(95.0, 90.0, 10.0));
+    points.push_back(Point3f(160.0, 90.0, 10.0));
+
+
 
 
     
@@ -68,7 +67,7 @@ int test() {
     cout<< "normal: " <<endl;
     cout<< normal  <<endl;
     cout<< "centroid:" << centroid << endl;
-    viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(100,100)));
+    viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(150,150)));
     std::vector<Point3f> projectedPoints;
     for (int i = 0;i < points.size();i++){
         Point3f projectedPoint;
@@ -77,8 +76,11 @@ int test() {
 
         
     }
-
-    viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,colors);
+    std::vector<Vec3b> projColors;
+    for (int i = 0;i< projectedPoints.size();i++){
+        projColors.push_back(viz::Color::blue());
+    }
+    viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,projColors);
     projectedPointsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
     cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
     window.showWidget("point_cloud", cloudWidget);
