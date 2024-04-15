@@ -27,6 +27,8 @@ add_executable(
     src/vizualizationModule.cpp src/vizualizationModule.h
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
     src/delauney-triangulation/bestFittingPlane.cpp src/delauney-triangulation/bestFittingPlane.h
+    src/delauney-triangulation/geomAdditionalFunc.cpp src/delauney-triangulation/geomAdditionalFunc.h
+
 )
 
 target_link_libraries( slam-indoor-code Ceres::ceres )

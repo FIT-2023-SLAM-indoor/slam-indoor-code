@@ -1,18 +1,20 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
 #include "../vizualizationModule.h"
+#include "geomAdditionalFunc.h"
 #include "bestFittingPlane.h"
+
 
 using namespace cv;
 using namespace std;
-void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3d& centroid, Mat& normal){
+void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid, Mat& normal){
     Mat A = Mat(points.size(),3,CV_32F,points.data());
     transpose(A,A);
     cout<< A <<endl;
     Mat leftSingularVectors, leftSingularValues, transposedMatrixOfRightSingularVectors;
     
 
-    centroid = Point3d(mean(A.row(0))[0],mean(A.row(1))[0],mean(A.row(2))[0]);
+    centroid = Point3f(mean(A.row(0))[0],mean(A.row(1))[0],mean(A.row(2))[0]);
 
     
 
@@ -57,15 +59,26 @@ int test() {
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(points,colors);
     Mat normal;
-    Point3d centroid;
+    Point3f centroid;
     getBestFittingPlaneByPoints(points,centroid,normal);
     cout<< "normal: " <<endl;
     cout<< normal  <<endl;
     cout<< "centroid:" << centroid << endl;
     viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(100,100)));
-    
+    std::vector<Point3f> projectedPoints;
+    for (int i = 0;i < points.size();i++){
+        Point3f projectedPoint;
+        projectPointOnPlane(points.at(i),normal,centroid,projectedPoint);
+        projectedPoints.push_back(projectedPoint);
+
+        
+    }
+
+    viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,colors);
+    projectedPointsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
     cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
     window.showWidget("point_cloud", cloudWidget);
+    window.showWidget("point_cloud2", projectedPointsWidget);
     window.showWidget("coordinate", viz::WCoordinateSystem(100));
     window.showWidget("bestPlane",bestFittingPlane);
     startWindowSpin(window);
