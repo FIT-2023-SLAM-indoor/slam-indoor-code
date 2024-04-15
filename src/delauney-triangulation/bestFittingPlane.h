@@ -5,4 +5,5 @@
 using namespace std;
 using namespace cv;
 
+void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3d& centroid, Mat& normal);
 int test();
