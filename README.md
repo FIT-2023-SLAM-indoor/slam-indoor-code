@@ -17,6 +17,12 @@ sudo apt install cmake git libgtk2.0-dev pkg-config libavcodec-dev libavformat-d
 #тут некоторые библиотеки могли не установится но пофиг
 sudo apt install libeigen3-dev libgflags-dev libgoogle-glog-dev libatlas-base-dev libsuitesparse-
 #тут вроде всё должно сработать
+
+# CUDA installation
+wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-keyring_1.1-1_all.deb
+sudo dpkg -i cuda-keyring_1.1-1_all.deb
+sudo apt-get update
+sudo apt-get -y install cuda-toolkit-12-3
 ```
 2. Download sources
 ```sh
@@ -30,32 +36,7 @@ mkdir opencv-build
 cd opencv-build
 ```
 3. Build & install
-```sh
-cmake -D CMAKE_BUILD_TYPE=RELEASE \
--D CMAKE_INSTALL_PREFIX=/usr/local \
--D OPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ \
--D BUILD_SHARED_LIBS=ON \
--D BUILD_opencv_sfm=ON \
--D OPENCV_ENABLE_NONFREE=ON \
--D BUILD_SHARED_LIBS=ON \
--D BUILD_TESTS=ON \
--D OPENCV_GENERATE_PKGCONFIG=ON \
--D BUILD_EXAMPLES=ON \
--D WITH_QT=ON \
--D WITH_GTK=ON \
--D WITH_OPENGL=ON \
--D WITH_FFMPEG=ON \
--D WITH_TBB=ON \
--D WITH_V4L=ON \
--D WITH_VTK=ON \
-../opencv-4.8.0/  
-
-# Make sure FFMPEG and its modules marked "YES"
-
-make -j8  # Number of jobs can be specified
-sudo make install
-```
-*For CUDA:*
+    - See CUDA installation pipeline [here](#cuda-installation)
 ```sh
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
 -D CMAKE_INSTALL_PREFIX=/usr/local \
@@ -81,9 +62,14 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
 -D BUILD_opencv_cudacodec=OFF \
 -D WITH_CUDNN=ON \
 -D OPENCV_DNN_CUDA=OFF \
--D CUDA_ARCH_BIN=8.6 \
+-D CUDA_ARCH_BIN=<version> \
 -D WITH_GSTREAMER=ON \
 ../opencv-4.8.0/  
+
+# Make sure FFMPEG, its and CUDA (not cuDNN) modules marked "YES"
+
+make -j8  # Number of jobs can be specified
+sudo make install
 ```
 
 ### Configuration files (may be outdated)
@@ -151,7 +137,7 @@ VIZ_FILE_PATH = "data/points.txt"
 VIZ_PARSE_FORMAT = "xyz"
 ```
 ---
-So now you can specify program working using configs and run using `./rebuild_and_run.sh` (write `chmod a+x rebuild_and_run.sh` to make this file executable) // TODO Rework script
+So now you can specify program working using configs and run using `./rebuild_and_run.sh <path/to/config.json` (write `chmod a+x rebuild_and_run.sh` to make this file executable)
 
 ### Ceres installation
 ```sh
@@ -167,7 +153,47 @@ make -j3
 make test
 sudo make install
 ```
-Run for testing installation 
+Run to test:
 ```sh
 ./bin/simple_bundle_adjuster ../ceres-solver-2.2.0/data/problem-16-22106-pre.txt
+```
+
+### CUDA installation
+1. Install CUDA
+2. Go to `opencv-build` folder from the second step of main pipeline
+3. Build & install OpenCV with CUDA:
+    - Specify version for `-D CUDA_ARCH_BIN=<version>` ragrding to your hardware using [this site](https://developer.nvidia.com/cuda-gpus)
+```sh
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+-D CMAKE_INSTALL_PREFIX=/usr/local \
+-D OPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ \
+-D BUILD_SHARED_LIBS=ON \
+-D BUILD_opencv_sfm=ON \
+-D OPENCV_ENABLE_NONFREE=ON \
+-D BUILD_SHARED_LIBS=ON \
+-D BUILD_TESTS=ON \
+-D OPENCV_GENERATE_PKGCONFIG=ON \
+-D BUILD_EXAMPLES=ON \
+-D WITH_QT=ON \
+-D WITH_GTK=ON \
+-D WITH_OPENGL=ON \
+-D WITH_FFMPEG=ON \
+-D WITH_TBB=ON \
+-D WITH_V4L=ON \
+-D WITH_VTK=ON \
+-D ENABLE_FAST_MATH=1 \
+-D CUDA_FAST_MATH=1 \
+-D WITH_CUBLAS=1 \
+-D WITH_CUDA=ON \
+-D BUILD_opencv_cudacodec=OFF \
+-D WITH_CUDNN=ON \
+-D OPENCV_DNN_CUDA=OFF \
+-D CUDA_ARCH_BIN=<version> \
+-D WITH_GSTREAMER=ON \
+../opencv-4.8.0/  
+
+# Make sure FFMPEG, its and CUDA (not cuDNN) modules marked "YES"
+
+make -j8  # Number of jobs can be specified
+sudo make install
 ```
