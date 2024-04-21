@@ -37,19 +37,36 @@ void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid
      );
    
 }
+
+
 int test() {
     vector<Point3f> points;
+    /*
     points.push_back(Point3f(5.0, 60.0, 10.0));
-    points.push_back(Point3f(70.0, 60.0, 10.0));
-    points.push_back(Point3f(5.0, 90.0, 10.0));
-    points.push_back(Point3f(60.0, 90.0, 10.0));
+    points.push_back(Point3f(70.0, 40.0, 50.0));
+    points.push_back(Point3f(5.0, 60.0, 10.0));
+    points.push_back(Point3f(60.0, 120.0, 50.0));
 
+    points.push_back(Point3f(25.0, 60.0, 10.0));
+    points.push_back(Point3f(90.0, 40.0, 50.0));
+    points.push_back(Point3f(25.0, 60.0, 10.0));
+    points.push_back(Point3f(80.0, 120.0, 50.0));
+    
+    points.push_back(Point3f(5.0, 80.0, 30.0));
+    points.push_back(Point3f(70.0, 80.0, 70.0));
+    points.push_back(Point3f(5.0, 100.0, 30.0));
+    points.push_back(Point3f(60.0, 160.0, 70.0));
 
-    points.push_back(Point3f(95.0, 60.0, 10.0));
-    points.push_back(Point3f(150.0, 60.0, 12.0));
+    points.push_back(Point3f(25.0, 70.0, 30.0));
+    points.push_back(Point3f(90.0, 40.0, 70.0));
+    points.push_back(Point3f(25.0, 20.0, 30.0));
+    points.push_back(Point3f(80.0, 10.0, 70.0));
+    */
 
-    points.push_back(Point3f(95.0, 90.0, 10.0));
-    points.push_back(Point3f(160.0, 90.0, 10.0));
+    points.push_back(Point3f(5.0, 60.0, 10.0));
+    points.push_back(Point3f(70.0, 40.0, 50.0));
+    points.push_back(Point3f(5.0, 60.0, 10.0));
+    points.push_back(Point3f(60.0, 120.0, 50.0));
 
 
 
@@ -71,8 +88,24 @@ int test() {
     std::vector<Point3f> projectedPoints;
     for (int i = 0;i < points.size();i++){
         Point3f projectedPoint;
+        
         projectPointOnPlane(points.at(i),normal,centroid,projectedPoint);
         projectedPoints.push_back(projectedPoint);
+        
+        projectedPoint = projectedPoint - centroid;
+
+
+        double coef = sqrt(sqr(projectedPoint.y) / (sqr(projectedPoint.x) + sqr(projectedPoint.z)) +1);
+
+
+        projectedPoint = projectedPoint*coef;
+        
+        projectedPoint.y = 0;
+        cout << projectedPoint <<endl;
+
+        projectedPoints.push_back(projectedPoint);
+
+        
 
         
     }
@@ -83,11 +116,26 @@ int test() {
     viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,projColors);
     projectedPointsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
     cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
-    window.showWidget("point_cloud", cloudWidget);
-    window.showWidget("point_cloud2", projectedPointsWidget);
-    window.showWidget("coordinate", viz::WCoordinateSystem(100));
+    //window.showWidget("point_cloud", cloudWidget);
+    //window.showWidget("point_cloud2", projectedPointsWidget);
+    //window.showWidget("coordinate", viz::WCoordinateSystem(100));
     window.showWidget("bestPlane",bestFittingPlane);
-    startWindowSpin(window);
+
+    Triangle triangle;
+    triangle.points.push_back(Point2f(0,3));
+    triangle.points.push_back(Point2f(0,0));
+    triangle.points.push_back(Point2f(4,0));
+    
+
+
+
+    double radius;
+    Point2f center;
+    getCircumByTriangle(triangle,radius,center);
+    cout << "WTF:" << endl;
+    cout << radius << endl;
+    cout << center << endl;
+    //startWindowSpin(window);
 
     return 0;
 }
