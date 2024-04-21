@@ -1,7 +1,7 @@
 #include "chrono"
-#include "atomic"
 #include "thread"
 
+#include "../misc/ChronoTimer.h"
 #include "../IOmisc.h"
 #include "../fastExtractor.h"
 #include "../featureMatching.h"
@@ -74,7 +74,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 		return EMPTY_BATCH;
 
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
-	auto start = std::chrono::high_resolution_clock::now();
+	ChronoTimer timer;
 
 	std::vector<bool> isMatchesEstimated(currentBatchSz, false);
 	int threadsCnt = dataProcessingConditions.threadsCount;
@@ -98,6 +98,9 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 		}, i));
 	}
 
+	timer.printLastPointDelta("Matching threads started at: ", logStreams.timeStream);
+	timer.updateLastPoint();
+
 	int returnCode = findGoodFrameFromBatch(
 		dataProcessingConditions,
 		currentBatch, isMatchesEstimated, estimatedMatches,
@@ -106,17 +109,16 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 		matches
 	);
 
-	std::cout << "Matching time for index " << returnCode << ": "
-			  << std::chrono::duration_cast<std::chrono::milliseconds>(
-				  std::chrono::high_resolution_clock::now() - start
-			  ).count() << std::endl;
+	logStreams.timeStream << "Matching time for index " << returnCode;
+	timer.printLastPointDelta(" : ", logStreams.timeStream);
+	timer.updateLastPoint();
+
 	threadsShouldDie = true;
 	for (auto& thread : threads)
 		thread.join();
-	std::cout << "Threads terminated: "
-			  << std::chrono::duration_cast<std::chrono::milliseconds>(
-				  std::chrono::high_resolution_clock::now() - start
-			  ).count() << std::endl;
+
+	timer.printLastPointDelta("Threads terminated: ", logStreams.timeStream);
+	timer.updateLastPoint();
 
 	if (returnCode < 0)
 		return returnCode;
@@ -134,7 +136,7 @@ static int fillVideoFrameBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch
 ) {
-	std::clock_t start = clock();
+	ChronoTimer timer;
 	int currentFrameBatchSize = 0;
 	Mat nextFrame;
 
@@ -164,7 +166,7 @@ static int fillVideoFrameBatch(
 	logStreams.mainReportStream << std::endl << "Skipped for first: " << skippedFramesForFirstFound << std::endl;
 	logStreams.mainReportStream << "Skipped frames while constructing batch: " << skippedFrames << std::endl;
 	logStreams.mainReportStream << "Batch size: " << currentBatch.size() << std::endl;
-	std::cout << "Extracting time: " << (clock() - start) / CLOCKS_PER_SEC << std::endl;
+	timer.printLastPointDelta("MS for batch's filling: ", logStreams.timeStream);
 	return skippedFrames;
 }
 

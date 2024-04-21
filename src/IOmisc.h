@@ -11,6 +11,7 @@ typedef struct LogFilesStreams {
 	std::ofstream mainReportStream;
 	std::ofstream pointsStream;
 	std::ofstream poseStream;
+	std::ofstream timeStream;
 	std::ofstream extractedMatchedTable;
 } LogFilesStreams;
 
@@ -101,3 +102,10 @@ void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream);
  * @throws std::runtime_error if the file cannot be opened or created.
  */
 void rawOutput(const Mat &matrix, const String &path, const char mode='a');
+
+/**
+ * Prints divider from '=' chars.
+ *
+ * @param stream output stream
+ */
+void printDivider(std::ofstream &stream);

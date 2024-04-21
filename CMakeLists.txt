@@ -27,6 +27,7 @@ add_executable(
     src/IOmisc.cpp src/IOmisc.h
     src/vizualizationModule.cpp src/vizualizationModule.h
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
+    src/misc/ChronoTimer.cpp src/misc/ChronoTimer.h
 )
 
 target_link_libraries( slam-indoor-code Ceres::ceres )

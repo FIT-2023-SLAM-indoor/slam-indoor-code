@@ -5,6 +5,7 @@
 #include "../featureMatching.h"
 #include "../triangulate.h"
 #include "../IOmisc.h"
+#include "../misc/ChronoTimer.h"
 #include "../bundleAdjustment/bundleAdjustment.h"
 
 #include "../config/config.h"
@@ -103,8 +104,10 @@ int mainCycle(
 
 	int batchFrameIndex;
     int lastFrameIdx = 1;
+	ChronoTimer timer;
     while (true) {
-        logStreams.mainReportStream << std::endl << "================================================================\n" << std::endl;
+		printDivider(logStreams.timeStream);
+		printDivider(logStreams.mainReportStream);
 
         // Find the next good frame batch
         Mat nextGoodFrame;
@@ -124,6 +127,8 @@ int mainCycle(
             break;
         }
 
+		timer.updateLastPoint();
+
         // Get object and image points for reconstruction
         std::vector<Point3f> oldSpatialPointsForNewFrame;
         std::vector<Point2f> newFrameFeatureCoords;
@@ -135,6 +140,9 @@ int mainCycle(
             oldSpatialPointsForNewFrame, newFrameFeatureCoords
 		);
 
+		timer.printLastPointDelta("Corresponding points getting: ", logStreams.timeStream);
+		timer.updateLastPoint();
+
         // Find transformation matrix
         if (oldSpatialPointsForNewFrame.size() < 4) {
             logStreams.mainReportStream << "Not enough corresponding points for solvePnP RANSAC" << std::endl;
@@ -144,10 +152,13 @@ int mainCycle(
         solvePnPRansac(
 			oldSpatialPointsForNewFrame, newFrameFeatureCoords, calibrationMatrix,
 			dataProcessingConditions.distortionCoeffs, rotationVector,
-			temporalImageDataDeque.at(lastFrameIdx+1).motion
+			temporalImageDataDeque.at(lastFrameIdx+1).motion, false, 300
 		);
         // Convert rotation vector to rotation matrix
         Rodrigues(rotationVector, temporalImageDataDeque.at(lastFrameIdx+1).rotation);
+
+		timer.printLastPointDelta("RANSAC transformation estimation: ", logStreams.timeStream);
+		timer.updateLastPoint();
 
         logStreams.mainReportStream << "Used in solvePnP: " << oldSpatialPointsForNewFrame.size() << std::endl;
         logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).rotation << std::endl;
@@ -175,10 +186,16 @@ int mainCycle(
             temporalImageDataDeque.at(lastFrameIdx).correspondSpatialPointIdx,
             temporalImageDataDeque.at(lastFrameIdx+1));
 
+		timer.printLastPointDelta("Reconstruction: ", logStreams.timeStream);
+		timer.updateLastPoint();
+
 		processedFramesData.push_back(temporalImageDataDeque.at(lastFrameIdx+1));
 		if (processedFramesData.size() >= dataProcessingConditions.maxProcessedFramesVectorSz) {
-			if (dataProcessingConditions.useBundleAdjustment)
+			if (dataProcessingConditions.useBundleAdjustment) {
 				bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+				timer.printLastPointDelta("Bundle adjustment: ", logStreams.timeStream);
+				timer.updateLastPoint();
+			}
 			moveProcessedDataToGlobalStruct(
 				processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
 			);
@@ -197,6 +214,8 @@ int mainCycle(
 	if (!processedFramesData.empty()) {
 		if (dataProcessingConditions.useBundleAdjustment) {
 			bundleAdjustment(calibrationMatrix, processedFramesData, globalDataStruct);
+			timer.printLastPointDelta("Bundle adjustment: ", logStreams.timeStream);
+			timer.updateLastPoint();
 		}
 		moveProcessedDataToGlobalStruct(
 			processedFramesData, globalDataStruct, dataProcessingConditions.useBundleAdjustment
@@ -228,6 +247,8 @@ static int processingFirstPairFrames(
 		return EMPTY_BATCH;
 	}
 
+	ChronoTimer timer;
+
 	Mat chiralityMask;
 	std::vector<Point2f> extractedPointCoords1, extractedPointCoords2;
 	computeTransformationAndFilterPoints(dataProcessingConditions, calibrationMatrix,
@@ -246,6 +267,8 @@ static int processingFirstPairFrames(
 				extractedPointCoords1, extractedPointCoords2, spatialPoints);
 	defineFeaturesCorrespondSpatialIndices(chiralityMask, secondFrame, temporalImageDataDeque.at(0),
 										   temporalImageDataDeque.at(1), firstPairSpatialPointColors);
+
+	timer.printLastPointDelta("MS for first-pair computations: ", logStreams.timeStream);
 
 	return frameIndex;
 }
