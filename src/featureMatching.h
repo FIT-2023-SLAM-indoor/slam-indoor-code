@@ -83,8 +83,15 @@ void showMatchedPointsInTwoFrames(
 );
 
 /**
- * Написать документацию!!!
-*/
+ * TODO: DOCUMENT
+ *
+ * @param firstFrame
+ * @param secondFrame
+ * @param firstFeatures
+ * @param secondFeatures
+ * @param matcherType
+ * @param matches
+ */
 void matchFramesPairFeatures(
     Mat& firstFrame,
     Mat& secondFrame,
@@ -92,4 +99,23 @@ void matchFramesPairFeatures(
     std::vector<KeyPoint>& secondFeatures,
     int matcherType,
     std::vector<DMatch>& matches
+);
+
+/**
+ * TODO: DOCUMENT
+ *
+ * @param firstFrame
+ * @param secondFrame
+ * @param firstFeatures
+ * @param secondFeatures
+ * @param matcherType
+ * @param matches
+ */
+void matchFramesPairFeaturesCUDA(
+	Mat& firstFrame,
+	Mat& secondFrame,
+	std::vector<KeyPoint>& firstFeatures,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
 );

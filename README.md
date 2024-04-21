@@ -31,12 +31,61 @@ cd opencv-build
 ```
 3. Build & install
 ```sh
-cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D OPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ -D BUILD_SHARED_LIBS=ON -D BUILD_opencv_sfm=ON -D OPENCV_ENABLE_NONFREE=ON -D BUILD_SHARED_LIBS=ON  -D BUILD_TESTS=ON -D OPENCV_GENERATE_PKGCONFIG=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_GTK=ON -D WITH_OPENGL=ON -D WITH_FFMPEG=ON -D WITH_TBB=ON -D WITH_V4L=ON -D WITH_VTK=ON ../opencv-4.8.0/  
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+-D CMAKE_INSTALL_PREFIX=/usr/local \
+-D OPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ \
+-D BUILD_SHARED_LIBS=ON \
+-D BUILD_opencv_sfm=ON \
+-D OPENCV_ENABLE_NONFREE=ON \
+-D BUILD_SHARED_LIBS=ON \
+-D BUILD_TESTS=ON \
+-D OPENCV_GENERATE_PKGCONFIG=ON \
+-D BUILD_EXAMPLES=ON \
+-D WITH_QT=ON \
+-D WITH_GTK=ON \
+-D WITH_OPENGL=ON \
+-D WITH_FFMPEG=ON \
+-D WITH_TBB=ON \
+-D WITH_V4L=ON \
+-D WITH_VTK=ON \
+../opencv-4.8.0/  
+
 # Make sure FFMPEG and its modules marked "YES"
 
 make -j8  # Number of jobs can be specified
 sudo make install
 ```
+*For CUDA:*
+```sh
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+-D CMAKE_INSTALL_PREFIX=/usr/local \
+-D OPENCV_EXTRA_MODULES_PATH=../opencv_contrib-4.8.0/modules/ \
+-D BUILD_SHARED_LIBS=ON \
+-D BUILD_opencv_sfm=ON \
+-D OPENCV_ENABLE_NONFREE=ON \
+-D BUILD_SHARED_LIBS=ON \
+-D BUILD_TESTS=ON \
+-D OPENCV_GENERATE_PKGCONFIG=ON \
+-D BUILD_EXAMPLES=ON \
+-D WITH_QT=ON \
+-D WITH_GTK=ON \
+-D WITH_OPENGL=ON \
+-D WITH_FFMPEG=ON \
+-D WITH_TBB=ON \
+-D WITH_V4L=ON \
+-D WITH_VTK=ON \
+-D ENABLE_FAST_MATH=1 \
+-D CUDA_FAST_MATH=1 \
+-D WITH_CUBLAS=1 \
+-D WITH_CUDA=ON \
+-D BUILD_opencv_cudacodec=OFF \
+-D WITH_CUDNN=ON \
+-D OPENCV_DNN_CUDA=OFF \
+-D CUDA_ARCH_BIN=8.6 \
+-D WITH_GSTREAMER=ON \
+../opencv-4.8.0/  
+```
+
 ### Configuration files (may be outdated)
 Install `nlohmann-json`:
 ```bash

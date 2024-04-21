@@ -1,4 +1,4 @@
-#include "chrono"
+#include "opencv2/core/cuda.hpp"
 #include "thread"
 
 #include "../misc/ChronoTimer.h"
@@ -81,14 +81,14 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 	std::vector<std::thread> threads;
 	volatile bool threadsShouldDie = false;
 	std::vector<std::vector<DMatch>> estimatedMatches(currentBatchSz, std::vector<DMatch>());
-	for (int i = 0; i < threadsCnt; ++i) {
+	for (int i = threadsCnt - 1; i >= 0; --i) {
 		threads.emplace_back(std::thread([&](int threadIndex) {
 			for (
 				int batchIndex = currentBatchSz - 1 - threadIndex;
 				batchIndex >= 0;
 				batchIndex -= threadsCnt
 			) {
-				matchFramesPairFeatures(previousFrame, currentBatch.at(batchIndex).frame,
+				matchFramesPairFeaturesCUDA(previousFrame, currentBatch.at(batchIndex).frame,
 					previousFeatures, currentBatch.at(batchIndex).features,
 					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex));
 				isMatchesEstimated.at(batchIndex) = true;
@@ -146,7 +146,7 @@ static int fillVideoFrameBatch(
 	while (
 		currentBatch.size() < dataProcessingConditions.frameBatchSize
 		&& getNextFrame(mediaInputStruct, nextFrame)
-		) {
+	) {
 		// TODO: here can be undistortion
 		fastExtractor(nextFrame, nextFeatures,
 			dataProcessingConditions.featureExtractingThreshold);
@@ -193,8 +193,8 @@ static int findGoodFrameFromBatch(
 		int batchIndex = batchSz - 1;
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
-		) {
-		while (!isMatchesEstimated.at(batchIndex)); // Dmitry Valentinovich, I'm sorry...
+	) {
+		while (!isMatchesEstimated.at(batchIndex));
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 		candidateMatches = estimatedMatches.at(batchIndex);
@@ -206,7 +206,7 @@ static int findGoodFrameFromBatch(
 		if (
 			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
 			&& candidateMatches.size() >= goodMatches.size()
-			) {
+		) {
 			logStreams.mainReportStream << "Frame " << batchIndex << " is a good" << std::endl;
 			goodIndex = batchIndex;
 			goodFrame = candidateFrame.clone();

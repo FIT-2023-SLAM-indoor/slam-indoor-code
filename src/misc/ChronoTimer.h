@@ -12,6 +12,6 @@ private:
 public:
 	ChronoTimer();
 	void updateLastPoint();
-	void printLastPointDelta(const string &message, ofstream &stream);
-	void printStartDelta(const string &message, ofstream &stream);
+	void printLastPointDelta(const string &message, ostream &stream);
+	void printStartDelta(const string &message, ostream &stream);
 };

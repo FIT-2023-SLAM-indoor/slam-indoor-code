@@ -11,14 +11,14 @@ void ChronoTimer::updateLastPoint() {
 	this->lastPoint = high_resolution_clock::now();
 }
 
-void ChronoTimer::printLastPointDelta(const string &message, ofstream &stream) {
+void ChronoTimer::printLastPointDelta(const string &message, ostream &stream) {
 	stream << message
 			<< duration_cast<milliseconds>(
 				high_resolution_clock::now() - this->lastPoint
 			).count() << endl;
 }
 
-void ChronoTimer::printStartDelta(const string &message, ofstream &stream) {
+void ChronoTimer::printStartDelta(const string &message, ostream &stream) {
 	stream << message
 		   << duration_cast<milliseconds>(
 			   high_resolution_clock::now() - this->start

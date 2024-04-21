@@ -1,0 +1,95 @@
+MS for batch's filling: 373
+Matching threads started at: 0
+Matching time for index 29 : 2732
+Threads terminated: 3049
+MS for first-pair computations: 27
+
+================================================================
+
+MS for batch's filling: 227
+Matching threads started at: 0
+Matching time for index 29 : 836
+Threads terminated: 854
+Corresponding points getting: 0
+RANSAC transformation estimation: 2
+Reconstruction: 5
+
+================================================================
+
+MS for batch's filling: 195
+Matching threads started at: 0
+Matching time for index 29 : 740
+Threads terminated: 658
+Corresponding points getting: 0
+RANSAC transformation estimation: 1
+Reconstruction: 4
+
+================================================================
+
+MS for batch's filling: 198
+Matching threads started at: 0
+Matching time for index 29 : 873
+Threads terminated: 846
+Corresponding points getting: 0
+RANSAC transformation estimation: 2
+Reconstruction: 5
+
+================================================================
+
+MS for batch's filling: 198
+Matching threads started at: 0
+Matching time for index 29 : 688
+Threads terminated: 700
+Corresponding points getting: 0
+RANSAC transformation estimation: 1
+Reconstruction: 5
+
+================================================================
+
+MS for batch's filling: 182
+Matching threads started at: 0
+Matching time for index 29 : 496
+Threads terminated: 506
+Corresponding points getting: 0
+RANSAC transformation estimation: 1
+Reconstruction: 4
+
+================================================================
+
+MS for batch's filling: 304
+Matching threads started at: 0
+Matching time for index 28 : 974
+Threads terminated: 446
+Corresponding points getting: 0
+RANSAC transformation estimation: 2
+Reconstruction: 4
+
+================================================================
+
+MS for batch's filling: 231
+Matching threads started at: 0
+Matching time for index -1 : 35225
+Threads terminated: 0
+MS for batch's filling: 276
+Matching threads started at: 0
+Matching time for index 29 : 4135
+Threads terminated: 3713
+MS for first-pair computations: 17
+
+================================================================
+
+MS for batch's filling: 130
+Matching threads started at: 0
+Matching time for index 14 : 6298
+Threads terminated: 4799
+Corresponding points getting: 0
+RANSAC transformation estimation: 1
+Reconstruction: 6
+
+================================================================
+
+MS for batch's filling: 0
+
+================================================================
+
+Whole time: 71153
