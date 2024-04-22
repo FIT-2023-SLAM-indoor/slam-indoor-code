@@ -219,6 +219,17 @@ void matchFramesPairFeaturesCUDA(
 	cuda::GpuMat firstDescriptor;
 	extractDescriptorCUDA(firstFrame, firstFeatures,
 		matcherType, firstDescriptor);
+	matchFramesPairFeaturesCUDA(firstDescriptor, secondFrame, secondFeatures, matcherType, matches);
+}
+
+void matchFramesPairFeaturesCUDA(
+	cuda::GpuMat& firstFrameDescriptor,
+	Mat& secondFrame,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
+) {
+	ChronoTimer timer;
 	cuda::GpuMat secondDescriptor;
 	extractDescriptorCUDA(secondFrame, secondFeatures,
 		matcherType, secondDescriptor);
@@ -226,7 +237,7 @@ void matchFramesPairFeaturesCUDA(
 	timer.printLastPointDelta("Descriptors extracting: ", std::cout);
 	timer.updateLastPoint();
 
-	matchFeaturesCUDA(firstDescriptor, secondDescriptor, matches,
+	matchFeaturesCUDA(firstFrameDescriptor, secondDescriptor, matches,
 		matcherType);
 
 	timer.printLastPointDelta("Matching: ", std::cout);

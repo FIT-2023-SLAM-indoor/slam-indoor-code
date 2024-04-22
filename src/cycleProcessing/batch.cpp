@@ -83,8 +83,10 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 
 	std::vector<std::vector<DMatch>> estimatedMatches(currentBatchSz, std::vector<DMatch>());
 	Mat previousDescriptor;
+	cuda::GpuMat previousDescriptorGpu;
 	extractDescriptor(previousFrame, previousFeatures,
 		dataProcessingConditions.matcherType, previousDescriptor);
+	previousDescriptorGpu.upload(previousDescriptor);
 
 	for (int i = threadsCnt - 1; i >= 0; --i) {
 		threads.emplace_back(std::thread([&](int threadIndex) {
@@ -94,10 +96,17 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 				batchIndex -= threadsCnt
 			) {
 				BatchElement &element = currentBatch.at(batchIndex);
-				matchFramesPairFeatures(
-					previousFrame, element.frame, element.features,
-					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
-				);
+				if (true) {
+					matchFramesPairFeaturesCUDA(
+						previousFrame, element.frame, previousFeatures, element.features,
+						dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
+					);
+				} else {
+					matchFramesPairFeatures(
+						previousDescriptor, element.frame, element.features,
+						dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
+					);
+				}
 				isMatchesEstimated.at(batchIndex) = true;
 				if (threadsShouldDie)
 					break;

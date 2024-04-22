@@ -119,7 +119,7 @@ void matchFramesPairFeatures(
 );
 
 /**
- * TODO: DOCUMENT
+ * For common case.
  *
  * @param firstFrame
  * @param secondFrame
@@ -132,6 +132,23 @@ void matchFramesPairFeaturesCUDA(
 	Mat& firstFrame,
 	Mat& secondFrame,
 	std::vector<KeyPoint>& firstFeatures,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
+);
+
+/**
+ * For case when the first descriptor is pre-calculated.
+ * 
+ * @param firstFrameDescriptor
+ * @param secondFrame
+ * @param secondFeatures
+ * @param matcherType
+ * @param matches
+ */
+void matchFramesPairFeaturesCUDA(
+	cuda::GpuMat& firstFrameDescriptor,
+	Mat& secondFrame,
 	std::vector<KeyPoint>& secondFeatures,
 	int matcherType,
 	std::vector<DMatch>& matches
