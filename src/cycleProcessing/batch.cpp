@@ -95,7 +95,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 			) {
 				BatchElement &element = currentBatch.at(batchIndex);
 				matchFramesPairFeatures(
-					previousFrame, element.frame, element.features,
+					previousDescriptor, element.frame, element.features,
 					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
 				);
 				isMatchesEstimated.at(batchIndex) = true;
