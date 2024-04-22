@@ -3,8 +3,15 @@
 #pragma once
 using namespace cv;
 typedef struct{
-    std::vector<Point2d> points;
+    Point2f start;
+    Point2f end;
+}Edge;
+
+typedef struct{
+    std::vector<Point2f> points;
+    
 }Triangle;
+
 
 void projectPointOnPlane(
     Point3f& point,
@@ -14,6 +21,7 @@ void projectPointOnPlane(
 
 bool insideCircum(Point2f& point, Triangle& triangle);
 
+bool isPointInVector(Point2f& pt, std::vector<Point2f>& points);
 
 double sqr(double x);
 

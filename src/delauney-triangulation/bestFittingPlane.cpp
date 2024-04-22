@@ -3,6 +3,7 @@
 #include "../vizualizationModule.h"
 #include "geomAdditionalFunc.h"
 #include "bestFittingPlane.h"
+#include "bowyerWatson.h"
 
 
 using namespace cv;
@@ -121,20 +122,27 @@ int test() {
     //window.showWidget("coordinate", viz::WCoordinateSystem(100));
     window.showWidget("bestPlane",bestFittingPlane);
 
-    Triangle triangle;
-    triangle.points.push_back(Point2f(0,3));
-    triangle.points.push_back(Point2f(0,0));
-    triangle.points.push_back(Point2f(4,0));
     
+    vector<Point2f> pts;
+    pts.push_back(Point2f(0,0));
+    pts.push_back(Point2f(5,5));
+    pts.push_back(Point2f(0,5));
+    pts.push_back(Point2f(5,0));
 
 
+    vector<Triangle> triang;
+    triangulation(pts,triang);
+    cout << "Triangulation:" << endl;
+    for (int i = 0;i< triang.size();i++){
+        cout<< triang.at(i).points << endl;
+    }
 
-    double radius;
-    Point2f center;
-    getCircumByTriangle(triangle,radius,center);
-    cout << "WTF:" << endl;
-    cout << radius << endl;
-    cout << center << endl;
+    
+    cout << "Triangulation ended" << endl;
+    //getCircumByTriangle(triangle,radius,center);
+    //cout << "WTF:" << endl;
+    //cout << radius << endl;
+    //cout << center << endl;
     //startWindowSpin(window);
 
     return 0;

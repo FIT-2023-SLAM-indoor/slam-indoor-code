@@ -30,9 +30,17 @@ bool insideCircum(Point2f& point, Triangle& triangle){
     double radius;
     Point2f center;
     getCircumByTriangle(triangle,radius,center);
-    return distance(point,center) > radius;
+    return distance(point,center) <= radius;
 }
 
+bool isPointInVector(Point2f& pt, std::vector<Point2f>& points){
+    for (int i = 0;i < points.size();i++){
+        if (pt.x == points.at(i).x && pt.y == points.at(i).y){
+            return true;
+        }
+    }
+    return false;
+}
 
 
 void getCircumByTriangle(Triangle& triangle, double& radius, Point2f& center){
