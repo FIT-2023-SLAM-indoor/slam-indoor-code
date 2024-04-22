@@ -115,26 +115,31 @@ void showMatchedPointsInTwoFrames(
 	waitKey(3000);
 }
 
-/**
- * Написать документацию!!!
-*/
 void matchFramesPairFeatures(
     Mat& firstFrame,
     Mat& secondFrame,
     std::vector<KeyPoint>& firstFeatures,
     std::vector<KeyPoint>& secondFeatures,
     int matcherType,
-    std::vector<DMatch>& matches)
-{
-    // Extract descriptors from the key points of the input frames
+    std::vector<DMatch>& matches
+) {
     Mat firstDescriptor;
-    extractDescriptor(firstFrame, firstFeatures, 
+    extractDescriptor(firstFrame, firstFeatures,
         matcherType, firstDescriptor);
-    Mat secondDescriptor;
-    extractDescriptor(secondFrame, secondFeatures, 
-        matcherType, secondDescriptor);
+	matchFramesPairFeatures(firstDescriptor, secondFrame, secondFeatures, matcherType, matches);
+}
 
-    // Match the descriptors using the specified matcher type and radius
-    matchFeatures(firstDescriptor, secondDescriptor, matches,
-        matcherType);
+void matchFramesPairFeatures(
+	Mat& firstFrameDescriptor,
+	Mat& secondFrame,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
+) {
+	Mat secondDescriptor;
+	extractDescriptor(secondFrame, secondFeatures,
+		matcherType, secondDescriptor);
+
+	matchFeatures(firstFrameDescriptor, secondDescriptor, matches,
+		matcherType);
 }

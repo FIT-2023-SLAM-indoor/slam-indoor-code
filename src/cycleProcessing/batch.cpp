@@ -76,11 +76,16 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
 	ChronoTimer timer;
 
-	std::vector<bool> isMatchesEstimated(currentBatchSz, false);
 	int threadsCnt = dataProcessingConditions.threadsCount;
 	std::vector<std::thread> threads;
+	std::vector<bool> isMatchesEstimated(currentBatchSz, false);
 	volatile bool threadsShouldDie = false;
+
 	std::vector<std::vector<DMatch>> estimatedMatches(currentBatchSz, std::vector<DMatch>());
+	Mat previousDescriptor;
+	extractDescriptor(previousFrame, previousFeatures,
+		dataProcessingConditions.matcherType, previousDescriptor);
+
 	for (int i = 0; i < threadsCnt; ++i) {
 		threads.emplace_back(std::thread([&](int threadIndex) {
 			for (
@@ -88,9 +93,11 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 				batchIndex >= 0;
 				batchIndex -= threadsCnt
 			) {
-				matchFramesPairFeatures(previousFrame, currentBatch.at(batchIndex).frame,
-					previousFeatures, currentBatch.at(batchIndex).features,
-					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex));
+				BatchElement &element = currentBatch.at(batchIndex);
+				matchFramesPairFeatures(
+					previousFrame, element.frame, element.features,
+					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
+				);
 				isMatchesEstimated.at(batchIndex) = true;
 				if (threadsShouldDie)
 					break;
@@ -194,7 +201,9 @@ static int findGoodFrameFromBatch(
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
 		) {
-		while (!isMatchesEstimated.at(batchIndex)); // Dmitry Valentinovich, I'm sorry...
+		while (!isMatchesEstimated.at(batchIndex)) {
+			this_thread::yield();
+		}
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 		candidateMatches = estimatedMatches.at(batchIndex);

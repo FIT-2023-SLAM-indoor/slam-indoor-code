@@ -83,8 +83,8 @@ void showMatchedPointsInTwoFrames(
 );
 
 /**
- * Написать документацию!!!
-*/
+ * For common case.
+ */
 void matchFramesPairFeatures(
     Mat& firstFrame,
     Mat& secondFrame,
@@ -92,4 +92,21 @@ void matchFramesPairFeatures(
     std::vector<KeyPoint>& secondFeatures,
     int matcherType,
     std::vector<DMatch>& matches
+);
+
+/**
+ * For case when the first descriptor is pre-calculated.
+ *
+ * @param firstFrameDescriptor
+ * @param secondFrame
+ * @param secondFeatures
+ * @param matcherType
+ * @param matches
+ */
+void matchFramesPairFeatures(
+	Mat& firstFrameDescriptor,
+	Mat& secondFrame,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
 );
