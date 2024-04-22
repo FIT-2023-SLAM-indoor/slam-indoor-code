@@ -189,12 +189,21 @@ void matchFramesPairFeatures(
     Mat firstDescriptor;
     extractDescriptor(firstFrame, firstFeatures,
         matcherType, firstDescriptor);
-    Mat secondDescriptor;
-    extractDescriptor(secondFrame, secondFeatures,
-        matcherType, secondDescriptor);
+	matchFramesPairFeatures(firstDescriptor, secondFrame, secondFeatures, matcherType, matches);
+}
 
-    // Match the descriptors using the specified matcher type and radius
-	matchFeatures(firstDescriptor, secondDescriptor, matches,
+void matchFramesPairFeatures(
+	Mat& firstFrameDescriptor,
+	Mat& secondFrame,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
+) {
+	Mat secondDescriptor;
+	extractDescriptor(secondFrame, secondFeatures,
+		matcherType, secondDescriptor);
+
+	matchFeatures(firstFrameDescriptor, secondDescriptor, matches,
 		matcherType);
 }
 
