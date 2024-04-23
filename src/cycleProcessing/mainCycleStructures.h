@@ -23,7 +23,7 @@ struct DataProcessingConditions {
 	int threadsCount;
 	int frameBatchSize;               // Size of batch of frames.
 	int skipFramesFromBatchHead;      // Count of frames in batch's head which won't be checked
-	bool useFirstFitInBath;
+	bool useFirstFitInBatch;
 	int featureExtractingThreshold;   // Threshold for feature extraction.
 	int requiredExtractedPointsCount; // Required number of extracted points in frame.
 	int requiredMatchedPointsCount;   // Required number of matched points in frame.

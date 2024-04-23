@@ -91,7 +91,7 @@ void defineProcessingEnvironment(
         configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
 	dataProcessingConditions.skipFramesFromBatchHead =
 		configService.getValue<int>(ConfigFieldEnum::SKIP_FRAMES_FROM_BATCH_HEAD);
-	dataProcessingConditions.useFirstFitInBath =
+	dataProcessingConditions.useFirstFitInBatch =
 		configService.getValue<bool>(ConfigFieldEnum::USE_FIRST_FIT_IN_BATCH);
     dataProcessingConditions.requiredExtractedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT);

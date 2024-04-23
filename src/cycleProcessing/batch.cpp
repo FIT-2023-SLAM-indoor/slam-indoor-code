@@ -230,7 +230,7 @@ static int findGoodFrameFromBatch(
 			goodFrame = candidateFrame.clone();
 			goodFeatures = candidateFrameFeatures;
 			goodMatches = candidateMatches;
-			if (dataProcessingConditions.useFirstFitInBath)
+			if (dataProcessingConditions.useFirstFitInBatch)
 				break;
 		}
 	}
