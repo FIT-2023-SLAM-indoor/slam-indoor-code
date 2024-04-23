@@ -8,7 +8,7 @@ double sqr(double x){
 }
 
 
-double distance(Point2f p1, Point2f p2){
+double distance(Point2f& p1, Point2f& p2){
     return sqrt(sqr((p1 - p2).x) + sqr((p1 - p2).y));
 }
 
@@ -61,9 +61,9 @@ void getCircumByTriangle(Triangle& triangle, double& radius, Point2f& center){
             lastPoint = 1;
         }
     }else {
-        choosenPoint1 = 2;
-        choosenPoint2 = 0;
-        lastPoint = 1;
+        choosenPoint1 = 1;
+        choosenPoint2 = 2;
+        lastPoint = 0;
     }
     
     getLineByTwoPoints(triangle.points.at(choosenPoint1),triangle.points.at(choosenPoint2),k1,m);
@@ -92,7 +92,7 @@ void getCircumByTriangle(Triangle& triangle, double& radius, Point2f& center){
     radius = distance(triangle.points.at(0), center);
 
 }
-void getLineByTwoPoints(Point2f point1,Point2f point2,double& k, double& m){
+void getLineByTwoPoints(Point2f& point1,Point2f& point2,double& k, double& m){
     k = (point2.y - point1.y) / (point2.x - point1.x);
     m = (point2.x * point1.y - point2.y* point1.x) / (point2.x - point1.x);
 }

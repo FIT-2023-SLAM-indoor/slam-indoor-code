@@ -17,20 +17,21 @@ void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangula
     super.points.push_back(superThird);
 
     triangulation.push_back(super);
-    for (int i = 0;i< points.size();i++){
-        Point2f point = points.at(i);
+    for (int global = 0; global< points.size();global++){
+        Point2f point = points.at(global);
         std::vector<int> indexes;
 
         std::vector<Triangle> badTriangles;
         for (int j = 0;j < triangulation.size();j++){
             Triangle triangle = triangulation.at(j);
             if(insideCircum(point, triangle)){
+                //std::cout << "Bad point:" << point << "in " << triangle.points << std::endl;
                 badTriangles.push_back(triangle);
                 indexes.push_back(j);
             }
         }
         std::vector<Edge> polygon;
-        for (int triangleIndex = 0; triangleIndex < badTriangles.size();triangleIndex ++){
+        for (int triangleIndex = 0; triangleIndex < badTriangles.size();triangleIndex++){
             for (int k = 0; k < 3; k++){
                 Point2f first = badTriangles.at(triangleIndex).points.at(k);
                 Point2f second = badTriangles.at(triangleIndex).points.at((k+1)%3);
@@ -53,11 +54,14 @@ void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangula
             }
         }
 
-        for (int triangleIndex = 0; triangleIndex <badTriangles.size();triangleIndex++){
+        for (int triangleIndex = 0; triangleIndex < badTriangles.size();triangleIndex++){
             triangulation.erase(triangulation.begin() + (indexes.at(triangleIndex) - triangleIndex));
             
         }
-        for (int i = 0;i< polygon.size();i++){
+        for (int i = 0;i < polygon.size();i++){
+            if (polygon.at(i).start == point || polygon.at(i).end == point){
+                continue;
+            }
             Triangle newTri;
             newTri.points.push_back(polygon.at(i).start);
             newTri.points.push_back(polygon.at(i).end);

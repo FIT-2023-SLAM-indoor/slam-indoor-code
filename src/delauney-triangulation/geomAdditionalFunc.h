@@ -27,4 +27,4 @@ double sqr(double x);
 
 void getCircumByTriangle(Triangle& Triangle, double& radius, Point2f& center);
 
-void getLineByTwoPoints(Point2f point1,Point2f point2,double& k, double& m);
+void getLineByTwoPoints(Point2f& point1,Point2f& point2,double& k, double& m);

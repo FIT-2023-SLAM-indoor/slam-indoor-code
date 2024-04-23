@@ -124,15 +124,31 @@ int test() {
 
     
     vector<Point2f> pts;
-    pts.push_back(Point2f(30,-30));
-    pts.push_back(Point2f(30,30));
-    pts.push_back(Point2f(0,0));
-    pts.push_back(Point2f(50,0));
-    pts.push_back(Point2f(70,70));
-    pts.push_back(Point2f(80,0));
-    pts.push_back(Point2f(80,-80));
+    pts.push_back(Point2f(-50,-50));
+    pts.push_back(Point2f(-50,50));
+    pts.push_back(Point2f(50,-50));
+    pts.push_back(Point2f(50,50));
 
- 
+
+    pts.push_back(Point2f(0,3));
+    pts.push_back(Point2f(33,30));
+    pts.push_back(Point2f(15,0));
+    pts.push_back(Point2f(44,-30));
+    pts.push_back(Point2f(-30,-30));
+
+     pts.push_back(Point2f(0,-10));
+
+    pts.push_back(Point2f(10,-30));
+    pts.push_back(Point2f(30,40));
+    pts.push_back(Point2f(11,-3));
+    pts.push_back(Point2f(0,-30));
+    pts.push_back(Point2f(38,-30));
+    
+     pts.push_back(Point2f(18,-10));
+    
+
+
+
     
 
 
@@ -153,7 +169,7 @@ int test() {
         cv::viz::WMesh trWidget(cloud3, faces);
 
         trWidget.setColor(viz::Color::indigo());
-        trWidget.setRenderingProperty(viz::OPACITY, 0.1 * (i+1));
+        trWidget.setRenderingProperty(viz::OPACITY, 0.05 * (i+1));
         trWidget.setRenderingProperty(viz::SHADING, viz::SHADING_FLAT);
         trWidget.setRenderingProperty(viz::REPRESENTATION, viz::REPRESENTATION_SURFACE);
         char str[16]  ="triangnnnn";
