@@ -114,36 +114,70 @@ int test() {
     for (int i = 0;i< projectedPoints.size();i++){
         projColors.push_back(viz::Color::blue());
     }
-    viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,projColors);
-    projectedPointsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
-    cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
+    //viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,projColors);
+    //projectedPointsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
+    //cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
     //window.showWidget("point_cloud", cloudWidget);
     //window.showWidget("point_cloud2", projectedPointsWidget);
     //window.showWidget("coordinate", viz::WCoordinateSystem(100));
-    window.showWidget("bestPlane",bestFittingPlane);
+    //window.showWidget("bestPlane",bestFittingPlane);
 
     
     vector<Point2f> pts;
+    pts.push_back(Point2f(30,-30));
+    pts.push_back(Point2f(30,30));
     pts.push_back(Point2f(0,0));
-    pts.push_back(Point2f(5,5));
-    pts.push_back(Point2f(0,5));
-    pts.push_back(Point2f(5,0));
+    pts.push_back(Point2f(50,0));
+    pts.push_back(Point2f(70,70));
+    pts.push_back(Point2f(80,0));
+    pts.push_back(Point2f(80,-80));
+
+ 
+    
+
 
 
     vector<Triangle> triang;
     triangulation(pts,triang);
     cout << "Triangulation:" << endl;
     for (int i = 0;i< triang.size();i++){
-        cout<< triang.at(i).points << endl;
+        cv::Mat polygon3 = (cv::Mat_<int>(1,4) << 3, 0, 1, 2);
+        vector<int> faces{3, 0, 1, 2};
+        vector<Point3d> cloud3;
+        cout << triang.at(i).points << endl;
+        for (int j = 0;j < 3;j++){
+            cloud3.push_back(Point3d(triang.at(i).points.at(j)));
+        }
+
+
+        cv::viz::WMesh trWidget(cloud3, faces);
+
+        trWidget.setColor(viz::Color::indigo());
+        trWidget.setRenderingProperty(viz::OPACITY, 0.1 * (i+1));
+        trWidget.setRenderingProperty(viz::SHADING, viz::SHADING_FLAT);
+        trWidget.setRenderingProperty(viz::REPRESENTATION, viz::REPRESENTATION_SURFACE);
+        char str[16]  ="triangnnnn";
+        str[0] = i;
+        window.showWidget(str, trWidget);
     }
 
-    
+
     cout << "Triangulation ended" << endl;
     //getCircumByTriangle(triangle,radius,center);
     //cout << "WTF:" << endl;
     //cout << radius << endl;
     //cout << center << endl;
     //startWindowSpin(window);
+    vector<Point3f> trPts;
+    for (int i = 0;i< pts.size();i++){
+        trPts.push_back(Point3f(pts.at(i)));
+    }
+
+    viz::WCloud trPtsWidget = getPointCloudFromPoints(trPts,projColors);
+    trPtsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 5);
+    window.showWidget("pts",trPtsWidget);
+    startWindowSpin(window);
+
 
     return 0;
 }

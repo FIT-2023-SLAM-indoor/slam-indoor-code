@@ -24,7 +24,7 @@ void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangula
         std::vector<Triangle> badTriangles;
         for (int j = 0;j < triangulation.size();j++){
             Triangle triangle = triangulation.at(j);
-            if( insideCircum(point, triangle)){
+            if(insideCircum(point, triangle)){
                 badTriangles.push_back(triangle);
                 indexes.push_back(j);
             }
