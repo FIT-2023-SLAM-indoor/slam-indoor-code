@@ -20,6 +20,7 @@ struct MediaSources {
  */
 struct DataProcessingConditions {
 	Mat distortionCoeffs;             // Distortion coefficients for camera.
+	bool useCUDA;
 	int threadsCount;
 	int frameBatchSize;               // Size of batch of frames.
 	int skipFramesFromBatchHead;      // Count of frames in batch's head which won't be checked

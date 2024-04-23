@@ -85,6 +85,8 @@ void defineProcessingEnvironment(
 
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
+	dataProcessingConditions.useCUDA =
+		configService.getValue<bool>(ConfigFieldEnum::USE_CUDA);
 	dataProcessingConditions.threadsCount =
 		configService.getValue<int>(ConfigFieldEnum::THREADS_COUNT);
     dataProcessingConditions.frameBatchSize =
