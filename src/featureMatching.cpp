@@ -38,7 +38,6 @@ void matchFeatures(
 	int extractorType
 ) {
 	std::vector<std::vector<DMatch>> allMatches;
-	cv::Ptr<cv::DescriptorExtractor> extractor;
 
 	Ptr<DescriptorMatcher> matcher;
 	switch (extractorType) {
@@ -54,7 +53,13 @@ void matchFeatures(
 	default:
 		throw std::exception();
 	}
+
+	std::cout << "START KNN MATCHING\n";
+
 	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
+
+	std::cout << "KNN MATCHED\n";
+
 	getGoodMatches(allMatches,matches);
 }
 

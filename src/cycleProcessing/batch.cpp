@@ -86,19 +86,22 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 	extractDescriptor(previousFrame, previousFeatures,
 		dataProcessingConditions.matcherType, previousDescriptor);
 
-	for (int i = 0; i < threadsCnt; ++i) {
+	for (int i = threadsCnt - 1; i >= 0; --i) {
 		threads.emplace_back(std::thread([&](int threadIndex) {
 			for (
 				int batchIndex = currentBatchSz - 1 - threadIndex;
 				batchIndex >= 0;
 				batchIndex -= threadsCnt
 			) {
+				std::cout << "Start: " << batchIndex << std::endl;
 				BatchElement &element = currentBatch.at(batchIndex);
 				matchFramesPairFeatures(
 					previousDescriptor, element.frame, element.features,
 					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
 				);
 				isMatchesEstimated.at(batchIndex) = true;
+				std::cout << "Finish: " << batchIndex << std::endl;
+				this_thread::yield();
 				if (threadsShouldDie)
 					break;
 			}
@@ -201,9 +204,7 @@ static int findGoodFrameFromBatch(
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
 		) {
-		while (!isMatchesEstimated.at(batchIndex)) {
-			this_thread::yield();
-		}
+		while (!isMatchesEstimated.at(batchIndex));
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 		candidateMatches = estimatedMatches.at(batchIndex);
