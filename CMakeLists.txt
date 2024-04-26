@@ -11,6 +11,10 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 find_package(nlohmann_json 3.10.0 REQUIRED)
 
+if (DEFINED USE_CUDA)
+    add_definitions(-DUSE_CUDA)
+endif ()
+
 add_executable(
     slam-indoor-code
     src/main.cpp

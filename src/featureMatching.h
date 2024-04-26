@@ -118,6 +118,7 @@ void matchFramesPairFeatures(
 	std::vector<DMatch>& matches
 );
 
+#ifdef USE_CUDA
 /**
  * For common case.
  *
@@ -153,3 +154,4 @@ void matchFramesPairFeaturesCUDA(
 	int matcherType,
 	std::vector<DMatch>& matches
 );
+#endif

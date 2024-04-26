@@ -1,7 +1,12 @@
-#define _USE_MATH_DEFINES
+#ifdef USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include "opencv2/cudafeatures2d.hpp"
+#include "opencv2/cudaimgproc.hpp"
+#endif
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
-#include "opencv2/cudafeatures2d.hpp"
+
 #include "misc/ChronoTimer.h"
 
 #include <opencv2/highgui.hpp>
@@ -33,6 +38,29 @@ void getKeyPointCoordsFromFramePair(const std::vector<KeyPoint> &prevFrameFeatur
 	}
 }
 
+void extractDescriptor(
+	Mat& frame,
+	std::vector<KeyPoint>& features,
+	int matcherType,
+	Mat& desc
+) {
+	cv::Ptr<cv::DescriptorExtractor> extractor;
+	switch (matcherType) {
+		case SIFT_BF:
+			extractor = cv::SIFT::create();
+			break;
+		case SIFT_FLANN:
+			extractor = cv::SIFT::create();
+			break;
+		case ORB_BF:
+			extractor = cv::ORB::create();
+			break;
+		default:
+			throw std::exception();
+	}
+	extractor->compute(frame, features, desc);
+}
+
 void matchFeatures(
 	Mat& prevDesc, 
 	Mat& curDesc, 
@@ -60,28 +88,6 @@ void matchFeatures(
 	getGoodMatches(allMatches,matches);
 }
 
-void matchFeaturesCUDA(
-	cuda::GpuMat& prevDesc,
-	cuda::GpuMat& curDesc,
-	std::vector<DMatch>& matches,
-	int extractorType
-) {
-	Ptr<cuda::DescriptorMatcher> matcher;
-	switch (extractorType) {
-		case SIFT_BF:
-			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L2);
-			break;
-		default:
-			std::cerr << "Only SIFT bruteforce matcher is supported using CUDA" << std::endl;
-			throw std::exception();
-	}
-
-	cuda::GpuMat matchesGpu;
-	std::vector<std::vector<DMatch>> allMatches;
-	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
-	getGoodMatches(allMatches,matches);
-}
-
 void getGoodMatches(
 	std::vector<std::vector<DMatch>>& allMatches,
 	std::vector<DMatch>& matches
@@ -95,68 +101,6 @@ void getGoodMatches(
 		if (allMatches[i][0].distance < distanceMlt*allMatches[i][1].distance)
 			matches.push_back(allMatches[i][0]);
 	}
-}
-
-void extractDescriptor(
-	Mat& frame,
-	std::vector<KeyPoint>& features,
-	int matcherType,
-	Mat& desc
-) {
-	cv::Ptr<cv::DescriptorExtractor> extractor;
-	switch (matcherType) {
-	case SIFT_BF:
-		extractor = cv::SIFT::create();
-		break;
-	case SIFT_FLANN:
-		extractor = cv::SIFT::create();
-		break;
-	case ORB_BF:
-		extractor = cv::ORB::create();
-		break;
-	default:
-		throw std::exception();
-	}
-	extractor->compute(frame, features, desc);
-}
-
-void extractDescriptorCUDA(
-	Mat& frame,
-	std::vector<KeyPoint>& features,
-	int matcherType,
-	cuda::GpuMat& desc
-) {
-	cv::Ptr<cv::DescriptorExtractor> extractor;
-	switch (matcherType) {
-		case SIFT_BF:
-			extractor = cv::SIFT::create();
-			break;
-		case SIFT_FLANN:
-			extractor = cv::SIFT::create();
-			break;
-		case ORB_BF:
-			extractor = cv::ORB::create();
-			break;
-		default:
-			throw std::exception();
-	}
-	Mat descriptors;
-	extractor->compute(frame, features, descriptors);
-	desc.upload(descriptors);
-
-	// WIP...
-//	cv::Ptr<cuda::Feature2DAsync> extractor;
-//
-//	std::vector<cv::Point2d> points;
-//	for(auto &feature : features)
-//	{
-//		points.push_back(feature.pt);
-//	}
-//
-//	cuda::GpuMat imageGpu, keyPointsGpu(points);
-//	imageGpu.upload(frame);
-//
-//	extractor->computeAsync(imageGpu, keyPointsGpu, desc);
 }
 
 void showMatchedPointsInTwoFrames(
@@ -178,17 +122,17 @@ void showMatchedPointsInTwoFrames(
 }
 
 void matchFramesPairFeatures(
-    Mat& firstFrame,
-    Mat& secondFrame,
-    std::vector<KeyPoint>& firstFeatures,
-    std::vector<KeyPoint>& secondFeatures,
-    int matcherType,
-    std::vector<DMatch>& matches
+	Mat& firstFrame,
+	Mat& secondFrame,
+	std::vector<KeyPoint>& firstFeatures,
+	std::vector<KeyPoint>& secondFeatures,
+	int matcherType,
+	std::vector<DMatch>& matches
 ) {
-    // Extract descriptors from the key points of the input frames
-    Mat firstDescriptor;
-    extractDescriptor(firstFrame, firstFeatures,
-        matcherType, firstDescriptor);
+	// Extract descriptors from the key points of the input frames
+	Mat firstDescriptor;
+	extractDescriptor(firstFrame, firstFeatures,
+		matcherType, firstDescriptor);
 	matchFramesPairFeatures(firstDescriptor, secondFrame, secondFeatures, matcherType, matches);
 }
 
@@ -205,6 +149,70 @@ void matchFramesPairFeatures(
 
 	matchFeatures(firstFrameDescriptor, secondDescriptor, matches,
 		matcherType);
+}
+
+#ifdef USE_CUDA
+void matchFeaturesCUDA(
+	cuda::GpuMat& prevDesc,
+	cuda::GpuMat& curDesc,
+	std::vector<DMatch>& matches,
+	int extractorType
+) {
+	Ptr<cuda::DescriptorMatcher> matcher;
+	switch (extractorType) {
+		case SIFT_BF:
+			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L2);
+			break;
+		default:
+			std::cerr << "Only SIFT bruteforce matcher is supported using CUDA" << std::endl;
+			throw std::exception();
+	}
+
+	std::vector<std::vector<DMatch>> allMatches;
+	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
+	getGoodMatches(allMatches,matches);
+}
+
+void extractDescriptorCUDA(
+	Mat& frame,
+	std::vector<KeyPoint>& features,
+	int matcherType,
+	cuda::GpuMat& desc
+) {
+//	cv::Ptr<cv::DescriptorExtractor> extractor;
+//	switch (matcherType) {
+//		case SIFT_BF:
+//			extractor = cv::SIFT::create();
+//			break;
+//		case SIFT_FLANN:
+//			extractor = cv::SIFT::create();
+//			break;
+//		case ORB_BF:
+//			extractor = cv::ORB::create();
+//			break;
+//		default:
+//			throw std::exception();
+//	}
+//	Mat descriptors;
+//	extractor->compute(frame, features, descriptors);
+//	desc.upload(descriptors);
+
+	// WIP...
+	cv::Ptr<cuda::ORB> extractor = cuda::ORB::create();
+
+	std::vector<cv::Point2d> points;
+	for(auto &feature : features)
+	{
+		points.push_back(feature.pt);
+	}
+
+	cuda::GpuMat imageGpu(frame), keyPointsGpu(points);
+	cuda::GpuMat grayImage;
+	cuda::cvtColor(imageGpu, grayImage, COLOR_BGR2GRAY);
+
+	std::cout << keyPointsGpu.rows << " " << keyPointsGpu.cols << std::endl;
+
+	extractor->computeAsync(grayImage, keyPointsGpu, desc);
 }
 
 void matchFramesPairFeaturesCUDA(
@@ -242,3 +250,4 @@ void matchFramesPairFeaturesCUDA(
 
 	timer.printLastPointDelta("Matching: ", std::cout);
 }
+#endif

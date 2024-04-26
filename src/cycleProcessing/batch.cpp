@@ -1,4 +1,6 @@
-#include "opencv2/core/cuda.hpp"
+#ifdef USE_CUDA
+	#include "opencv2/core/cuda.hpp"
+#endif
 #include "thread"
 
 #include "../misc/ChronoTimer.h"
@@ -94,19 +96,18 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 				batchIndex -= threadsCnt
 			) {
 				BatchElement &element = currentBatch.at(batchIndex);
-				if (dataProcessingConditions.useCUDA) {
-					cuda::GpuMat previousDescriptorGpu;
-					previousDescriptorGpu.upload(previousDescriptor);
-					matchFramesPairFeaturesCUDA(
-						previousDescriptorGpu, element.frame, element.features,
-						dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
-					);
-				} else {
-					matchFramesPairFeatures(
-						previousDescriptor, element.frame, element.features,
-						dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
-					);
-				}
+#ifdef USE_CUDA
+				cuda::GpuMat previousDescriptorGpu(previousDescriptor);
+				matchFramesPairFeaturesCUDA(
+					previousDescriptorGpu, element.frame, element.features,
+					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
+				);
+#else
+				matchFramesPairFeatures(
+					previousDescriptor, element.frame, element.features,
+					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
+				);
+#endif
 				isMatchesEstimated.at(batchIndex) = true;
 				if (threadsShouldDie)
 					break;
