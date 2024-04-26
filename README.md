@@ -149,8 +149,8 @@ JSON config (path to file should be specified as command line argument):
   "usePhotosCycle": false,
   "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-table/*.JPG",
   // "videoSourcePath" has an effect when "usePhotosCycle" is false
-  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-room-1-fhd.mp4",
-  
+  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-room-new-fhd.mp4",
+
   "outputDataDir": "./data/video_report/video_test",
 
   "threadsCount": 1,
@@ -160,7 +160,7 @@ JSON config (path to file should be specified as command line argument):
   "requiredExtractedPointsCount": 10000,
   "featureExtractingThreshold": 5,
 
-  "framesBatchSize": 30,
+  "framesBatchSize": 90,
   "skipFramesFromBatchHead": 0,
   "useFirstFitInBatch": true,
 
@@ -174,7 +174,7 @@ JSON config (path to file should be specified as command line argument):
   "useSSDOwnFT": false,
   "FTBarrier": 20,
   "FTMaxAcceptableDifference": 2000,
-  
+
   // This block has an effect when "useFeatureTracker" is false
   "useFM-SIFT-FLANN": false,
   "useFM-SIFT-BF": true,
@@ -221,3 +221,18 @@ VIZ_PARSE_FORMAT = "xyz"
 ```
 ---
 So now you can specify program working using configs and run using `./rebuild_and_run.sh <path/to/config.json` (write `chmod a+x rebuild_and_run.sh` to make this file executable)
+- For launching with CUDA use `rebuild_and_run_cuda.sh`
+
+## Build our binary
+Simple building:
+```sh
+cmake . -B build
+make -C build -j8
+```
+CUDA building:
+```sh
+cmake . -B build -D USE_CUDA=YES
+make -C build -j8
+```
+
+So now you can execute `./build/slam-indoor-code <path/to/config.json>`
