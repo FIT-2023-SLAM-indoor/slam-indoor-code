@@ -1,9 +1,3 @@
-#ifdef USE_CUDA
-#include <opencv2/core/cuda.hpp>
-#include "opencv2/cudafeatures2d.hpp"
-#include "opencv2/cudaimgproc.hpp"
-#endif
-
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
@@ -14,6 +8,13 @@
 #include "featureMatching.h"
 
 #include "config/config.h"
+
+#ifdef USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include "opencv2/cudafeatures2d.hpp"
+#include "opencv2/cudaimgproc.hpp"
+#endif
+
 using namespace cv;
 
 MatcherType getMatcherTypeIndex() {
@@ -179,40 +180,40 @@ void extractDescriptorCUDA(
 	int matcherType,
 	cuda::GpuMat& desc
 ) {
-//	cv::Ptr<cv::DescriptorExtractor> extractor;
-//	switch (matcherType) {
-//		case SIFT_BF:
-//			extractor = cv::SIFT::create();
-//			break;
-//		case SIFT_FLANN:
-//			extractor = cv::SIFT::create();
-//			break;
-//		case ORB_BF:
-//			extractor = cv::ORB::create();
-//			break;
-//		default:
-//			throw std::exception();
-//	}
-//	Mat descriptors;
-//	extractor->compute(frame, features, descriptors);
-//	desc.upload(descriptors);
+	cv::Ptr<cv::DescriptorExtractor> extractor;
+	switch (matcherType) {
+		case SIFT_BF:
+			extractor = cv::SIFT::create();
+			break;
+		case SIFT_FLANN:
+			extractor = cv::SIFT::create();
+			break;
+		case ORB_BF:
+			extractor = cv::ORB::create();
+			break;
+		default:
+			throw std::exception();
+	}
+	Mat descriptors;
+	extractor->compute(frame, features, descriptors);
+	desc.upload(descriptors);
 
 	// WIP...
-	cv::Ptr<cuda::ORB> extractor = cuda::ORB::create();
-
-	std::vector<cv::Point2d> points;
-	for(auto &feature : features)
-	{
-		points.push_back(feature.pt);
-	}
-
-	cuda::GpuMat imageGpu(frame), keyPointsGpu(points);
-	cuda::GpuMat grayImage;
-	cuda::cvtColor(imageGpu, grayImage, COLOR_BGR2GRAY);
-
-	std::cout << keyPointsGpu.rows << " " << keyPointsGpu.cols << std::endl;
-
-	extractor->computeAsync(grayImage, keyPointsGpu, desc);
+//	cv::Ptr<cuda::ORB> extractor = cuda::ORB::create();
+//
+//	std::vector<cv::Point2d> points;
+//	for(auto &feature : features)
+//	{
+//		points.push_back(feature.pt);
+//	}
+//
+//	cuda::GpuMat imageGpu(frame), keyPointsGpu(points);
+//	cuda::GpuMat grayImage;
+//	cuda::cvtColor(imageGpu, grayImage, COLOR_BGR2GRAY);
+//
+//	std::cout << keyPointsGpu.rows << " " << keyPointsGpu.cols << std::endl;
+//
+//	extractor->computeAsync(grayImage, keyPointsGpu, desc);
 }
 
 void matchFramesPairFeaturesCUDA(

@@ -109,6 +109,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 				);
 #endif
 				isMatchesEstimated.at(batchIndex) = true;
+				std::cout << "Matched batch element: " << batchIndex << std::endl;
 				if (threadsShouldDie)
 					break;
 			}
@@ -210,10 +211,8 @@ static int findGoodFrameFromBatch(
 		int batchIndex = batchSz - 1;
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
-		) {
-		while (!isMatchesEstimated.at(batchIndex)) {
-			this_thread::yield();
-		}
+	) {
+		while (!isMatchesEstimated.at(batchIndex));
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 		candidateMatches = estimatedMatches.at(batchIndex);
