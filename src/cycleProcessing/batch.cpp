@@ -95,6 +95,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 				batchIndex >= 0;
 				batchIndex -= threadsCnt
 			) {
+				std::cout << "Start: " << batchIndex << std::endl;
 				BatchElement &element = currentBatch.at(batchIndex);
 #ifdef USE_CUDA
 				cuda::GpuMat previousDescriptorGpu(previousDescriptor);
@@ -109,7 +110,8 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 				);
 #endif
 				isMatchesEstimated.at(batchIndex) = true;
-				std::cout << "Matched batch element: " << batchIndex << std::endl;
+				std::cout << "Finish: " << batchIndex << std::endl;
+				this_thread::yield();
 				if (threadsShouldDie)
 					break;
 			}
