@@ -31,26 +31,7 @@ static int fillVideoFrameBatch(
 	std::vector<BatchElement> &currentBatch
 );
 
-/**
- * Find new frame from batch which can be up to dataProcessingConditions.batchSize
- *
- * @param [in] mediaInputStruct
- * @param [in] dataProcessingConditions
- * @param [in,out] currentBatch <ul>
- * 		<li>Input is a batch tail from previous iteration</li>
- * 		<li>
- * 			Output is a batch tail after new good frame
- * 			(consequently there will be full batch in case we didn't find new good one)
-* 		</li>
- * </ul>
- * @param [in] previousFrame
- * @param [out] newGoodFrame
- * @param [in] previousFeatures
- * @param [out] newFeatures
- * @param [out] matches
- * @return found frame batch index or some of error codes described above
- */
-static int findGoodFrameFromBatch(
+static int findGoodFrameFromMatchedBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::vector<bool> &isMatchesEstimated,
@@ -61,7 +42,25 @@ static int findGoodFrameFromBatch(
 	std::vector<DMatch> &matches
 );
 
-int findGoodFrameFromBatchMultithreadingWrapper(
+static int findGoodFramesFromBatchSingleThread(
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame, Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+);
+
+static int findGoodFramesFromBatchMultiThreads(
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame, Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+);
+
+int findGoodFrameFromBatch(
 	MediaSources &mediaInputStruct,
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
@@ -72,10 +71,119 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 ) {
 	fillVideoFrameBatch(mediaInputStruct, dataProcessingConditions, currentBatch);
 	int currentBatchSz = currentBatch.size();
-	if (currentBatchSz == 0)
+	if (currentBatch.size() == 0)
 		return EMPTY_BATCH;
-
 	logStreams.mainReportStream << "Prev. extracted: " << previousFeatures.size() << std::endl;
+
+	int goodIndex;
+	if (dataProcessingConditions.threadsCount <= 1) {
+		goodIndex = findGoodFramesFromBatchSingleThread(
+			dataProcessingConditions, currentBatch,
+			previousFrame, newGoodFrame,
+			previousFeatures, newFeatures,
+			matches
+		);
+	}
+	else {
+		goodIndex = findGoodFramesFromBatchMultiThreads(
+			dataProcessingConditions, currentBatch,
+			previousFrame, newGoodFrame,
+			previousFeatures, newFeatures,
+			matches
+		);
+	}
+
+	if (goodIndex >= 0) {
+		std::vector<BatchElement> batchTail;
+		for (int i = goodIndex + 1; i < currentBatchSz; ++i)
+			batchTail.push_back(currentBatch.at(i));
+		currentBatch = batchTail;
+	}
+	return goodIndex;
+}
+
+static int findGoodFramesFromBatchSingleThread(
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame, Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+) {
+	int currentBatchSz = currentBatch.size();
+	ChronoTimer timer;
+
+	Mat previousDescriptor;
+	extractDescriptor(previousFrame, previousFeatures,
+		dataProcessingConditions.matcherType, previousDescriptor);
+
+	Mat goodFrame;
+	std::vector<KeyPoint> goodFeatures;
+	std::vector<DMatch> goodMatches;
+	int goodIndex = FRAME_NOT_FOUND;
+	Mat candidateFrame;
+	std::vector<KeyPoint> candidateFrameFeatures;
+	std::vector<DMatch> candidateMatches;
+	for (
+		int batchIndex = currentBatchSz - 1;
+		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
+		batchIndex--
+	) {
+		candidateFrame = currentBatch.at(batchIndex).frame.clone();
+		candidateFrameFeatures = currentBatch.at(batchIndex).features;
+
+#ifdef USE_CUDA
+		cuda::GpuMat previousDescriptorGpu(previousDescriptor);
+		matchFramesPairFeaturesCUDA(
+			previousDescriptorGpu, candidateFrame, candidateFrameFeatures,
+			dataProcessingConditions.matcherType, candidateMatches
+		);
+#else
+		matchFramesPairFeatures(
+			previousDescriptor, candidateFrame, candidateFrameFeatures,
+			dataProcessingConditions.matcherType, candidateMatches
+		);
+#endif
+
+		logStreams.mainReportStream << "Batch index: " << batchIndex
+									<< "; curr. extracted: " << candidateFrameFeatures.size()
+									<< "; matched " << candidateMatches.size() << std::endl;
+
+		if (
+			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
+			&& candidateMatches.size() >= goodMatches.size()
+		) {
+			logStreams.mainReportStream << "Frame " << batchIndex << " is a good" << std::endl;
+			goodIndex = batchIndex;
+			goodFrame = candidateFrame.clone();
+			goodFeatures = candidateFrameFeatures;
+			goodMatches = candidateMatches;
+			if (dataProcessingConditions.useFirstFitInBatch)
+				break;
+		}
+	}
+	if (goodIndex != FRAME_NOT_FOUND) {
+		newGoodFrame = goodFrame.clone();
+		newFeatures = goodFeatures;
+		matches = goodMatches;
+	}
+
+	logStreams.timeStream << "Matching time for index " << goodIndex;
+	timer.printLastPointDelta(": ", logStreams.timeStream);
+	timer.updateLastPoint();
+
+	return goodIndex;
+}
+
+static int findGoodFramesFromBatchMultiThreads(
+	const DataProcessingConditions &dataProcessingConditions,
+	std::vector<BatchElement> &currentBatch,
+	Mat &previousFrame, Mat &newGoodFrame,
+	std::vector<KeyPoint> &previousFeatures,
+	std::vector<KeyPoint> &newFeatures,
+	std::vector<DMatch> &matches
+) {
+	int currentBatchSz = currentBatch.size();
 	ChronoTimer timer;
 
 	int threadsCnt = dataProcessingConditions.threadsCount;
@@ -121,7 +229,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 	timer.printLastPointDelta("Matching threads started at: ", logStreams.timeStream);
 	timer.updateLastPoint();
 
-	int returnCode = findGoodFrameFromBatch(
+	int goodIndex = findGoodFrameFromMatchedBatch(
 		dataProcessingConditions,
 		currentBatch, isMatchesEstimated, estimatedMatches,
 		previousFrame, newGoodFrame,
@@ -129,8 +237,8 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 		matches
 	);
 
-	logStreams.timeStream << "Matching time for index " << returnCode;
-	timer.printLastPointDelta(" : ", logStreams.timeStream);
+	logStreams.timeStream << "Matching time for index " << goodIndex;
+	timer.printLastPointDelta(": ", logStreams.timeStream);
 	timer.updateLastPoint();
 
 	threadsShouldDie = true;
@@ -140,15 +248,7 @@ int findGoodFrameFromBatchMultithreadingWrapper(
 	timer.printLastPointDelta("Threads terminated: ", logStreams.timeStream);
 	timer.updateLastPoint();
 
-	if (returnCode < 0)
-		return returnCode;
-
-	std::vector<BatchElement> batchTail;
-	for (int i = returnCode + 1; i < currentBatchSz; ++i)
-		batchTail.push_back(currentBatch.at(i));
-	currentBatch = batchTail;
-
-	return returnCode;
+	return goodIndex;
 }
 
 static int fillVideoFrameBatch(
@@ -191,7 +291,7 @@ static int fillVideoFrameBatch(
 }
 
 
-static int findGoodFrameFromBatch(
+static int findGoodFrameFromMatchedBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
 	std::vector<bool> &isMatchesEstimated,

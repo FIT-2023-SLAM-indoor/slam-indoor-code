@@ -111,12 +111,12 @@ int mainCycle(
 
         // Find the next good frame batch
         Mat nextGoodFrame;
-		batchFrameIndex = findGoodFrameFromBatchMultithreadingWrapper(
-				mediaInputStruct, dataProcessingConditions, batch,
-				lastGoodFrame, nextGoodFrame,
-				temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
-				temporalImageDataDeque.at(lastFrameIdx+1).allExtractedFeatures,
-				temporalImageDataDeque.at(lastFrameIdx+1).allMatches
+		batchFrameIndex = findGoodFrameFromBatch(
+			mediaInputStruct, dataProcessingConditions, batch,
+			lastGoodFrame, nextGoodFrame,
+			temporalImageDataDeque.at(lastFrameIdx).allExtractedFeatures,
+			temporalImageDataDeque.at(lastFrameIdx + 1).allExtractedFeatures,
+			temporalImageDataDeque.at(lastFrameIdx + 1).allMatches
 		);
         if (batchFrameIndex == EMPTY_BATCH) {
 			break;
@@ -289,7 +289,7 @@ static int defineFirstPairFrames(
 
 	int frameIndex = FRAME_NOT_FOUND;
 	while (frameIndex == FRAME_NOT_FOUND) {
-		frameIndex = findGoodFrameFromBatchMultithreadingWrapper(
+		frameIndex = findGoodFrameFromBatch(
 			mediaInputStruct, dataProcessingConditions, currentBatch,
 			firstFrame, secondFrame,
 			temporalImageDataDeque.at(0).allExtractedFeatures,

@@ -20,6 +20,16 @@ LogFilesStreams logStreams;
 
 int main(int argc, char** argv) {
 
+#ifdef USE_CUDA
+	if (cuda::getCudaEnabledDeviceCount() < 1) {
+		std::cerr << "There's no available CUDA devices" << std::endl;
+		return 3;
+	}
+	else {
+		std::cout << "CUDA devices: " << cuda::getCudaEnabledDeviceCount() << std::endl;
+	}
+#endif
+
 	ChronoTimer timer;
 
 	if (argc < 2) {
