@@ -157,14 +157,14 @@ JSON config (path to file should be specified as command line argument):
 
   "useUndistortion": false,
 
-  "requiredExtractedPointsCount": 10000,
+  "requiredExtractedPointsCount": 1000,
   "featureExtractingThreshold": 5,
 
-  "framesBatchSize": 90,
+  "framesBatchSize": 60,
   "skipFramesFromBatchHead": 0,
   "useFirstFitInBatch": true,
 
-  "requiredMatchedPointsCount": 2000,
+  "requiredMatchedPointsCount": 200,
 
   "useFeatureTracker": false,
   // This block has an effect when "useFeatureTracker" is true
@@ -176,9 +176,9 @@ JSON config (path to file should be specified as command line argument):
   "FTMaxAcceptableDifference": 2000,
 
   // This block has an effect when "useFeatureTracker" is false
-  "useFM-SIFT-FLANN": false,
-  "useFM-SIFT-BF": true,
-  "useFM-ORB": false,
+  "useFM-SIFT-FLANN": true, // NORM_L2 in CUDA
+  "useFM-SIFT-BF": false, // NORM_L1 in CUDA
+  "useFM-ORB": false, // NORM_HAMMING in CUDA
 
   "knnMatcherDistance": 0.7,
 
