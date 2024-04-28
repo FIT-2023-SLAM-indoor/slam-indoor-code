@@ -25,14 +25,14 @@ add_executable(
     src/fastExtractor.cpp src/fastExtractor.h
     src/cameraCalibration.cpp src/cameraCalibration.h
     src/cameraTransition.cpp src/cameraTransition.h
-    src/featureMatching.cpp src/featureMatching.h
+    src/featureMatching/featureMatching.cpp src/featureMatching/featureMatching.h
     src/triangulate.cpp src/triangulate.h
     src/bundleAdjustment/bundleAdjustment.cpp src/bundleAdjustment/bundleAdjustment.h
     src/IOmisc.cpp src/IOmisc.h
     src/vizualizationModule.cpp src/vizualizationModule.h
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
     src/misc/ChronoTimer.cpp src/misc/ChronoTimer.h
-)
+    src/featureMatching/featureMatchingCommon.cpp src/featureMatching/featureMatchingCommon.h)
 
 target_link_libraries( slam-indoor-code Ceres::ceres )
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )

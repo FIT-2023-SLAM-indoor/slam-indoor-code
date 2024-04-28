@@ -2,7 +2,8 @@
 #include <opencv2/core.hpp>
 
 #include "../cameraTransition.h"
-#include "../featureMatching.h"
+#include "../featureMatching/featureMatching.h"
+#include "../featureMatching/featureMatchingCommon.h"
 #include "../triangulate.h"
 #include "../IOmisc.h"
 #include "../misc/ChronoTimer.h"

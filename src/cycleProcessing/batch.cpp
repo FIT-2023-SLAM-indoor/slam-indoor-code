@@ -6,7 +6,7 @@
 #include "../misc/ChronoTimer.h"
 #include "../IOmisc.h"
 #include "../fastExtractor.h"
-#include "../featureMatching.h"
+#include "../featureMatching/featureMatching.h"
 
 #include "mainCycleInternals.h"
 

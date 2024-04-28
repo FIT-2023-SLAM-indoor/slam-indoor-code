@@ -5,7 +5,8 @@
 #include "../cameraCalibration.h"
 #include "../cameraTransition.h"
 #include "../fastExtractor.h"
-#include "../featureMatching.h"
+#include "../featureMatching/featureMatching.h"
+#include "../featureMatching/featureMatchingCommon.h"
 #include "../IOmisc.h"
 
 #include "../config/config.h"
