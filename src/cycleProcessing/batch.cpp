@@ -1,11 +1,9 @@
-#ifdef USE_CUDA
-	#include "opencv2/core/cuda.hpp"
-#endif
 #include "thread"
 
 #include "../misc/ChronoTimer.h"
 #include "../IOmisc.h"
 #include "../fastExtractor.h"
+
 #include "../featureMatching/featureMatching.h"
 
 #include "mainCycleInternals.h"
@@ -132,18 +130,10 @@ static int findGoodFramesFromBatchSingleThread(
 		candidateFrame = currentBatch.at(batchIndex).frame.clone();
 		candidateFrameFeatures = currentBatch.at(batchIndex).features;
 
-#ifdef USE_CUDA
-		cuda::GpuMat previousDescriptorGpu(previousDescriptor);
-		matchFramesPairFeaturesCUDA(
-			previousDescriptorGpu, candidateFrame, candidateFrameFeatures,
-			dataProcessingConditions.matcherType, candidateMatches
-		);
-#else
 		matchFramesPairFeatures(
 			previousDescriptor, candidateFrame, candidateFrameFeatures,
 			dataProcessingConditions.matcherType, candidateMatches
 		);
-#endif
 
 		logStreams.mainReportStream << "Batch index: " << batchIndex
 									<< "; curr. extracted: " << candidateFrameFeatures.size()
@@ -205,18 +195,10 @@ static int findGoodFramesFromBatchMultiThreads(
 			) {
 				std::cout << "Start: " << batchIndex << std::endl;
 				BatchElement &element = currentBatch.at(batchIndex);
-#ifdef USE_CUDA
-				cuda::GpuMat previousDescriptorGpu(previousDescriptor);
-				matchFramesPairFeaturesCUDA(
-					previousDescriptorGpu, element.frame, element.features,
-					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
-				);
-#else
 				matchFramesPairFeatures(
 					previousDescriptor, element.frame, element.features,
 					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
 				);
-#endif
 				isMatchesEstimated.at(batchIndex) = true;
 				std::cout << "Finish: " << batchIndex << std::endl;
 				this_thread::yield();
