@@ -24,10 +24,15 @@ static void matchFeatures(
 	Ptr<cuda::DescriptorMatcher> matcher;
 	switch (extractorType) {
 		case SIFT_BF:
+			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L1);
+			break;
+		case SIFT_FLANN:
 			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L2);
 			break;
+		case ORB_BF:
+			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
+			break;
 		default:
-			std::cerr << "Only SIFT bruteforce matcher is supported using CUDA" << std::endl;
 			throw std::exception();
 	}
 
@@ -60,23 +65,6 @@ void extractDescriptor(
 			throw std::exception();
 	}
 	extractor->compute(frame, features, desc);
-
-	// WIP...
-//	cv::Ptr<cuda::ORB> extractor = cuda::ORB::create();
-//
-//	std::vector<cv::Point2d> points;
-//	for(auto &feature : features)
-//	{
-//		points.push_back(feature.pt);
-//	}
-//
-//	cuda::GpuMat imageGpu(frame), keyPointsGpu(points);
-//	cuda::GpuMat grayImage;
-//	cuda::cvtColor(imageGpu, grayImage, COLOR_BGR2GRAY);
-//
-//	std::cout << keyPointsGpu.rows << " " << keyPointsGpu.cols << std::endl;
-//
-//	extractor->computeAsync(grayImage, keyPointsGpu, desc);
 }
 
 void matchFramesPairFeatures(

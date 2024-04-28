@@ -2,14 +2,13 @@
 
 #include "fastExtractor.h"
 
+using namespace cv;
 
 void fastExtractor(cv::Mat& srcImage, std::vector<cv::KeyPoint>& points,
     int threshold, bool suppression, cv::FastFeatureDetector::DetectorType type)
 {
-    // Set the key point detector settings.
-    cv::Ptr<cv::FastFeatureDetector> detector =
-        cv::FastFeatureDetector::create(threshold, suppression, type);
-
-    // Detects keypoints in srcImage. @param points is the detected features.
+    Ptr<FastFeatureDetector> detector =
+        FastFeatureDetector::create(threshold, suppression, type);
     detector->detect(srcImage, points);
+
 }
