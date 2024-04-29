@@ -4,7 +4,7 @@
 #include "geomAdditionalFunc.h"
 #include "bestFittingPlane.h"
 #include "bowyerWatson.h"
-
+#include <utility>
 
 using namespace cv;
 using namespace std;
@@ -41,36 +41,28 @@ void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid
 
 
 int test() {
+    vector<pair<Point2f,Point3f>> pairs;
     vector<Point3f> points;
-    /*
-    points.push_back(Point3f(5.0, 60.0, 10.0));
-    points.push_back(Point3f(70.0, 40.0, 50.0));
-    points.push_back(Point3f(5.0, 60.0, 10.0));
-    points.push_back(Point3f(60.0, 120.0, 50.0));
-
-    points.push_back(Point3f(25.0, 60.0, 10.0));
-    points.push_back(Point3f(90.0, 40.0, 50.0));
-    points.push_back(Point3f(25.0, 60.0, 10.0));
-    points.push_back(Point3f(80.0, 120.0, 50.0));
     
-    points.push_back(Point3f(5.0, 80.0, 30.0));
-    points.push_back(Point3f(70.0, 80.0, 70.0));
-    points.push_back(Point3f(5.0, 100.0, 30.0));
-    points.push_back(Point3f(60.0, 160.0, 70.0));
+    /*
+    points.push_back(Point3f(0.0, 0.0, 0.0));
+    points.push_back(Point3f(70.0, 0.0, 0.0));
+    points.push_back(Point3f(70.0, 50.0, 0.0));
+    points.push_back(Point3f(70.0, 50.0, 70.0));
 
-    points.push_back(Point3f(25.0, 70.0, 30.0));
-    points.push_back(Point3f(90.0, 40.0, 70.0));
-    points.push_back(Point3f(25.0, 20.0, 30.0));
-    points.push_back(Point3f(80.0, 10.0, 70.0));
-    */
+    points.push_back(Point3f(0.0, 49.0, 70.0));
+    points.push_back(Point3f(0.0, 0.0, 70.0));
+    points.push_back(Point3f(0.0, 50.0, 0.0));
+    points.push_back(Point3f(70.0, 0.0, 70.0));*/
+    srand(time(0));
+    for (int i = 0;i< 100;i++){
+        int x = rand()%300;
+        int y = 100+ rand()%30 - rand()%30;
+        int z = rand()%300;
+        points.push_back(Point3f(x,y,z));
+    }
 
-    points.push_back(Point3f(5.0, 60.0, 10.0));
-    points.push_back(Point3f(70.0, 40.0, 50.0));
-    points.push_back(Point3f(5.0, 60.0, 10.0));
-    points.push_back(Point3f(60.0, 120.0, 50.0));
-
-
-
+    
 
     
    
@@ -91,7 +83,7 @@ int test() {
         Point3f projectedPoint;
         
         projectPointOnPlane(points.at(i),normal,centroid,projectedPoint);
-        projectedPoints.push_back(projectedPoint);
+        //projectedPoints.push_back(projectedPoint);
         
         projectedPoint = projectedPoint - centroid;
 
@@ -102,7 +94,7 @@ int test() {
         projectedPoint = projectedPoint*coef;
         
         projectedPoint.y = 0;
-        cout << projectedPoint <<endl;
+        //cout << projectedPoint <<endl;
 
         projectedPoints.push_back(projectedPoint);
 
@@ -110,48 +102,38 @@ int test() {
 
         
     }
-    std::vector<Vec3b> projColors;
+    
+    std::vector<Point2f> pts;
     for (int i = 0;i< projectedPoints.size();i++){
-        projColors.push_back(viz::Color::blue());
+        Point2f cur  = Point2f(projectedPoints.at(i).x,projectedPoints.at(i).z);
+        pts.push_back(cur);
+        pairs.push_back(pair(cur,points.at(i)));
     }
-    //viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,projColors);
+    vector<Vec3b> proj2Colors;
+    for (int i = 0;i< projectedPoints.size();i++){
+        proj2Colors.push_back(viz::Color::celestial_blue());
+    }
+    viz::WCloud projectedPointsWidget = getPointCloudFromPoints(projectedPoints,proj2Colors);
     //projectedPointsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
-    //cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
-    //window.showWidget("point_cloud", cloudWidget);
-    //window.showWidget("point_cloud2", projectedPointsWidget);
-    //window.showWidget("coordinate", viz::WCoordinateSystem(100));
+    window.showWidget("point_cloud22", projectedPointsWidget);
+
+
+
+    cloudWidget.setRenderingProperty( cv::viz::POINT_SIZE, 10);
+    window.showWidget("point_cloud", cloudWidget);
+    window.showWidget("coordinate", viz::WCoordinateSystem(100));
     //window.showWidget("bestPlane",bestFittingPlane);
 
     
-    vector<Point2f> pts;
-    pts.push_back(Point2f(-50,-50));
-    pts.push_back(Point2f(-50,50));
-    pts.push_back(Point2f(50,-50));
-    pts.push_back(Point2f(50,50));
 
-
-    pts.push_back(Point2f(0,3));
-    pts.push_back(Point2f(33,30));
-    pts.push_back(Point2f(15,0));
-    pts.push_back(Point2f(44,-30));
-    pts.push_back(Point2f(-30,-30));
-
-     pts.push_back(Point2f(0,-10));
-
-    pts.push_back(Point2f(10,-30));
-    pts.push_back(Point2f(30,40));
-    pts.push_back(Point2f(11,-3));
-    pts.push_back(Point2f(0,-30));
-    pts.push_back(Point2f(38,-30));
     
-     pts.push_back(Point2f(18,-10));
     
 
 
 
     
 
-
+    vector<Vec3b> projColors;
 
     vector<Triangle> triang;
     triangulation(pts,triang);
@@ -159,39 +141,43 @@ int test() {
     for (int i = 0;i< triang.size();i++){
         cv::Mat polygon3 = (cv::Mat_<int>(1,4) << 3, 0, 1, 2);
         vector<int> faces{3, 0, 1, 2};
-        vector<Point3d> cloud3;
+        vector<Point3f> cloud3;
         cout << triang.at(i).points << endl;
         for (int j = 0;j < 3;j++){
-            cloud3.push_back(Point3d(triang.at(i).points.at(j)));
+            Point3f pt;
+            for (int k = 0;k< pairs.size();k++){
+                if (pairs.at(k).first.x == triang.at(i).points.at(j).x && 
+                pairs.at(k).first.y == triang.at(i).points.at(j).y){
+                    pt = pairs.at(k).second;
+                    break;
+                }
+
+            }
+            cloud3.push_back(pt);
         }
 
 
         cv::viz::WMesh trWidget(cloud3, faces);
 
         trWidget.setColor(viz::Color::indigo());
-        trWidget.setRenderingProperty(viz::OPACITY, 0.05 * (i+1));
+        trWidget.setRenderingProperty(viz::OPACITY, 0.005 * (i+1));
         trWidget.setRenderingProperty(viz::SHADING, viz::SHADING_FLAT);
         trWidget.setRenderingProperty(viz::REPRESENTATION, viz::REPRESENTATION_SURFACE);
-        char str[16]  ="triangnnnn";
-        str[0] = i;
+        String str = to_string(i);
         window.showWidget(str, trWidget);
     }
 
 
     cout << "Triangulation ended" << endl;
-    //getCircumByTriangle(triangle,radius,center);
-    //cout << "WTF:" << endl;
-    //cout << radius << endl;
-    //cout << center << endl;
-    //startWindowSpin(window);
+
     vector<Point3f> trPts;
     for (int i = 0;i< pts.size();i++){
-        trPts.push_back(Point3f(pts.at(i)));
+        trPts.push_back(Point3f(pts.at(i).x,0,pts.at(i).y));
     }
 
     viz::WCloud trPtsWidget = getPointCloudFromPoints(trPts,projColors);
     trPtsWidget.setRenderingProperty( cv::viz::POINT_SIZE, 5);
-    window.showWidget("pts",trPtsWidget);
+    //window.showWidget("pts",trPtsWidget);
     startWindowSpin(window);
 
 

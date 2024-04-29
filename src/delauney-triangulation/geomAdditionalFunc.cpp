@@ -73,17 +73,17 @@ void getCircumByTriangle(Triangle& triangle, double& radius, Point2f& center){
     Point2f p1 = (triangle.points.at(choosenPoint2) - triangle.points.at(choosenPoint1))/ 2 + triangle.points.at(choosenPoint1);
     Point2f p2 = (triangle.points.at(choosenPoint2) - triangle.points.at(lastPoint))/ 2 + triangle.points.at(lastPoint);
 
-    cout << "Point1:" <<  p1 << endl; 
-    cout << "Point2:" <<  p2 << endl; 
+    //cout << "Point1:" <<  p1 << endl; 
+    //cout << "Point2:" <<  p2 << endl; 
 
     double m1 = p1.y + 1/k1 * p1.x;
     double m2 = p2.y + 1/k2 * p2.x;
 
-    cout << "k1:" <<  k1 << endl; 
-    cout << "k2:" <<  k2 << endl; 
+    //cout << "k1:" <<  k1 << endl; 
+    //cout << "k2:" <<  k2 << endl; 
     
-    cout << "m1:" <<  m1 << endl; 
-    cout << "m2:" <<  m2 << endl; 
+    //cout << "m1:" <<  m1 << endl; 
+    //cout << "m2:" <<  m2 << endl; 
 
     double x = (m2 - m1)/ (1/k2 - 1/k1);
     double y = m1 - (1/k1)*x;
