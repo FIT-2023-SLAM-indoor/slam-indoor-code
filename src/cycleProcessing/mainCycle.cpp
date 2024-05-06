@@ -153,7 +153,7 @@ int mainCycle(
         solvePnPRansac(
 			oldSpatialPointsForNewFrame, newFrameFeatureCoords, calibrationMatrix,
 			dataProcessingConditions.distortionCoeffs, rotationVector,
-			temporalImageDataDeque.at(lastFrameIdx+1).motion, false, 300
+			temporalImageDataDeque.at(lastFrameIdx+1).motion
 		);
         // Convert rotation vector to rotation matrix
         Rodrigues(rotationVector, temporalImageDataDeque.at(lastFrameIdx+1).rotation);

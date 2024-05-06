@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
+#include "../IOmisc.h"
 #include "../misc/ChronoTimer.h"
 
 #include "featureMatching.h"
@@ -97,12 +98,12 @@ void matchFramesPairFeatures(
 	cuda::GpuMat firstDescriptorGpu(firstFrameDescriptor);
 	cuda::GpuMat secondDescriptorGpu(secondDescriptor);
 
-	timer.printLastPointDelta("Descriptors extracting: ", std::cout);
+	timer.printLastPointDelta("Descriptors extracting: ", logStreams.timeStream);
 	timer.updateLastPoint();
 
 	matchFeatures(firstDescriptorGpu, secondDescriptorGpu, matches,
 		matcherType);
 
-	timer.printLastPointDelta("Matching: ", std::cout);
+	timer.printLastPointDelta("Matching: ", logStreams.timeStream);
 }
 #endif
