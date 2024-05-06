@@ -55,10 +55,10 @@ int test() {
     points.push_back(Point3f(0.0, 50.0, 0.0));
     points.push_back(Point3f(70.0, 0.0, 70.0));*/
     srand(time(0));
-    for (int i = 0;i< 100;i++){
-        int x = rand()%300;
-        int y = 100+ rand()%30 - rand()%30;
-        int z = rand()%300;
+    for (int i = 0;i< 1000;i++){
+        int x = rand()%3000;
+        int y = 100+ rand()%300 - rand()%300;
+        int z = rand()%3000;
         points.push_back(Point3f(x,y,z));
     }
 
@@ -125,7 +125,7 @@ int test() {
     //window.showWidget("bestPlane",bestFittingPlane);
 
     
-
+    int maxDistance = 30000;
     
     
 
@@ -139,6 +139,8 @@ int test() {
     triangulation(pts,triang);
     cout << "Triangulation:" << endl;
     for (int i = 0;i< triang.size();i++){
+        bool flag = true;
+
         cv::Mat polygon3 = (cv::Mat_<int>(1,4) << 3, 0, 1, 2);
         vector<int> faces{3, 0, 1, 2};
         vector<Point3f> cloud3;
@@ -154,9 +156,14 @@ int test() {
 
             }
             cloud3.push_back(pt);
+            if (j > 0 && distance(cloud3.at(j),cloud3.at(j-1)) > maxDistance){
+                flag = false;
+            }
         }
-
-
+        
+        if (!flag){
+            continue;
+        }
         cv::viz::WMesh trWidget(cloud3, faces);
 
         trWidget.setColor(viz::Color::indigo());

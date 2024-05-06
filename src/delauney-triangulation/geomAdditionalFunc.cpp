@@ -12,6 +12,10 @@ double distance(Point2f& p1, Point2f& p2){
     return sqrt(sqr((p1 - p2).x) + sqr((p1 - p2).y));
 }
 
+double distance(Point3f& p1, Point3f& p2){
+    return sqrt(sqr((p1 - p2).x) + sqr((p1 - p2).y + sqr((p1 - p2).z)));
+}
+
 void projectPointOnPlane(Point3f& point, Vec3d& normal, Point3f& centroid, Point3f& projectedPoint){
     double x = 
         ((point.x - centroid.x)*normal[0] + 

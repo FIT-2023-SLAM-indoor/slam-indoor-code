@@ -9,9 +9,9 @@ using namespace cv;
 void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangulation){
     assert(triangulation.size() == 0);
     Triangle super;
-    Point2f superFirst = Point2f(0,1000);
-    Point2f superSecond = Point2f(1000,-1000);
-    Point2f superThird = Point2f(-1000,-1000);
+    Point2f superFirst = Point2f(0,10000);
+    Point2f superSecond = Point2f(10000,-10000);
+    Point2f superThird = Point2f(-10000,-10000);
     super.points.push_back(superFirst);
     super.points.push_back(superSecond);
     super.points.push_back(superThird);
