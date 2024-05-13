@@ -39,11 +39,74 @@ void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid
    
 }
 
+viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
+    vector<pair<Point2f,Point3f>> pairs;
+    Vec3d normal;
+    Point3f centroid;
+    getBestFittingPlaneByPoints(points,centroid,normal);
+    cout<< "normal: " <<endl;
+    cout<< normal  <<endl;
+    cout<< "centroid:" << centroid << endl;
+
+    std::vector<Point3f> projectedPoints;
+    std::vector<Point2f> pts;
+    for (int i = 0;i < points.size();i++){
+        Point3f projectedPoint;
+
+        projectPointOnPlane(points.at(i),normal,centroid,projectedPoint);
+
+        projectedPoint = projectedPoint - centroid;
+        double coef = sqrt(sqr(projectedPoint.y) / (sqr(projectedPoint.x) + sqr(projectedPoint.z)) +1);
+        projectedPoint = projectedPoint*coef;
+        projectedPoint.y = 0;
+        projectedPoints.push_back(projectedPoint);
+        
+        Point2f cur  = Point2f(projectedPoints.at(i).x,projectedPoints.at(i).z);
+        pts.push_back(cur);
+        pairs.push_back(pair(cur,points.at(i)));
+    }
+
+    vector<Triangle> triang;
+    std::cout << "Triangulation" << endl;
+    
+    triangulation(pts,triang);
+    cout << "Triangulation ended" << endl;
+    
+    
+
+    vector<int> poly;
+    for (int i = 0;i< triang.size();i++){
+        poly.push_back(3);
+
+        //std::cout << triang.at(i).points << endl;
+        for (int j = 0;j < 3;j++){
+            Point3f pt;
+            for (int k = 0;k< pairs.size();k++){
+                if (pairs.at(k).first.x == triang.at(i).points.at(j).x && 
+                pairs.at(k).first.y == triang.at(i).points.at(j).y){
+                    pt = pairs.at(k).second;
+                    poly.push_back(k);
+                    break;
+                }
+                
+            }
+        }
+    }
+    cv::Mat polygon3 = cv::Mat(poly).t();
+    //cout << polygon3 << endl;
+    
+
+    cv::viz::WMesh trWidget = cv::viz::WMesh(points, polygon3,colors);
+
+    //trWidget.setColor(viz::Color::indigo());
+    trWidget.setRenderingProperty(viz::OPACITY, 1);
+    trWidget.setRenderingProperty(viz::SHADING, viz::SHADING_FLAT);
+    trWidget.setRenderingProperty(viz::REPRESENTATION, viz::REPRESENTATION_SURFACE);
+    return trWidget;
+}
 
 int test() {
     vector<pair<Point2f,Point3f>> pairs;
-    vector<pair<int,Point3f>> pairs_index;
-
     vector<Point3f> points;
     
     
@@ -61,8 +124,7 @@ int test() {
     */
     srand(time(0));
    
-    srand(time(0));
-    for (int i = 0;i< 10000;i++){
+    for (int i = 0;i< 1000;i++){
         int x = rand()%3000;
         int y = 100+ rand()%300 - rand()%300;
         int z = rand()%3000;
@@ -77,6 +139,7 @@ int test() {
 
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(points,colors);
+
     Vec3d normal;
     Point3f centroid;
     getBestFittingPlaneByPoints(points,centroid,normal);
@@ -88,7 +151,6 @@ int test() {
 
     for (int i = 0;i < points.size();i++){
         Point3f projectedPoint;
-        pairs_index.push_back(pair(i,points.at(i)));
 
         projectPointOnPlane(points.at(i),normal,centroid,projectedPoint);
         //projectedPoints.push_back(projectedPoint);
@@ -146,8 +208,10 @@ int test() {
     vector<Vec3b> projColors;
 
     vector<Triangle> triang;
-    std::cout << "Triangulation:" << endl;
-    triangulation(pts,triang);
+    std::cout << "Triangulation" << endl;
+    Subdiv2D(Rect2d(Point2d(-1000,-1000),Point2d(1000,1000)))
+    
+    //triangulation(pts,triang);
     
     
     
