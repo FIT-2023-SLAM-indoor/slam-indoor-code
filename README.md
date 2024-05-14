@@ -139,32 +139,32 @@ Install `nlohmann-json`:
 ```bash
 sudo apt install nlohmann-json3-dev
 ```
-JSON config (path to file should be specified as command line argument):
+JSON config example (path to it should be specified as command line argument):
 ```json
 {
   "calibrate": false,
   "visualCalibration": true,
-  "calibrationPath": "./config/samsung-hv.xml",
+  "calibrationPath": "./config/samsung-hp.xml",
 
   "usePhotosCycle": false,
   "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-table/*.JPG",
   // "videoSourcePath" has an effect when "usePhotosCycle" is false
-  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-room-new-fhd.mp4",
+  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-room-1-fhd.MP4",
 
   "outputDataDir": "./data/video_report/video_test",
 
-  "threadsCount": 1,
+  "threadsCount": 6,
 
   "useUndistortion": false,
 
-  "requiredExtractedPointsCount": 1000,
-  "featureExtractingThreshold": 5,
+  "requiredExtractedPointsCount": 10000,
+  "featureExtractingThreshold": 3,
 
   "framesBatchSize": 60,
   "skipFramesFromBatchHead": 0,
   "useFirstFitInBatch": true,
 
-  "requiredMatchedPointsCount": 200,
+  "requiredMatchedPointsCount": 1000,
 
   "useFeatureTracker": false,
   // This block has an effect when "useFeatureTracker" is true
@@ -213,12 +213,7 @@ JSON config (path to file should be specified as command line argument):
   "BATukeyLossFunctionParameter": 4.0
 }
 ```
-- `./python_utility/config.py`:
-```python
-PROJECT_PATH = "/PATH/TO/PROJECT/DIR"
-VIZ_FILE_PATH = "data/points.txt"
-VIZ_PARSE_FORMAT = "xyz"
-```
+
 ---
 So now you can specify program working using configs and run using `./rebuild_and_run.sh <path/to/config.json` (write `chmod a+x rebuild_and_run.sh` to make this file executable)
 - For launching with CUDA use `rebuild_and_run_cuda.sh`
