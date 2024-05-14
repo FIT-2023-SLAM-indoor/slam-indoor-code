@@ -2,7 +2,7 @@
  * Camera calibration header
  */
 #include <opencv2/videoio.hpp>
-#include "main_config.h"
+
 #pragma once
 
 using namespace cv;
@@ -16,6 +16,18 @@ enum CalibrationOption {
 };
 
 /**
+ * Entry point for calibration in main function.
+ */
+void mainCalibrationEntryPoint();
+
+/**
+ * Сreates a new matrix or changing the type and size of an existing one.
+ *
+ * @param [out] calibrationMatrix
+ */
+void defineCalibrationMatrix(Mat &calibrationMatrix);
+
+/**
  * Calibration wrapper.
  *
  * Regarding to `option`, loads to `cameraMatrix` camera intrinsic matrix from file specified by `pathToXML`
@@ -27,7 +39,7 @@ enum CalibrationOption {
  * @param [in] option Option that determines how calibration wrapper will get calibration matrix.
  * @param [in] pathToXML Path to XML file for saving/loading. Relative path starts from project root.
  */
-void calibration(Mat& cameraMatrix, CalibrationOption option, const char* pathToXML= CALIBRATION_PATH);
+void calibration(Mat& cameraMatrix, CalibrationOption option);
 
 /**
  * Chessboard calibration from video source.
@@ -41,9 +53,8 @@ void calibration(Mat& cameraMatrix, CalibrationOption option, const char* pathTo
  * @param [in] boardSize Shape of board (`Size(int width, int height)`)
  * @param [in] pathToXML Oath to XML for saving got matrix
  */
-void chessboardVideoCalibration(VideoCapture capture, int itersCount= 10, double delay= 3,
-                                double squareSize= 23.0, Size boardSize= Size(7, 7),
-                                const char* pathToXML= CALIBRATION_PATH);
+void chessboardVideoCalibration(VideoCapture capture, int itersCount= 15, double delay= 5,
+                                double squareSize= 23.0, Size boardSize= Size(7, 7));
 /**
  * Chessboard calibration from photos.
  *
@@ -56,5 +67,4 @@ void chessboardVideoCalibration(VideoCapture capture, int itersCount= 10, double
  * @param [in] pathToXML Oath to XML for saving got matrix
  */
 void chessboardPhotosCalibration(std::vector<String>& fileNames, int itersCount= 10,
-                                double squareSize= 23.0, Size boardSize= Size(7, 7),
-                                const char* pathToXML= CALIBRATION_PATH);
+                                double squareSize= 23.0, Size boardSize= Size(7, 7));

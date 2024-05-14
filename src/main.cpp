@@ -1,46 +1,94 @@
-#include "cameraCalibration.h"
-#include "photosProcessingCycle.h"
-#include "videoProcessingCycle.h"
-#include "IOmisc.h"
+#include "fstream"
+#include "ceres/ceres.h"
 
-#include "main_config.h"
+#include "config/config.h"
+#include "misc/ChronoTimer.h"
+#include "IOmisc.h"
+#include "cameraCalibration.h"
+
+#include "cycleProcessing/mainCycle.h"
+#include "cycleProcessing/mainCycleInternals.h"
+#include "vizualizationModule.h"
 
 using namespace cv;
 
-int main(int argc, char** argv)
-{
-#ifdef CALIB
-    std::vector<String> files;
-    glob("../static/for_calib/samsung-hv/*.png", files, false);
-    chessboardPhotosCalibration(files, 13);
-    return 0;
-#endif
-#ifdef PHOTOS_CYCLE
-    std::vector<String> photos;
-    glob(PHOTOS_PATH_PATTERN, photos, false);
-    sortGlobs(photos);
-    char path[] = OUTPUT_DATA_DIR;
-    photosProcessingCycle(photos,
-                          FT_BARRIER,
-                          FT_MAX_ACCEPTABLE_DIFFERENCE,
-                          FRAMES_BATCH_SIZE,
-                          REQUIRED_EXTRACTED_POINTS_COUNT,
-                          FEATURE_EXTRACTING_THRESHOLD,
-                          path);
-#else
-    VideoCapture cap(VIDEO_SOURCE_PATH);
-	if (!cap.isOpened()) {
-		std::cerr << "Camera wasn't opened" << std::endl;
-		return -1;
+const int OPTIMAL_DEQUE_SIZE = 8;
+
+ConfigService configService;
+LogFilesStreams logStreams;
+
+
+int main(int argc, char** argv) {
+
+#ifdef USE_CUDA
+	if (cuda::getCudaEnabledDeviceCount() < 1) {
+		std::cerr << "There's no available CUDA devices" << std::endl;
+		return 3;
 	}
-	char path[] = OUTPUT_DATA_DIR;
-	videoProcessingCycle(cap,
-                         FT_BARRIER,
-                         FT_MAX_ACCEPTABLE_DIFFERENCE,
-                         FRAMES_BATCH_SIZE,
-                         REQUIRED_EXTRACTED_POINTS_COUNT,
-                         FEATURE_EXTRACTING_THRESHOLD,
-                         path);
+	else {
+		std::cout << "CUDA devices: " << cuda::getCudaEnabledDeviceCount() << std::endl;
+	}
 #endif
+
+	ChronoTimer timer;
+
+	if (argc < 2) {
+		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
+		return 2;
+	}
+
+	configService.setConfigFile(argv[1]);
+	google::InitGoogleLogging("BA");
+	openLogsStreams();
+
+	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
+		mainCalibrationEntryPoint();
+		return 0;
+	}
+
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
+
+	MediaSources mediaInputStruct;
+	DataProcessingConditions dataProcessingConditions;
+	Mat calibrationMatrix;
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions, calibrationMatrix);
+	
+	GlobalData globalDataStruct;
+	std::deque<TemporalImageData> oldTempImageDataDeque;
+	int lastFrameOfLaunchId = -1;
+	do {
+		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
+		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
+						     newTempImageDataDeque.at(0));
+
+		GlobalData newGlobalData;
+		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
+										dataProcessingConditions, newTempImageDataDeque,
+										newGlobalData);
+		oldTempImageDataDeque = newTempImageDataDeque;
+
+		insertNewGlobalData(globalDataStruct, newGlobalData);
+	} while (lastFrameOfLaunchId > 0);
+
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
+	logStreams.pointsStream.flush();
+
+	checkGlobalDataStruct(globalDataStruct);
+
+	printDivider(logStreams.timeStream);
+	timer.printStartDelta("Whole time: ", logStreams.timeStream);
+
+	// Kostil for Points3f in visualizer
+	std::vector<Point3f> convertedSpatialPoints;
+	for (auto point : globalDataStruct.spatialPoints)
+		convertedSpatialPoints.push_back(Point3f(point));
+
+	vizualizePointsAndCameras(convertedSpatialPoints,
+							  globalDataStruct.cameraRotations,
+							  globalDataStruct.spatialCameraPositions,
+							  globalDataStruct.spatialPointsColors,
+							  calibrationMatrix);
+	closeLogsStreams();
+
     return 0;
 }

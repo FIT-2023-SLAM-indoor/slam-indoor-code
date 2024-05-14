@@ -6,15 +6,37 @@
 #include <ctime>
 #include <iostream>
 
-#include "main_config.h"
-#include "cameraCalibration.h"
+#include "config/config.h"
 #include "IOmisc.h"
+
+#include "cameraCalibration.h"
 
 #define MINIMAL_FOUND_FRAMES_COUNT 10
 
 using namespace cv;
 
-void calibration(Mat& cameraMatrix, CalibrationOption option, const char *pathToXML) {
+void mainCalibrationEntryPoint() {
+	if (configService.getValue<bool>(ConfigFieldEnum::USE_PHOTOS_CYCLE)) {
+		std::vector<String> files;
+		glob(
+			configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN),
+			files, false
+		);
+		chessboardPhotosCalibration(files, 13);
+	}
+	else {
+		chessboardVideoCalibration(VideoCapture(
+			configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH)
+		));
+	}
+}
+
+void defineCalibrationMatrix(Mat &calibrationMatrix) {
+	calibrationMatrix.create(3, 3, CV_64F);
+	calibration(calibrationMatrix, CalibrationOption::load);
+}
+
+void calibration(Mat& cameraMatrix, CalibrationOption option) {
     VideoCapture cap;
     std::vector<String> files;
     switch (option) {
@@ -32,7 +54,8 @@ void calibration(Mat& cameraMatrix, CalibrationOption option, const char *pathTo
             break;
         default:;
     }
-    loadMatrixFromXML(pathToXML, cameraMatrix);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
+    loadMatrixFromXML(pathToXML.c_str(), cameraMatrix);
 }
 
 /**
@@ -55,8 +78,11 @@ static void getObjectPoints(std::vector<Point3f> &objectPoints, Size boardSize, 
     }
 }
 
-void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double delay, double squareSize, cv::Size boardSize,
-                                const char *pathToXML) {
+void chessboardVideoCalibration(
+	cv::VideoCapture capture, int itersCount, double delay,
+	double squareSize, cv::Size boardSize
+) {
+	bool visualCalib = configService.getValue<bool>(ConfigFieldEnum::VISUAL_CALIBRATION);
     // Set base plane pattern relative predicted points
     std::vector<Point3f> objectPoints;
     getObjectPoints(objectPoints, boardSize, squareSize);
@@ -83,23 +109,20 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             cornerSubPix(gray, imagePoints, Size(11, 11), Size(-1, -1),
                          { TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,30,0.0001) }
             ); // Make points' corners more precisely
-#ifdef VISUAL_CALIB
-            drawChessboardCorners(frame, boardSize, imagePoints, true);
-#endif
+			if (visualCalib)
+	            drawChessboardCorners(frame, boardSize, imagePoints, true);
             imagePointsVector.push_back(imagePoints);
             objectPointsVector.push_back(objectPoints);
             prevClock = clock();
         }
-#ifdef VISUAL_CALIB
-        char c = (char)waitKey(33);
-//        Mat resized;
-        namedWindow("Test", cv::WINDOW_NORMAL);
-        resizeWindow("Test", frame.rows / 32, frame.cols / 32);
-        imshow("Test", frame);
-//        imwrite("./test.jpg", frame);
-        if (c == 27)
-            break;
-#endif
+		if (visualCalib) {
+			char c = (char) waitKey(33);
+			namedWindow("Test", cv::WINDOW_NORMAL);
+			resizeWindow("Test", frame.rows / 32, frame.cols / 32);
+			imshow("Test", frame);
+			if (c == 27)
+				break;
+		}
     }
     if (imagePointsVector.size() < MINIMAL_FOUND_FRAMES_COUNT) {
         std::cerr << "Cannot find enough chessboard frames" << std::endl;
@@ -112,13 +135,16 @@ void chessboardVideoCalibration(cv::VideoCapture capture, int itersCount, double
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-    if (pathToXML != nullptr)
-        saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
+	saveCalibParametersToXML(pathToXML.c_str(), cameraMatrixK, distortionCoeffs, R, T);
 }
 
-void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount, double squareSize, Size boardSize,
-                                 const char *pathToXML) {
-    // Set base plane pattern relative predicted points
+void chessboardPhotosCalibration(
+	std::vector<String> &fileNames, int itersCount,
+	double squareSize, Size boardSize
+) {
+	bool visualCalib = configService.getValue<bool>(ConfigFieldEnum::VISUAL_CALIBRATION);
+	// Set base plane pattern relative predicted points
     std::vector<Point3f> objectPoints;
     getObjectPoints(objectPoints, boardSize, squareSize);
     std::vector <std::vector<Point3f>> objectPointsVector; // All vector is the same as its first element
@@ -143,17 +169,16 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
             cornerSubPix(gray, imagePoints, Size(11, 11), Size(-1, -1),
                          { TermCriteria(TermCriteria::COUNT + TermCriteria::EPS,30,0.0001) }
             ); // Make points' corners more precisely
-#ifdef VISUAL_CALIB
-            drawChessboardCorners(frame, boardSize, imagePoints, true);
-#endif
+			if (visualCalib)
+				drawChessboardCorners(frame, boardSize, imagePoints, true);
             imagePointsVector.push_back(imagePoints);
             objectPointsVector.push_back(objectPoints);
-#ifdef VISUAL_CALIB
-            imshow("Test", frame);
-            char c = (char)waitKey(500);
-            if (c == 27)
-                break;
-#endif
+			if (visualCalib) {
+				imshow("Test", frame);
+				char c = (char) waitKey(500);
+				if (c == 27)
+					break;
+			}
         }
         else {
             std::cout << "Cannot find chessboard corners" << std::endl;
@@ -173,6 +198,6 @@ void chessboardPhotosCalibration(std::vector<String> &fileNames, int itersCount,
             cameraMatrixK, distortionCoeffs, R, T
     );
 
-    if (pathToXML != nullptr)
-        saveCalibParametersToXML(pathToXML, cameraMatrixK, distortionCoeffs, R, T);
+	std::string pathToXML = configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH);
+	saveCalibParametersToXML(pathToXML.c_str(), cameraMatrixK, distortionCoeffs, R, T);
 }

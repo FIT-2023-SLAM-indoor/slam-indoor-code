@@ -1,15 +1,33 @@
 #include <opencv2/core.hpp>
-#include <opencv2/videoio.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/calib3d.hpp>
-#include <opencv2/imgproc.hpp>
-#include <ctime>
 #include <iostream>
 #include <fstream>
 
-#include "main_config.h"
+#include "config/config.h"
+#include "./cycleProcessing/mainCycleStructures.h"
+
 #include "IOmisc.h"
 
+void openLogsStreams() {
+	char tmp[256] = "";
+	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
+	sprintf(tmp, "%s/main.txt", path.c_str());
+	logStreams.mainReportStream.open(tmp);
+	sprintf(tmp, "%s/points.txt", path.c_str());
+	logStreams.pointsStream.open(tmp);
+	sprintf(tmp, "%s/pose.txt", path.c_str());
+	logStreams.poseStream.open(tmp);
+	sprintf(tmp, "%s/time.txt", path.c_str());
+	logStreams.timeStream.open(tmp);
+	sprintf(tmp, "%s/extractedMatched.csv", path.c_str());
+	logStreams.extractedMatchedTable.open(tmp);
+}
+
+void closeLogsStreams() {
+	logStreams.mainReportStream.close();
+	logStreams.pointsStream.close();
+	logStreams.poseStream.close();
+	logStreams.extractedMatchedTable.close();
+}
 
 void sortGlobs(std::vector<String> &paths) {
     std::sort(paths.begin(), paths.end(), [](const String &a, const String &b) {
@@ -74,7 +92,7 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
     // Write into file every matrix element
     for (int row_id = 0; row_id < matrix.rows; row_id++) {
         for (int col_id = 0; col_id < matrix.cols; col_id++) {
-            fileStream << matrix.at<double>(row_id, col_id);
+            fileStream << std::fixed << std::setprecision(12) << matrix.at<double>(row_id, col_id);
             // If it wasn't the last element in a current row
             if (col_id < matrix.cols - 1) {
                 fileStream << " ";
@@ -90,6 +108,18 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
         // Flush the stream to ensure data is written immediately
         fileStream.flush();
     }
+}
+
+void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream) {
+	Mat pointsMat = Mat(vector);
+	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
+	rawOutput(pointsMat, fileStream);
+}
+
+void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream) {
+	Mat pointsMat = Mat(vector);
+	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
+	rawOutput(pointsMat, fileStream);
 }
 
 void rawOutput(const Mat &matrix, const String &path, const char mode) {
@@ -109,4 +139,8 @@ void rawOutput(const Mat &matrix, const String &path, const char mode) {
     rawOutput(matrix, fileStream);
 
     fileStream.close();
+}
+
+void printDivider(std::ofstream &stream) {
+	stream << std::endl << "================================================================\n" << std::endl;
 }
