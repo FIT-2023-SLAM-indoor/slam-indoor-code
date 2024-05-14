@@ -19,10 +19,12 @@ enum ConfigFieldEnum {
 	CALIBRATION_PATH,
 
 	USE_PHOTOS_CYCLE,
-	PHOTOS_PATH_PATTERN_,
+	PHOTOS_PATH_PATTERN,
 
 	VIDEO_SOURCE_PATH,
 	OUTPUT_DATA_DIR,
+
+	THREADS_COUNT,
 
 	USE_UNDISTORTION,
 
@@ -30,6 +32,8 @@ enum ConfigFieldEnum {
 	FEATURE_EXTRACTING_THRESHOLD,
 
 	FRAMES_BATCH_SIZE,
+	SKIP_FRAMES_FROM_BATCH_HEAD,
+	USE_FIRST_FIT_IN_BATCH,
 
 	REQUIRED_MATCHED_POINTS_COUNT,
 
@@ -78,9 +82,11 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{CALIBRATION_PATH,                {"calibrationPath",              STRING}},
 
 		{USE_PHOTOS_CYCLE,                {"usePhotosCycle",               BOOL}},
-		{PHOTOS_PATH_PATTERN_,            {"photosPathPattern",            STRING}},
+		{PHOTOS_PATH_PATTERN,             {"photosPathPattern",            STRING}},
 		{VIDEO_SOURCE_PATH,               {"videoSourcePath",              STRING}},
 		{OUTPUT_DATA_DIR,                 {"outputDataDir",                STRING}},
+
+		{THREADS_COUNT,                   {"threadsCount",                 INTEGER}},
 
 		{USE_UNDISTORTION,                {"useUndistortion",              BOOL}},
 
@@ -88,6 +94,8 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{FEATURE_EXTRACTING_THRESHOLD,    {"featureExtractingThreshold",   INTEGER}},
 
 		{FRAMES_BATCH_SIZE,               {"framesBatchSize",              INTEGER}},
+		{SKIP_FRAMES_FROM_BATCH_HEAD,     {"skipFramesFromBatchHead",      INTEGER}},
+		{USE_FIRST_FIT_IN_BATCH,          {"useFirstFitInBatch",           BOOL}},
 
 		{REQUIRED_MATCHED_POINTS_COUNT,   {"requiredMatchedPointsCount",   INTEGER}},
 

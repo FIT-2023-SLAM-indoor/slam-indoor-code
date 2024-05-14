@@ -12,18 +12,27 @@ using namespace cv;
  *
  * @param [out] mediaInputStruct так называемый интерефейс для универсальной работы с медиа
  * @param [out] dataProcessingConditions
+ * @param [out] calibrationMatrix
  */
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions
+    DataProcessingConditions &dataProcessingConditions,
+    Mat &calibrationMatrix
 );
 
 /**
- * ADD DOCUMENTATION
+ * Определяет поля позиции камеры в TemporalImageData. Функция универсально работает с начальным
+ * кадром и последующими.
  *
- * @param initialFrame
+ * @param [in] oldImageDataDeque
+ * @param [in] lastFrameOfLaunchId
+ * @param [out] frameData
  */
-void defineInitialCameraPosition(TemporalImageData &initialFrame);
+void defineCameraPosition(
+    const std::deque<TemporalImageData> &oldImageDataDeque, 
+    int lastFrameOfLaunchId, 
+    TemporalImageData &frameData
+);
 
 /**
  * Функция достает (и удаляет) из структуры слдующее изображение.
@@ -146,3 +155,21 @@ void pushNewSpatialPoints(
 	std::vector<int> &prevFrameCorrespondIndices,
 	TemporalImageData &newFrameData
 );
+
+
+/**
+ * Функция копирует общие данные об обработанном медиа из newGlobalData в mainGlobalData.
+ *
+ * @param [out] mainGlobalData
+ * @param [in] newGlobalData
+ */
+void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData);
+
+
+/**
+ * Функция проверяет была ли заполнена структура GlobalData после обработки медиа. Если структура
+ * осталась пуста, то будет вызвано падение программы.
+ *
+ * @param [in] globalDataStruct
+ */
+void checkGlobalDataStruct(GlobalData &globalDataStruct);

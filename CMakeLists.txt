@@ -14,23 +14,49 @@ find_package(nlohmann_json 3.10.0 REQUIRED)
 add_executable(
     slam-indoor-code
     src/main.cpp
-    src/cycle_processing/mainCycleStructures.h
-    src/cycle_processing/mainCycle.cpp src/cycle_processing/mainCycle.h
-    src/cycle_processing/mainCycleInternals.cpp src/cycle_processing/mainCycleInternals.h
+
+    src/cycleProcessing/mainCycleStructures.h
+    src/cycleProcessing/mainCycle.cpp src/cycleProcessing/mainCycle.h
+    src/cycleProcessing/batch.cpp src/cycleProcessing/batch.h
+    src/cycleProcessing/mainCycleInternals.cpp src/cycleProcessing/mainCycleInternals.h
+
     src/fastExtractor.cpp src/fastExtractor.h
+
     src/cameraCalibration.cpp src/cameraCalibration.h
+
     src/cameraTransition.cpp src/cameraTransition.h
-    src/featureMatching.cpp src/featureMatching.h
+
+    src/featureMatching/featureMatchingCommon.cpp src/featureMatching/featureMatchingCommon.h
+    src/featureMatching/featureMatching.h
+
     src/triangulate.cpp src/triangulate.h
+
     src/bundleAdjustment/bundleAdjustment.cpp src/bundleAdjustment/bundleAdjustment.h
+
     src/IOmisc.cpp src/IOmisc.h
+
     src/vizualizationModule.cpp src/vizualizationModule.h
+
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
     src/delauney-triangulation/bestFittingPlane.cpp src/delauney-triangulation/bestFittingPlane.h
     src/delauney-triangulation/geomAdditionalFunc.cpp src/delauney-triangulation/geomAdditionalFunc.h
     src/delauney-triangulation/bowyerWatson.cpp src/delauney-triangulation/bowyerWatson.h
+    src/misc/ChronoTimer.cpp src/misc/ChronoTimer.h
 
 )
+
+if (DEFINED USE_CUDA)
+    add_definitions(-DUSE_CUDA)
+    target_sources(
+        slam-indoor-code
+        PRIVATE src/featureMatching/featureMatchingCUDA.cpp
+    )
+else()
+    target_sources(
+        slam-indoor-code
+        PRIVATE src/featureMatching/featureMatchingCPU.cpp
+    )
+endif ()
 
 target_link_libraries( slam-indoor-code Ceres::ceres )
 target_link_libraries( slam-indoor-code ${OpenCV_LIBS} )

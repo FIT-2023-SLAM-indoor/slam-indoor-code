@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include "config/config.h"
-#include "./cycle_processing/mainCycleStructures.h"
+#include "./cycleProcessing/mainCycleStructures.h"
 
 #include "IOmisc.h"
 
@@ -16,6 +16,8 @@ void openLogsStreams() {
 	logStreams.pointsStream.open(tmp);
 	sprintf(tmp, "%s/pose.txt", path.c_str());
 	logStreams.poseStream.open(tmp);
+	sprintf(tmp, "%s/time.txt", path.c_str());
+	logStreams.timeStream.open(tmp);
 	sprintf(tmp, "%s/extractedMatched.csv", path.c_str());
 	logStreams.extractedMatchedTable.open(tmp);
 }
@@ -137,4 +139,8 @@ void rawOutput(const Mat &matrix, const String &path, const char mode) {
     rawOutput(matrix, fileStream);
 
     fileStream.close();
+}
+
+void printDivider(std::ofstream &stream) {
+	stream << std::endl << "================================================================\n" << std::endl;
 }

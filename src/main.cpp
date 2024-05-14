@@ -2,11 +2,12 @@
 #include "ceres/ceres.h"
 
 #include "config/config.h"
+#include "misc/ChronoTimer.h"
 #include "IOmisc.h"
 #include "cameraCalibration.h"
 
-#include "cycle_processing/mainCycle.h"
-#include "cycle_processing/mainCycleInternals.h"
+#include "cycleProcessing/mainCycle.h"
+#include "cycleProcessing/mainCycleInternals.h"
 #include "vizualizationModule.h"
 
 using namespace cv;
@@ -18,7 +19,19 @@ LogFilesStreams logStreams;
 
 
 int main(int argc, char** argv) {
-	
+
+#ifdef USE_CUDA
+	if (cuda::getCudaEnabledDeviceCount() < 1) {
+		std::cerr << "There's no available CUDA devices" << std::endl;
+		return 3;
+	}
+	else {
+		std::cout << "CUDA devices: " << cuda::getCudaEnabledDeviceCount() << std::endl;
+	}
+#endif
+
+	ChronoTimer timer;
+
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
@@ -29,33 +42,41 @@ int main(int argc, char** argv) {
 	openLogsStreams();
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
-		std::vector<String> files;
-		glob(
-			configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_),
-			files, false
-		);
-		chessboardPhotosCalibration(files, 13);
+		mainCalibrationEntryPoint();
 		return 0;
 	}
+
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 
-	GlobalData globalDataStruct;
 	MediaSources mediaInputStruct;
 	DataProcessingConditions dataProcessingConditions;
-	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
 	Mat calibrationMatrix;
-	defineCalibrationMatrix(calibrationMatrix);
-	std::deque<TemporalImageData> temporalImageDataDeque(OPTIMAL_DEQUE_SIZE);
-	defineInitialCameraPosition(temporalImageDataDeque.at(0));
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions, calibrationMatrix);
+	
+	GlobalData globalDataStruct;
+	std::deque<TemporalImageData> oldTempImageDataDeque;
+	int lastFrameOfLaunchId = -1;
 	do {
-		/* Что-то делаем с TemporalData. А именно передаём данные о начальной позиции камеры */
-	} while (mainCycle(
-		mediaInputStruct, calibrationMatrix, dataProcessingConditions,
-		temporalImageDataDeque, globalDataStruct
-	));
+		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
+		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
+						     newTempImageDataDeque.at(0));
+
+		GlobalData newGlobalData;
+		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
+										dataProcessingConditions, newTempImageDataDeque,
+										newGlobalData);
+		oldTempImageDataDeque = newTempImageDataDeque;
+
+		insertNewGlobalData(globalDataStruct, newGlobalData);
+	} while (lastFrameOfLaunchId > 0);
 
 	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
 	logStreams.pointsStream.flush();
+
+	checkGlobalDataStruct(globalDataStruct);
+
+	printDivider(logStreams.timeStream);
+	timer.printStartDelta("Whole time: ", logStreams.timeStream);
 
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;
@@ -67,7 +88,6 @@ int main(int argc, char** argv) {
 							  globalDataStruct.spatialCameraPositions,
 							  globalDataStruct.spatialPointsColors,
 							  calibrationMatrix);
-
 	closeLogsStreams();
 
     return 0;

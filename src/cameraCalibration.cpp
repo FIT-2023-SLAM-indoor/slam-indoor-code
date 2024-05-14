@@ -15,6 +15,22 @@
 
 using namespace cv;
 
+void mainCalibrationEntryPoint() {
+	if (configService.getValue<bool>(ConfigFieldEnum::USE_PHOTOS_CYCLE)) {
+		std::vector<String> files;
+		glob(
+			configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN),
+			files, false
+		);
+		chessboardPhotosCalibration(files, 13);
+	}
+	else {
+		chessboardVideoCalibration(VideoCapture(
+			configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH)
+		));
+	}
+}
+
 void defineCalibrationMatrix(Mat &calibrationMatrix) {
 	calibrationMatrix.create(3, 3, CV_64F);
 	calibration(calibrationMatrix, CalibrationOption::load);
