@@ -1,4 +1,5 @@
 data/
+cuda_build/
 
 *.sfk
 config.py

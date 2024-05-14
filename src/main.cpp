@@ -2,6 +2,7 @@
 #include "ceres/ceres.h"
 
 #include "config/config.h"
+#include "misc/ChronoTimer.h"
 #include "IOmisc.h"
 #include "cameraCalibration.h"
 
@@ -18,7 +19,19 @@ LogFilesStreams logStreams;
 
 
 int main(int argc, char** argv) {
-	
+
+#ifdef USE_CUDA
+	if (cuda::getCudaEnabledDeviceCount() < 1) {
+		std::cerr << "There's no available CUDA devices" << std::endl;
+		return 3;
+	}
+	else {
+		std::cout << "CUDA devices: " << cuda::getCudaEnabledDeviceCount() << std::endl;
+	}
+#endif
+
+	ChronoTimer timer;
+
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
@@ -61,6 +74,9 @@ int main(int argc, char** argv) {
 	logStreams.pointsStream.flush();
 
 	checkGlobalDataStruct(globalDataStruct);
+
+	printDivider(logStreams.timeStream);
+	timer.printStartDelta("Whole time: ", logStreams.timeStream);
 
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;

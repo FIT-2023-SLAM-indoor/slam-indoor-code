@@ -5,7 +5,8 @@
 #include "../cameraCalibration.h"
 #include "../cameraTransition.h"
 #include "../fastExtractor.h"
-#include "../featureMatching.h"
+#include "../featureMatching/featureMatching.h"
+#include "../featureMatching/featureMatchingCommon.h"
 #include "../IOmisc.h"
 
 #include "../config/config.h"
@@ -85,11 +86,13 @@ void defineProcessingEnvironment(
 
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
+	dataProcessingConditions.threadsCount =
+		configService.getValue<int>(ConfigFieldEnum::THREADS_COUNT);
     dataProcessingConditions.frameBatchSize =
         configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
 	dataProcessingConditions.skipFramesFromBatchHead =
 		configService.getValue<int>(ConfigFieldEnum::SKIP_FRAMES_FROM_BATCH_HEAD);
-	dataProcessingConditions.useFirstFitInBath =
+	dataProcessingConditions.useFirstFitInBatch =
 		configService.getValue<bool>(ConfigFieldEnum::USE_FIRST_FIT_IN_BATCH);
     dataProcessingConditions.requiredExtractedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT);
