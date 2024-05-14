@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
 #include "vizualizationModule.h"
+#include "delauney-triangulation/bestFittingPlane.h"
 using namespace cv;
 double speed = 0.5;
 void vizualizeOnlyPoints(
@@ -59,6 +60,19 @@ void vizualizePointsAndCameras(
     viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
     window.showWidget("point_cloud", cloudWidget);
     vizualizeCameras(window,rotations,transitions,calibration);
+    
+    /*
+    cv::viz::WMesh trWidget = makeMesh(spatialPoints,colors);
+    window.showWidget("mesh", trWidget);
+    Vec3d normal;
+    Point3f centroid;
+    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+    cout<< "normal: " <<endl;
+    cout<< normal  <<endl;
+    cout<< "centroid:" << centroid << endl;
+    viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(150,150)));
+    //window.showWidget("plane", bestFittingPlane);
+    */
     startWindowSpin(window);
 }
 void startWindowSpin(

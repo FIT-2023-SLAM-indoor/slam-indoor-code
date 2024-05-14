@@ -11,6 +11,8 @@ typedef struct{
     std::vector<Point2f> points;
     
 }Triangle;
+double distance(Point2f& p1, Point2f& p2);
+
 double distance(Point3f& p1, Point3f& p2);
 
 void projectPointOnPlane(

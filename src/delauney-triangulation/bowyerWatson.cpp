@@ -18,6 +18,7 @@ void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangula
 
     triangulation.push_back(super);
     for (int global = 0; global< points.size();global++){
+        std::cout<< (double)global/(double)points.size() <<std::endl;
         Point2f point = points.at(global);
         std::vector<int> indexes;
 

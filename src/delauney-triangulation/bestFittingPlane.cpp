@@ -73,24 +73,45 @@ viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
     cout << "Triangulation ended" << endl;
     
     
+    double max_size = 0.5;
+    
+    
 
     vector<int> poly;
     for (int i = 0;i< triang.size();i++){
-        poly.push_back(3);
-
+        
+        vector<Point3f> currentTriangle;
+        vector<int> currentIndexes;
         //std::cout << triang.at(i).points << endl;
         for (int j = 0;j < 3;j++){
-            Point3f pt;
             for (int k = 0;k< pairs.size();k++){
                 if (pairs.at(k).first.x == triang.at(i).points.at(j).x && 
                 pairs.at(k).first.y == triang.at(i).points.at(j).y){
-                    pt = pairs.at(k).second;
-                    poly.push_back(k);
+                    currentTriangle.push_back(pairs.at(k).second);
+                    currentIndexes.push_back(k);
                     break;
                 }
                 
             }
         }
+        bool flag = false;
+        for (int j = 0;j < 3;j++){
+            double dist = distance(currentTriangle.at(j),currentTriangle.at((j+1)%3));
+            if (dist > max_size){
+                flag = true;
+            }
+                    
+        }
+        if (flag){
+            continue;
+        }
+
+        poly.push_back(3);
+        for (int j = 0; j< 3;j++){
+            poly.push_back(currentIndexes.at(j));
+        }
+    
+
     }
     cv::Mat polygon3 = cv::Mat(poly).t();
     //cout << polygon3 << endl;
@@ -110,26 +131,26 @@ int test() {
     vector<Point3f> points;
     
     
-    /*
+    
     points.push_back(Point3f(0.0, 0.0, 0.0));
     points.push_back(Point3f(70.0, 0.0, 0.0));
     points.push_back(Point3f(70.0, 50.0, 0.0));
     points.push_back(Point3f(70.0, 50.0, 70.0));
     
     points.push_back(Point3f(0.0, 49.0, 70.0));
-    
+    /*
     points.push_back(Point3f(0.0, 0.0, 70.0));
     points.push_back(Point3f(0.0, 50.0, 0.0));
     points.push_back(Point3f(70.0, 0.0, 70.0));
     */
     srand(time(0));
-   
+   /*
     for (int i = 0;i< 1000;i++){
         int x = rand()%3000;
         int y = 100+ rand()%300 - rand()%300;
         int z = rand()%3000;
         points.push_back(Point3f(x,y,z));
-    }
+    }*/
     
 
     
@@ -209,8 +230,20 @@ int test() {
 
     vector<Triangle> triang;
     std::cout << "Triangulation" << endl;
-    Subdiv2D(Rect2d(Point2d(-1000,-1000),Point2d(1000,1000)))
-    
+    Subdiv2D subdiv = Subdiv2D(Rect2d(Point2d(-10000,-10000),Point2d(10000,10000)));
+
+    for (int i =0;i< pts.size();i++){
+        subdiv.insert(pts.at(i));
+    }
+    std::vector<cv::Vec6f> triangleList;
+    subdiv.getTriangleList(triangleList);
+    for (int i = 0;i<triangleList.size();i++){
+        Triangle tr;
+        for (int j =0;j<3;j++){
+            tr.points.push_back(Point2d(triangleList.at(i)[j],triangleList.at(i)[j+1]));
+        }
+        triang.push_back(tr);
+    }
     //triangulation(pts,triang);
     
     
