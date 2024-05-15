@@ -4,3 +4,4 @@
 #include "geomAdditionalFunc.h"
 #pragma once
 void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangulation);
+void builtInTriangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangulation);

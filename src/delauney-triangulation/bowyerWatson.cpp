@@ -83,3 +83,23 @@ void triangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangula
     }
 
 }
+void builtInTriangulation(std::vector<Point2f>& points,std::vector<Triangle>& triangulation){
+
+    Subdiv2D subdiv = Subdiv2D(Rect2d(Point2d(-100000,-100000),Point2d(100000,100000)));
+
+    for (int i =0;i< points.size();i++){
+        Point2d pt = points.at(i);
+        subdiv.insert(points.at(i));
+    }
+    std::vector<cv::Vec6f> triangleList;
+    subdiv.getTriangleList(triangleList);
+
+    for (int i = 0;i<triangleList.size();i++){
+        Triangle tr;
+        for (int j =0;j<6;j+=2){
+            tr.points.push_back(Point2d(triangleList.at(i)[j],triangleList.at(i)[j+1]));
+        }
+        triangulation.push_back(tr);
+    }
+    
+}

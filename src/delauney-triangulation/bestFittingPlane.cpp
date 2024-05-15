@@ -69,11 +69,12 @@ viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
     vector<Triangle> triang;
     std::cout << "Triangulation" << endl;
     
-    triangulation(pts,triang);
+    //triangulation(pts,triang);
+    builtInTriangulation(pts,triang);
     cout << "Triangulation ended" << endl;
     
     
-    double max_size = 0.5;
+    double max_size = 1;
     
     
 
@@ -138,19 +139,19 @@ int test() {
     points.push_back(Point3f(70.0, 50.0, 70.0));
     
     points.push_back(Point3f(0.0, 49.0, 70.0));
-    /*
+    
     points.push_back(Point3f(0.0, 0.0, 70.0));
     points.push_back(Point3f(0.0, 50.0, 0.0));
     points.push_back(Point3f(70.0, 0.0, 70.0));
-    */
+    
     srand(time(0));
-   /*
+   
     for (int i = 0;i< 1000;i++){
         int x = rand()%3000;
         int y = 100+ rand()%300 - rand()%300;
         int z = rand()%3000;
         points.push_back(Point3f(x,y,z));
-    }*/
+    }
     
 
     
@@ -237,9 +238,10 @@ int test() {
     }
     std::vector<cv::Vec6f> triangleList;
     subdiv.getTriangleList(triangleList);
+
     for (int i = 0;i<triangleList.size();i++){
         Triangle tr;
-        for (int j =0;j<3;j++){
+        for (int j =0;j<6;j+=2){
             tr.points.push_back(Point2d(triangleList.at(i)[j],triangleList.at(i)[j+1]));
         }
         triang.push_back(tr);
@@ -287,6 +289,8 @@ int test() {
         int z = rand()%255;
         vectorColors.push_back(Vec3b(x,y,z));
     }
+    std::cout<< polygon3 << endl;
+
     cv::viz::WMesh trWidget(points, polygon3,vectorColors);
 
     //trWidget.setColor(viz::Color::indigo());
@@ -294,7 +298,9 @@ int test() {
     trWidget.setRenderingProperty(viz::SHADING, viz::SHADING_FLAT);
     trWidget.setRenderingProperty(viz::REPRESENTATION, viz::REPRESENTATION_SURFACE);
 
-    window.showWidget("mesh", trWidget);
+    cv::viz::WMesh trWidget2 = makeMesh(points,vectorColors);
+    window.showWidget("mesh", trWidget2);
+    window.showWidget("mesh2", trWidget);
 
 
     cout << "Triangulation ended" << endl;
