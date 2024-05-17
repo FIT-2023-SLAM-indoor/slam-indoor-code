@@ -22,7 +22,7 @@ void mainCalibrationEntryPoint() {
 			configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN),
 			files, false
 		);
-		chessboardPhotosCalibration(files, 13);
+		chessboardPhotosCalibration(files, 10);
 	}
 	else {
 		chessboardVideoCalibration(VideoCapture(
