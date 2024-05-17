@@ -17,6 +17,13 @@ const int OPTIMAL_DEQUE_SIZE = 8;
 ConfigService configService;
 LogFilesStreams logStreams;
 
+/**
+ * Function for main algorithm
+ * @param mediaInputStruct
+ * @param dataProcessingConditions
+ * @return
+ */
+static GlobalData slamMain(Mat &calibrationMatrix);
 
 int main(int argc, char** argv) {
 
@@ -30,59 +37,26 @@ int main(int argc, char** argv) {
 	}
 #endif
 
-	ChronoTimer timer;
-
 	if (argc < 2) {
 		std::cerr << "Please specify path to JSON-config as the second argument" << std::endl;
 		return 2;
 	}
 
 	configService.setConfigFile(argv[1]);
-	google::InitGoogleLogging("BA");
-
-//	openLogsStreams(logStreams);
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
 		mainCalibrationEntryPoint();
 		return 0;
 	}
 
-	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
-
-	MediaSources mediaInputStruct;
-	DataProcessingConditions dataProcessingConditions;
 	Mat calibrationMatrix;
-	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions, calibrationMatrix);
-
-//	GlobalData globalDataStruct;
-//	std::deque<TemporalImageData> oldTempImageDataDeque;
-//	int lastFrameOfLaunchId = -1;
-//	do {
-//		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
-//		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
-//						     newTempImageDataDeque.at(0));
-//
-//		GlobalData newGlobalData;
-//		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
-//										dataProcessingConditions, newTempImageDataDeque,
-//										newGlobalData);
-//		oldTempImageDataDeque = newTempImageDataDeque;
-//
-//		insertNewGlobalData(globalDataStruct, newGlobalData);
-//	} while (lastFrameOfLaunchId > 0);
-//
-//	rawOutput(globalDataStruct.spatialPoints, logStreams.pointStream);
-//	logStreams.pointStream.flush();
-//	rawOutput(globalDataStruct.spatialPointsColors, logStreams.colorStream);
-//	logStreams.colorStream.flush();
-//
-//	checkGlobalDataStruct(globalDataStruct);
-//
-//	printDivider(logStreams.timeStream);
-//	timer.printStartDelta("Whole time: ", logStreams.timeStream);
-//	closeLogsStreams(logStreams);
-
-	GlobalData globalDataStruct = getGlobalDataFromLogFiles();
+	defineCalibrationMatrix(calibrationMatrix);
+	GlobalData globalDataStruct;
+	if (configService.getValue<bool>(ConfigFieldEnum::ONLY_VIZ)) {
+		globalDataStruct = getGlobalDataFromLogFiles();
+	} else {
+		globalDataStruct = slamMain(calibrationMatrix);
+	}
 
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;
@@ -97,4 +71,45 @@ int main(int argc, char** argv) {
 							  calibrationMatrix);
 
     return 0;
+}
+
+static GlobalData slamMain(Mat &calibrationMatrix) {
+	ChronoTimer timer;
+
+	google::InitGoogleLogging("BA");
+	openLogsStreams(logStreams);
+
+	MediaSources mediaInputStruct;
+	DataProcessingConditions dataProcessingConditions;
+	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions);
+
+	GlobalData globalDataStruct;
+	std::deque<TemporalImageData> oldTempImageDataDeque;
+	int lastFrameOfLaunchId = -1;
+	do {
+		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
+		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
+			newTempImageDataDeque.at(0));
+
+		GlobalData newGlobalData;
+		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
+			dataProcessingConditions, newTempImageDataDeque,
+			newGlobalData);
+		oldTempImageDataDeque = newTempImageDataDeque;
+
+		insertNewGlobalData(globalDataStruct, newGlobalData);
+	} while (lastFrameOfLaunchId > 0);
+
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointStream);
+	logStreams.pointStream.flush();
+	rawOutput(globalDataStruct.spatialPointsColors, logStreams.colorStream);
+	logStreams.colorStream.flush();
+
+	checkGlobalDataStruct(globalDataStruct);
+
+	printDivider(logStreams.timeStream);
+	timer.printStartDelta("Whole time: ", logStreams.timeStream);
+	closeLogsStreams(logStreams);
+
+	return globalDataStruct;
 }

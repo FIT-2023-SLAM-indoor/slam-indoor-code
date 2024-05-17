@@ -14,6 +14,8 @@ typedef struct ConfigFieldPair {
 } ConfigFieldPair;
 
 enum ConfigFieldEnum {
+	ONLY_VIZ,
+
 	CALIBRATE,
 	VISUAL_CALIBRATION,
 	CALIBRATION_PATH,
@@ -77,6 +79,8 @@ enum ConfigFieldEnum {
 };
 
 const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
+		{ONLY_VIZ,                        {"onlyViz",                      BOOL}},
+
 		{CALIBRATE,                       {"calibrate",                    BOOL}},
 		{VISUAL_CALIBRATION,              {"visualCalibration",            BOOL}},
 		{CALIBRATION_PATH,                {"calibrationPath",              STRING}},

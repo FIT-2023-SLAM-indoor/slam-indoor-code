@@ -77,12 +77,10 @@ static void defineDistortionCoeffs(Mat &distortionCoeffs) {
 
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &calibrationMatrix)
-{
+    DataProcessingConditions &dataProcessingConditions
+) {
     defineMediaSources(mediaInputStruct);
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
-    defineCalibrationMatrix(calibrationMatrix);
 
     dataProcessingConditions.featureExtractingThreshold =
         configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);

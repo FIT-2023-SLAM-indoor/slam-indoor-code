@@ -12,12 +12,10 @@ using namespace cv;
  *
  * @param [out] mediaInputStruct так называемый интерефейс для универсальной работы с медиа
  * @param [out] dataProcessingConditions
- * @param [out] calibrationMatrix
  */
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions,
-    Mat &calibrationMatrix
+    DataProcessingConditions &dataProcessingConditions
 );
 
 /**
