@@ -39,7 +39,8 @@ int main(int argc, char** argv) {
 
 	configService.setConfigFile(argv[1]);
 	google::InitGoogleLogging("BA");
-	openLogsStreams();
+
+//	openLogsStreams(logStreams);
 
 	if (configService.getValue<bool>(ConfigFieldEnum::CALIBRATE)) {
 		mainCalibrationEntryPoint();
@@ -52,45 +53,48 @@ int main(int argc, char** argv) {
 	DataProcessingConditions dataProcessingConditions;
 	Mat calibrationMatrix;
 	defineProcessingEnvironment(mediaInputStruct, dataProcessingConditions, calibrationMatrix);
-	
-	GlobalData globalDataStruct;
-	std::deque<TemporalImageData> oldTempImageDataDeque;
-	int lastFrameOfLaunchId = -1;
-	do {
-		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
-		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
-						     newTempImageDataDeque.at(0));
 
-		GlobalData newGlobalData;
-		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
-										dataProcessingConditions, newTempImageDataDeque,
-										newGlobalData);
-		oldTempImageDataDeque = newTempImageDataDeque;
+//	GlobalData globalDataStruct;
+//	std::deque<TemporalImageData> oldTempImageDataDeque;
+//	int lastFrameOfLaunchId = -1;
+//	do {
+//		std::deque<TemporalImageData> newTempImageDataDeque(OPTIMAL_DEQUE_SIZE);
+//		defineCameraPosition(oldTempImageDataDeque, lastFrameOfLaunchId,
+//						     newTempImageDataDeque.at(0));
+//
+//		GlobalData newGlobalData;
+//		lastFrameOfLaunchId = mainCycle(mediaInputStruct, calibrationMatrix,
+//										dataProcessingConditions, newTempImageDataDeque,
+//										newGlobalData);
+//		oldTempImageDataDeque = newTempImageDataDeque;
+//
+//		insertNewGlobalData(globalDataStruct, newGlobalData);
+//	} while (lastFrameOfLaunchId > 0);
+//
+//	rawOutput(globalDataStruct.spatialPoints, logStreams.pointStream);
+//	logStreams.pointStream.flush();
+//	rawOutput(globalDataStruct.spatialPointsColors, logStreams.colorStream);
+//	logStreams.colorStream.flush();
+//
+//	checkGlobalDataStruct(globalDataStruct);
+//
+//	printDivider(logStreams.timeStream);
+//	timer.printStartDelta("Whole time: ", logStreams.timeStream);
+//	closeLogsStreams(logStreams);
 
-		insertNewGlobalData(globalDataStruct, newGlobalData);
-	} while (lastFrameOfLaunchId > 0);
-
-	rawOutput(globalDataStruct.spatialPoints, logStreams.pointStream);
-	logStreams.pointStream.flush();
-	rawOutput(globalDataStruct.spatialPointsColors, logStreams.colorStream);
-	logStreams.colorStream.flush();
-
-	checkGlobalDataStruct(globalDataStruct);
-
-	printDivider(logStreams.timeStream);
-	timer.printStartDelta("Whole time: ", logStreams.timeStream);
+	GlobalData globalDataStruct = getGlobalDataFromLogFiles();
 
 	// Kostil for Points3f in visualizer
 	std::vector<Point3f> convertedSpatialPoints;
 	for (auto point : globalDataStruct.spatialPoints)
 		convertedSpatialPoints.push_back(Point3f(point));
 
+
 	vizualizePointsAndCameras(convertedSpatialPoints,
 							  globalDataStruct.cameraRotations,
 							  globalDataStruct.spatialCameraPositions,
 							  globalDataStruct.spatialPointsColors,
 							  calibrationMatrix);
-	closeLogsStreams();
 
     return 0;
 }

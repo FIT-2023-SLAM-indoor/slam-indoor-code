@@ -7,30 +7,30 @@
 
 #include "IOmisc.h"
 
-void openLogsStreams() {
+void openLogsStreams(LogFilesStreams &streams, std::_Ios_Openmode mode) {
 	char tmp[256] = "";
 	std::string path = configService.getValue<std::string>(ConfigFieldEnum::OUTPUT_DATA_DIR);
 	sprintf(tmp, "%s/main.txt", path.c_str());
-	logStreams.mainReportStream.open(tmp);
+	streams.mainReportStream.open(tmp, mode);
 	sprintf(tmp, "%s/points.txt", path.c_str());
-	logStreams.pointStream.open(tmp);
+	streams.pointStream.open(tmp, mode);
 	sprintf(tmp, "%s/colors.txt", path.c_str());
-	logStreams.colorStream.open(tmp);
+	streams.colorStream.open(tmp, mode);
 	sprintf(tmp, "%s/poses.txt", path.c_str());
-	logStreams.poseStream.open(tmp);
+	streams.poseStream.open(tmp, mode);
 	sprintf(tmp, "%s/rotations.txt", path.c_str());
-	logStreams.rotationStream.open(tmp);
+	streams.rotationStream.open(tmp, mode);
 	sprintf(tmp, "%s/time.txt", path.c_str());
-	logStreams.timeStream.open(tmp);
+	streams.timeStream.open(tmp, mode);
 }
 
-void closeLogsStreams() {
-	logStreams.mainReportStream.close();
-	logStreams.pointStream.close();
-	logStreams.colorStream.close();
-	logStreams.poseStream.close();
-	logStreams.rotationStream.close();
-	logStreams.timeStream.close();
+void closeLogsStreams(LogFilesStreams &streams) {
+	streams.mainReportStream.close();
+	streams.pointStream.close();
+	streams.colorStream.close();
+	streams.poseStream.close();
+	streams.rotationStream.close();
+	streams.timeStream.close();
 }
 
 void sortGlobs(std::vector<String> &paths) {
@@ -85,7 +85,7 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String &matrixK
     fs[matrixKey] >> matrix;
 }
 
-void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
+void rawOutput(const Mat &matrix, std::fstream &fileStream) {
     if (!fileStream.is_open()) {
         std::cerr << "Error: stream of file is not opened" << std::endl;
         exit(-1);
@@ -108,24 +108,71 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
     }
 }
 
-void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream) {
+void rawOutput(const SpatialPointsVector &vector, std::fstream &fileStream) {
 	Mat pointsMat = Mat(vector);
 	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
 	rawOutput(pointsMat, fileStream);
 }
 
-void rawOutput(const std::vector<Vec3b> &vector, std::ofstream &fileStream) {
+void rawOutput(const std::vector<Vec3b> &vector, std::fstream &fileStream) {
 	Mat colorsMat = Mat(vector);
 	colorsMat.reshape(1).convertTo(colorsMat, CV_64F);
 	rawOutput(colorsMat, fileStream);
 }
 
-void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream) {
+void rawOutput(const std::vector<Point3f> &vector, std::fstream &fileStream) {
 	Mat pointsMat = Mat(vector);
 	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
 	rawOutput(pointsMat, fileStream);
 }
 
-void printDivider(std::ofstream &stream) {
+void printDivider(std::fstream &stream) {
 	stream << std::endl << "================================================================\n" << std::endl;
+}
+
+GlobalData getGlobalDataFromLogFiles() {
+	GlobalData globalData;
+	LogFilesStreams inputLogStreams;
+	openLogsStreams(inputLogStreams, std::ios_base::in);
+	while (!inputLogStreams.poseStream.eof()) {
+		double x, y, z;
+		inputLogStreams.poseStream >> x >> y >> z;
+		if (inputLogStreams.poseStream.eof())
+			break;
+		Mat pose = (Mat_<double>(1, 3) << x, y, z);
+		globalData.spatialCameraPositions.push_back(pose.clone().t());
+
+		double rData[9] = {};
+		for (int i = 0; i < 9; ++i)
+			inputLogStreams.rotationStream >> rData[i];
+		Mat rotation(3, 3, CV_64F, rData);
+		globalData.cameraRotations.push_back(rotation.clone());
+	}
+	if (globalData.cameraRotations.size() != globalData.spatialCameraPositions.size()) {
+		std::cerr << "Count of rotations and translations must be equal" << std::endl;
+		std::cerr << "Actual rotations count: " << globalData.cameraRotations.size() << std::endl;
+		std::cerr << "Actual translations count: " << globalData.spatialCameraPositions.size() << std::endl;
+		throw std::exception();
+	}
+	while (!inputLogStreams.pointStream.eof()) {
+		Point3d p;
+		inputLogStreams.pointStream >> p.x >> p.y >> p.z;
+		if (inputLogStreams.pointStream.eof())
+			break;
+		globalData.spatialPoints.push_back(p);
+
+		double r, g, b;
+		inputLogStreams.colorStream >> r >> g >> b;
+		Vec3b color((uchar) r, (uchar) g, (uchar) b);
+		globalData.spatialPointsColors.push_back(color);
+	}
+	if (globalData.spatialPoints.size() != globalData.spatialPointsColors.size()) {
+		std::cerr << "Count of points and their colors must be equal" << std::endl;
+		std::cerr << "Actual points count: " << globalData.spatialPoints.size() << std::endl;
+		std::cerr << "Actual colors count: " << globalData.spatialPointsColors.size() << std::endl;
+		throw std::exception();
+	}
+	closeLogsStreams(inputLogStreams);
+
+	return globalData;
 }
