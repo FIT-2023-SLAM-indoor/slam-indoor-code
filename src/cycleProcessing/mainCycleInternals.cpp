@@ -264,12 +264,7 @@ void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData) 
 
 
 void checkGlobalDataStruct(GlobalData &globalDataStruct) {
-    if (
-        globalDataStruct.cameraRotations.size() == 0 ||
-        globalDataStruct.spatialCameraPositions.size() == 0 ||
-        globalDataStruct.spatialPoints.size() == 0 ||
-        globalDataStruct.spatialPointsColors.size() == 0
-    ) {
+    if (globalDataStruct.spatialPoints.empty()) {
         logStreams.mainReportStream << "Couldn't process image sequence. Too little data.\n";
         logStreams.mainReportStream.flush();
         exit(-1);

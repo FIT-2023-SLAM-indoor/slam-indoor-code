@@ -70,8 +70,10 @@ int main(int argc, char** argv) {
 		insertNewGlobalData(globalDataStruct, newGlobalData);
 	} while (lastFrameOfLaunchId > 0);
 
-	rawOutput(globalDataStruct.spatialPoints, logStreams.pointsStream);
-	logStreams.pointsStream.flush();
+	rawOutput(globalDataStruct.spatialPoints, logStreams.pointStream);
+	logStreams.pointStream.flush();
+	rawOutput(globalDataStruct.spatialPointsColors, logStreams.colorStream);
+	logStreams.colorStream.flush();
 
 	checkGlobalDataStruct(globalDataStruct);
 

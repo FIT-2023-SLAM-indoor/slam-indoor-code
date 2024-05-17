@@ -9,10 +9,11 @@ using namespace cv;
 
 typedef struct LogFilesStreams {
 	std::ofstream mainReportStream;
-	std::ofstream pointsStream;
+	std::ofstream pointStream;
+	std::ofstream colorStream;
 	std::ofstream poseStream;
+	std::ofstream rotationStream;
 	std::ofstream timeStream;
-	std::ofstream extractedMatchedTable;
 } LogFilesStreams;
 
 extern LogFilesStreams logStreams;
@@ -83,6 +84,14 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream);
  * @param [out] fileStream
  */
 void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream);
+
+/**
+ * Works as function above but at first converts vector of vec3b to matrix.
+ *
+ * @param [in] vector
+ * @param [out] fileStream
+ */
+void rawOutput(const std::vector<Vec3b> &vector, std::ofstream &fileStream);
 
 /**
  * Works as function above but at first converts vector to matrix.

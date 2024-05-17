@@ -13,20 +13,24 @@ void openLogsStreams() {
 	sprintf(tmp, "%s/main.txt", path.c_str());
 	logStreams.mainReportStream.open(tmp);
 	sprintf(tmp, "%s/points.txt", path.c_str());
-	logStreams.pointsStream.open(tmp);
-	sprintf(tmp, "%s/pose.txt", path.c_str());
+	logStreams.pointStream.open(tmp);
+	sprintf(tmp, "%s/colors.txt", path.c_str());
+	logStreams.colorStream.open(tmp);
+	sprintf(tmp, "%s/poses.txt", path.c_str());
 	logStreams.poseStream.open(tmp);
+	sprintf(tmp, "%s/rotations.txt", path.c_str());
+	logStreams.rotationStream.open(tmp);
 	sprintf(tmp, "%s/time.txt", path.c_str());
 	logStreams.timeStream.open(tmp);
-	sprintf(tmp, "%s/extractedMatched.csv", path.c_str());
-	logStreams.extractedMatchedTable.open(tmp);
 }
 
 void closeLogsStreams() {
 	logStreams.mainReportStream.close();
-	logStreams.pointsStream.close();
+	logStreams.pointStream.close();
+	logStreams.colorStream.close();
 	logStreams.poseStream.close();
-	logStreams.extractedMatchedTable.close();
+	logStreams.rotationStream.close();
+	logStreams.timeStream.close();
 }
 
 void sortGlobs(std::vector<String> &paths) {
@@ -81,31 +85,25 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String &matrixK
     fs[matrixKey] >> matrix;
 }
 
-
 void rawOutput(const Mat &matrix, std::ofstream &fileStream) {
-    // Check if the file stream is opened
     if (!fileStream.is_open()) {
         std::cerr << "Error: stream of file is not opened" << std::endl;
         exit(-1);
     }
 
-    // Write into file every matrix element
     for (int row_id = 0; row_id < matrix.rows; row_id++) {
         for (int col_id = 0; col_id < matrix.cols; col_id++) {
             fileStream << std::fixed << std::setprecision(12) << matrix.at<double>(row_id, col_id);
-            // If it wasn't the last element in a current row
             if (col_id < matrix.cols - 1) {
                 fileStream << " ";
             }
         }
         fileStream << "\n";
         
-        // Check if an error occurred during writing
         if (fileStream.bad()) {
             std::cerr << "Something went wrong during writing in stream" << std::endl;
             exit(-1);
         }
-        // Flush the stream to ensure data is written immediately
         fileStream.flush();
     }
 }
@@ -116,29 +114,16 @@ void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream) {
 	rawOutput(pointsMat, fileStream);
 }
 
+void rawOutput(const std::vector<Vec3b> &vector, std::ofstream &fileStream) {
+	Mat colorsMat = Mat(vector);
+	colorsMat.reshape(1).convertTo(colorsMat, CV_64F);
+	rawOutput(colorsMat, fileStream);
+}
+
 void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream) {
 	Mat pointsMat = Mat(vector);
 	pointsMat.reshape(1).convertTo(pointsMat, CV_64F);
 	rawOutput(pointsMat, fileStream);
-}
-
-void rawOutput(const Mat &matrix, const String &path, const char mode) {
-    // Try to open file with received path
-    std::ofstream fileStream;
-    if (mode == 'a') {
-        fileStream.open(path, std::ios_base::app);
-    } else if (mode == 'w') {
-        fileStream.open(path);
-    }
-    if (!fileStream.is_open()) {
-        std::cerr << "Failed to open or create file with path: " << path << std::endl;
-        exit(-1);
-    }
-
-    // Write into file every matrix element
-    rawOutput(matrix, fileStream);
-
-    fileStream.close();
 }
 
 void printDivider(std::ofstream &stream) {

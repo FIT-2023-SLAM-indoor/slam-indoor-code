@@ -99,7 +99,9 @@ int mainCycle(
 	logStreams.mainReportStream << temporalImageDataDeque.at(1).rotation << std::endl;
 	logStreams.mainReportStream << temporalImageDataDeque.at(1).motion.t() << std::endl;
 	rawOutput(temporalImageDataDeque.at(0).motion.t(), logStreams.poseStream);
+	rawOutput(temporalImageDataDeque.at(0).rotation, logStreams.rotationStream);
 	rawOutput(temporalImageDataDeque.at(1).motion.t(), logStreams.poseStream);
+	rawOutput(temporalImageDataDeque.at(1).rotation, logStreams.rotationStream);
 	logStreams.mainReportStream.flush();
 	logStreams.poseStream.flush();
 
@@ -165,7 +167,12 @@ int mainCycle(
         logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).rotation << std::endl;
         logStreams.mainReportStream << temporalImageDataDeque.at(lastFrameIdx+1).motion.t() << std::endl;
         logStreams.mainReportStream.flush();
-        rawOutput(temporalImageDataDeque.at(lastFrameIdx+1).motion.t(), logStreams.poseStream);
+		rawOutput(temporalImageDataDeque.at(lastFrameIdx + 1).motion.t(),
+			logStreams.poseStream
+		);
+		rawOutput(temporalImageDataDeque.at(lastFrameIdx + 1).rotation,
+			logStreams.rotationStream
+		);
         logStreams.poseStream.flush();
 
         // Get matched point coordinates for reconstruction
