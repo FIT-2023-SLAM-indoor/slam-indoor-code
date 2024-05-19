@@ -59,4 +59,6 @@ struct GlobalData {
 typedef struct BatchElement {
 	Mat frame;
 	std::vector<KeyPoint> features;
+	std::vector<DMatch> matches;
+	bool estimated;
 } BatchElement;
