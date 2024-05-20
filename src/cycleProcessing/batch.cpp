@@ -32,8 +32,6 @@ static int fillVideoFrameBatch(
 static int findGoodFrameFromMatchedBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
-	std::vector<bool> &isMatchesEstimated,
-	std::vector<std::vector<DMatch>> &estimatedMatches,
 	Mat &previousFrame, Mat &newGoodFrame,
 	std::vector<KeyPoint> &previousFeatures,
 	std::vector<KeyPoint> &newFeatures,
@@ -119,35 +117,31 @@ static int findGoodFramesFromBatchSingleThread(
 	std::vector<KeyPoint> goodFeatures;
 	std::vector<DMatch> goodMatches;
 	int goodIndex = FRAME_NOT_FOUND;
-	Mat candidateFrame;
-	std::vector<KeyPoint> candidateFrameFeatures;
-	std::vector<DMatch> candidateMatches;
 	for (
 		int batchIndex = currentBatchSz - 1;
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
 	) {
-		candidateFrame = currentBatch.at(batchIndex).frame.clone();
-		candidateFrameFeatures = currentBatch.at(batchIndex).features;
+		BatchElement &element = currentBatch.at(batchIndex);
 
 		matchFramesPairFeatures(
-			previousDescriptor, candidateFrame, candidateFrameFeatures,
-			dataProcessingConditions.matcherType, candidateMatches
+			previousDescriptor, element.frame, element.features,
+			dataProcessingConditions.matcherType, element.matches
 		);
 
 		logStreams.mainReportStream << "Batch index: " << batchIndex
-									<< "; curr. extracted: " << candidateFrameFeatures.size()
-									<< "; matched " << candidateMatches.size() << std::endl;
+									<< "; curr. extracted: " << element.features.size()
+									<< "; matched " << element.matches.size() << std::endl;
 
 		if (
-			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
-			&& candidateMatches.size() >= goodMatches.size()
+			element.matches.size() >= dataProcessingConditions.requiredMatchedPointsCount
+			&& element.matches.size() >= goodMatches.size()
 		) {
 			logStreams.mainReportStream << "Frame " << batchIndex << " is a good" << std::endl;
 			goodIndex = batchIndex;
-			goodFrame = candidateFrame.clone();
-			goodFeatures = candidateFrameFeatures;
-			goodMatches = candidateMatches;
+			goodFrame = element.frame.clone();
+			goodFeatures = element.features;
+			goodMatches = element.matches;
 			if (dataProcessingConditions.useFirstFitInBatch)
 				break;
 		}
@@ -178,10 +172,8 @@ static int findGoodFramesFromBatchMultiThreads(
 
 	int threadsCnt = dataProcessingConditions.threadsCount;
 	std::vector<std::thread> threads;
-	std::vector<bool> isMatchesEstimated(currentBatchSz, false);
 	volatile bool threadsShouldDie = false;
 
-	std::vector<std::vector<DMatch>> estimatedMatches(currentBatchSz, std::vector<DMatch>());
 	Mat previousDescriptor;
 	extractDescriptor(previousFrame, previousFeatures,
 		dataProcessingConditions.matcherType, previousDescriptor);
@@ -197,10 +189,10 @@ static int findGoodFramesFromBatchMultiThreads(
 				BatchElement &element = currentBatch.at(batchIndex);
 				matchFramesPairFeatures(
 					previousDescriptor, element.frame, element.features,
-					dataProcessingConditions.matcherType, estimatedMatches.at(batchIndex)
+					dataProcessingConditions.matcherType, element.matches
 				);
-				isMatchesEstimated.at(batchIndex) = true;
-				std::cout << "Finish: " << batchIndex << std::endl;
+				element.estimated = true;
+				std::cout << "Finish: " << batchIndex << "; matched: " << element.matches.size() << std::endl;
 				this_thread::yield();
 				if (threadsShouldDie)
 					break;
@@ -213,7 +205,7 @@ static int findGoodFramesFromBatchMultiThreads(
 
 	int goodIndex = findGoodFrameFromMatchedBatch(
 		dataProcessingConditions,
-		currentBatch, isMatchesEstimated, estimatedMatches,
+		currentBatch,
 		previousFrame, newGoodFrame,
 		previousFeatures, newFeatures,
 		matches
@@ -261,7 +253,9 @@ static int fillVideoFrameBatch(
 		logStreams.mainReportStream << nextFeatures.size() << " ";
 		currentBatch.push_back({
 			nextFrame.clone(),
-			nextFeatures
+			nextFeatures,
+			std::vector<DMatch>(),
+			false
 		});
 		currentFrameBatchSize++;
 	}
@@ -276,8 +270,6 @@ static int fillVideoFrameBatch(
 static int findGoodFrameFromMatchedBatch(
 	const DataProcessingConditions &dataProcessingConditions,
 	std::vector<BatchElement> &currentBatch,
-	std::vector<bool> &isMatchesEstimated,
-	std::vector<std::vector<DMatch>> &estimatedMatches,
 	Mat &previousFrame, Mat &newGoodFrame,
 	std::vector<KeyPoint> &previousFeatures,
 	std::vector<KeyPoint> &newFeatures,
@@ -288,32 +280,27 @@ static int findGoodFrameFromMatchedBatch(
 	std::vector<KeyPoint> goodFeatures;
 	std::vector<DMatch> goodMatches;
 	int goodIndex = FRAME_NOT_FOUND;
-	Mat candidateFrame;
-	std::vector<KeyPoint> candidateFrameFeatures;
-	std::vector<DMatch> candidateMatches;
 	for (
 		int batchIndex = batchSz - 1;
 		batchIndex >= dataProcessingConditions.skipFramesFromBatchHead;
 		batchIndex--
 	) {
-		while (!isMatchesEstimated.at(batchIndex));
-		candidateFrame = currentBatch.at(batchIndex).frame.clone();
-		candidateFrameFeatures = currentBatch.at(batchIndex).features;
-		candidateMatches = estimatedMatches.at(batchIndex);
+		while (!currentBatch.at(batchIndex).estimated);
+		BatchElement &element = currentBatch.at(batchIndex);
 
 		logStreams.mainReportStream << "Batch index: " << batchIndex
-									<< "; curr. extracted: " << candidateFrameFeatures.size()
-									<< "; matched " << candidateMatches.size() << std::endl;
+									<< "; curr. extracted: " << element.features.size()
+									<< "; matched " << element.matches.size() << std::endl;
 
 		if (
-			candidateMatches.size() >= dataProcessingConditions.requiredMatchedPointsCount
-			&& candidateMatches.size() >= goodMatches.size()
+			element.matches.size() >= dataProcessingConditions.requiredMatchedPointsCount
+			&& element.matches.size() >= goodMatches.size()
 		) {
 			logStreams.mainReportStream << "Frame " << batchIndex << " is a good" << std::endl;
 			goodIndex = batchIndex;
-			goodFrame = candidateFrame.clone();
-			goodFeatures = candidateFrameFeatures;
-			goodMatches = candidateMatches;
+			goodFrame = element.frame.clone();
+			goodFeatures = element.features;
+			goodMatches = element.matches;
 			if (dataProcessingConditions.useFirstFitInBatch)
 				break;
 		}

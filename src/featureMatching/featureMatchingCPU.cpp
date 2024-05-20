@@ -37,11 +37,7 @@ static void matchFeatures(
 		throw std::exception();
 	}
 
-	std::cout << "START KNN MATCHING\n";
-
 	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
-
-	std::cout << "KNN MATCHED\n";
 
 	getGoodMatches(allMatches,matches);
 }

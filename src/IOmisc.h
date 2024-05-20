@@ -8,12 +8,12 @@
 using namespace cv;
 
 typedef struct LogFilesStreams {
-	std::ofstream mainReportStream;
-	std::ofstream pointStream;
-	std::ofstream colorStream;
-	std::ofstream poseStream;
-	std::ofstream rotationStream;
-	std::ofstream timeStream;
+	std::fstream mainReportStream;
+	std::fstream pointStream;
+	std::fstream colorStream;
+	std::fstream poseStream;
+	std::fstream rotationStream;
+	std::fstream timeStream;
 } LogFilesStreams;
 
 extern LogFilesStreams logStreams;
@@ -21,12 +21,12 @@ extern LogFilesStreams logStreams;
 /**
  * Opens streams for fields of LogFilesStreams' global structure.
  */
-void openLogsStreams();
+void openLogsStreams(LogFilesStreams &streams, std::_Ios_Openmode mode = std::ios_base::out);
 
 /**
  * Closes streams for fields of LogFilesStreams' global structure.
  */
-void closeLogsStreams();
+void closeLogsStreams(LogFilesStreams &streams);
 
 /**
  * Sorts files photos paths by its numbers.
@@ -75,7 +75,7 @@ void loadMatrixFromXML(const char *pathToXML, Mat &matrix, const String& matrixK
  *
  * @throws std::runtime_error if the file stream is not opened or if an error occurs during writing.
  */
-void rawOutput(const Mat &matrix, std::ofstream &fileStream);
+void rawOutput(const Mat &matrix, std::fstream &fileStream);
 
 /**
  * Works as function above but at first converts vector to matrix.
@@ -83,7 +83,7 @@ void rawOutput(const Mat &matrix, std::ofstream &fileStream);
  * @param [in] vector
  * @param [out] fileStream
  */
-void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream);
+void rawOutput(const SpatialPointsVector &vector, std::fstream &fileStream);
 
 /**
  * Works as function above but at first converts vector of vec3b to matrix.
@@ -91,7 +91,7 @@ void rawOutput(const SpatialPointsVector &vector, std::ofstream &fileStream);
  * @param [in] vector
  * @param [out] fileStream
  */
-void rawOutput(const std::vector<Vec3b> &vector, std::ofstream &fileStream);
+void rawOutput(const std::vector<Vec3b> &vector, std::fstream &fileStream);
 
 /**
  * Works as function above but at first converts vector to matrix.
@@ -99,7 +99,7 @@ void rawOutput(const std::vector<Vec3b> &vector, std::ofstream &fileStream);
  * @param [in] vector
  * @param [out] fileStream
  */
-void rawOutput(const std::vector<Point3f> &vector, std::ofstream &fileStream);
+void rawOutput(const std::vector<Point3f> &vector, std::fstream &fileStream);
 
 /**
  * Writes the elements of a given matrix to a file at the specified path.
@@ -117,4 +117,6 @@ void rawOutput(const Mat &matrix, const String &path, const char mode='a');
  *
  * @param stream output stream
  */
-void printDivider(std::ofstream &stream);
+void printDivider(std::fstream &stream);
+
+GlobalData getGlobalDataFromLogFiles();
