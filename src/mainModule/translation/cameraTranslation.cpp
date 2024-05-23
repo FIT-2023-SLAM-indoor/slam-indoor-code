@@ -3,9 +3,9 @@
 #include <opencv2/calib3d.hpp>
 #include <opencv2/core/hal/hal.hpp>
 
-#include "cameraTransition.h"
-#include "config/config.h"
-#include "IOmisc.h"
+#include "cameraTranslation.h"
+#include "../../config/config.h"
+#include "../../misc/IOmisc.h"
 
 using namespace cv;
 

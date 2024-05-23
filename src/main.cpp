@@ -3,12 +3,12 @@
 
 #include "config/config.h"
 #include "misc/ChronoTimer.h"
-#include "IOmisc.h"
-#include "cameraCalibration.h"
+#include "misc/IOmisc.h"
+#include "calibration/cameraCalibration.h"
 
-#include "cycleProcessing/mainCycle.h"
-#include "cycleProcessing/mainCycleInternals.h"
-#include "vizualizationModule.h"
+#include "mainModule//cycleProcessing/mainCycle.h"
+#include "mainModule/cycleProcessing/mainCycleInternals.h"
+#include "vizualization/vizualizationModule.h"
 
 using namespace cv;
 

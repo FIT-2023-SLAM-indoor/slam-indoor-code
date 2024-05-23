@@ -2,8 +2,11 @@
 #include <opencv2/viz.hpp>
 #include "vizualizationModule.h"
 #include "delauney-triangulation/bestFittingPlane.h"
+
 using namespace cv;
+
 double speed = 0.5;
+
 void vizualizeOnlyPoints(
     std::vector<Point3f>& spatialPoints,
     std::vector<Vec3b>& colors)
@@ -27,6 +30,7 @@ viz::WCloud getPointCloudFromPoints(
     viz::WCloud cloud_widget(point_cloud_est, viz::Color::green());
     return cloud_widget;
 }
+
 viz::Viz3d makeWindow()
 {
     viz::Viz3d window("Coordinate Frame");
@@ -34,6 +38,7 @@ viz::Viz3d makeWindow()
     window.setBackgroundColor(viz::Color(200, 200, 200));
     return window;
 }
+
 void vizualizeCameras(
     viz::Viz3d& window,
     std::vector<Mat>& rotations,
@@ -49,6 +54,7 @@ void vizualizeCameras(
     window.setViewerPose(path[0]);
 
 }
+
 void vizualizePointsAndCameras(
     std::vector<Point3f>& spatialPoints,
     std::vector<Mat>& rotations,
@@ -75,6 +81,7 @@ void vizualizePointsAndCameras(
     */
     startWindowSpin(window);
 }
+
 void startWindowSpin(
     viz::Viz3d& window)
 {

@@ -2,14 +2,14 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include "../cameraCalibration.h"
-#include "../cameraTransition.h"
-#include "../fastExtractor.h"
+#include "../../calibration/cameraCalibration.h"
+#include "../translation/cameraTranslation.h"
+#include "../featureExtraction/fastExtractor.h"
 #include "../featureMatching/featureMatching.h"
 #include "../featureMatching/featureMatchingCommon.h"
-#include "../IOmisc.h"
+#include "../../misc/IOmisc.h"
 
-#include "../config/config.h"
+#include "../../config/config.h"
 
 #include "mainCycleInternals.h"
 #include "mainCycleStructures.h"

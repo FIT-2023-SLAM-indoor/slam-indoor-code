@@ -1,7 +1,9 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
+
 using namespace cv;
+
 /*
     Vizualize only points with no trajectory of cameras.
     If you dont need points colors you need to give this function an empty colors vector.

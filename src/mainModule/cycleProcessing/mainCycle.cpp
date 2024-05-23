@@ -1,15 +1,15 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include "../cameraTransition.h"
+#include "../translation/cameraTranslation.h"
 #include "../featureMatching/featureMatching.h"
 #include "../featureMatching/featureMatchingCommon.h"
-#include "../triangulate.h"
-#include "../IOmisc.h"
-#include "../misc/ChronoTimer.h"
+#include "../triangulation/triangulate.h"
+#include "../../misc/IOmisc.h"
+#include "../../misc/ChronoTimer.h"
 #include "../bundleAdjustment/bundleAdjustment.h"
 
-#include "../config/config.h"
+#include "../../config/config.h"
 
 #include "mainCycle.h"
 #include "mainCycleInternals.h"

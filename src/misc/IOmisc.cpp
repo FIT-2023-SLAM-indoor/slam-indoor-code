@@ -2,8 +2,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "config/config.h"
-#include "./cycleProcessing/mainCycleStructures.h"
+#include "../config/config.h"
+#include "../mainModule//cycleProcessing/mainCycleStructures.h"
 
 #include "IOmisc.h"
 

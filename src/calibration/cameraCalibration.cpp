@@ -6,8 +6,8 @@
 #include <ctime>
 #include <iostream>
 
-#include "config/config.h"
-#include "IOmisc.h"
+#include "../config/config.h"
+#include "../misc/IOmisc.h"
 
 #include "cameraCalibration.h"
 

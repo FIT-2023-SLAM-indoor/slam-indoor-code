@@ -1,8 +1,8 @@
 #include "thread"
 
-#include "../misc/ChronoTimer.h"
-#include "../IOmisc.h"
-#include "../fastExtractor.h"
+#include "../../misc/ChronoTimer.h"
+#include "../../misc/IOmisc.h"
+#include "../featureExtraction/fastExtractor.h"
 
 #include "../featureMatching/featureMatching.h"
 
