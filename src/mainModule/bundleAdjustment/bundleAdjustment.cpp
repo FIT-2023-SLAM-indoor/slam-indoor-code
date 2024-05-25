@@ -4,9 +4,9 @@
 #include "ceres/rotation.h"
 #include "ceres/autodiff_cost_function.h"
 
-#include "../config/config.h"
+#include "../../config/config.h"
 #include "../cycleProcessing/mainCycleStructures.h"
-#include "../IOmisc.h"
+#include "../../misc/IOmisc.h"
 
 #include "bundleAdjustment.h"
 

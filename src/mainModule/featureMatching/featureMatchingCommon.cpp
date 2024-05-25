@@ -1,11 +1,11 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include "../misc/ChronoTimer.h"
+#include "../../misc/ChronoTimer.h"
 
 #include <opencv2/highgui.hpp>
 
-#include "../config/config.h"
+#include "../../config/config.h"
 
 #include "featureMatchingCommon.h"
 

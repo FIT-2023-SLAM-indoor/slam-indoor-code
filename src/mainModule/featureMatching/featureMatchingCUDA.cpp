@@ -1,44 +1,47 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core.hpp>
 
-#include "../misc/ChronoTimer.h"
+#include "../../misc/IOmisc.h"
+#include "../../misc/ChronoTimer.h"
 
 #include "featureMatching.h"
 #include "featureMatchingCommon.h"
 
+#ifdef USE_CUDA
+#include <opencv2/core/cuda.hpp>
+#include "opencv2/cudafeatures2d.hpp"
+#include "opencv2/cudaimgproc.hpp"
+#endif
+
 using namespace cv;
 
-/*
-* @param prevDesc [in]
-* @param curDesc [in]
-* @param matches [out]
-* @param matcherType [in] matcher type: 0 - sift_bf, 1 - sift_flann, 2 - orb_bf
-*/
+#ifdef USE_CUDA
 static void matchFeatures(
-	Mat& prevDesc, 
-	Mat& curDesc, 
+	cuda::GpuMat& prevDesc,
+	cuda::GpuMat& curDesc,
 	std::vector<DMatch>& matches,
 	int extractorType
 ) {
-	std::vector<std::vector<DMatch>> allMatches;
-
-	Ptr<DescriptorMatcher> matcher;
+	Ptr<cuda::DescriptorMatcher> matcher;
 	switch (extractorType) {
-	case SIFT_BF:
-		matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE);
-		break;
-	case SIFT_FLANN:
-		matcher = DescriptorMatcher::create(DescriptorMatcher::FLANNBASED);
-		break;
-	case ORB_BF:
-		matcher = DescriptorMatcher::create(DescriptorMatcher::BRUTEFORCE_HAMMING);
-		break;
-	default:
-		throw std::exception();
+		case SIFT_BF:
+			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L1);
+			break;
+		case SIFT_FLANN:
+			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_L2);
+			break;
+		case ORB_BF:
+			matcher = cuda::DescriptorMatcher::createBFMatcher(cv::NORM_HAMMING);
+			break;
+		default:
+			throw std::exception();
 	}
 
-	matcher->knnMatch(prevDesc, curDesc, allMatches, 2);
+	cuda::GpuMat allMatchesGpu;
+	matcher->knnMatchAsync(prevDesc, curDesc, allMatchesGpu, 2);
 
+	std::vector<std::vector<DMatch>> allMatches;
+	matcher->knnMatchConvert(allMatchesGpu, allMatches);
 	getGoodMatches(allMatches,matches);
 }
 
@@ -73,7 +76,7 @@ void matchFramesPairFeatures(
 	int matcherType,
 	std::vector<DMatch>& matches
 ) {
-	// Extract descriptors from the key points of the input frames
+	ChronoTimer timer;
 	Mat firstDescriptor;
 	extractDescriptor(firstFrame, firstFeatures,
 		matcherType, firstDescriptor);
@@ -87,10 +90,20 @@ void matchFramesPairFeatures(
 	int matcherType,
 	std::vector<DMatch>& matches
 ) {
+	ChronoTimer timer;
 	Mat secondDescriptor;
 	extractDescriptor(secondFrame, secondFeatures,
 		matcherType, secondDescriptor);
 
-	matchFeatures(firstFrameDescriptor, secondDescriptor, matches,
+	cuda::GpuMat firstDescriptorGpu(firstFrameDescriptor);
+	cuda::GpuMat secondDescriptorGpu(secondDescriptor);
+
+	timer.printLastPointDelta("Descriptors extracting: ", logStreams.timeStream);
+	timer.updateLastPoint();
+
+	matchFeatures(firstDescriptorGpu, secondDescriptorGpu, matches,
 		matcherType);
+
+	timer.printLastPointDelta("Matching: ", logStreams.timeStream);
 }
+#endif

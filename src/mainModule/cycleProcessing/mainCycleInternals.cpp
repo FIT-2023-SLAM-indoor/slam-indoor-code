@@ -2,32 +2,57 @@
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 
-#include "../cameraCalibration.h"
-#include "../cameraTransition.h"
-#include "../fastExtractor.h"
+#include "../../calibration/cameraCalibration.h"
+#include "../translation/cameraTranslation.h"
+#include "../featureExtraction/fastExtractor.h"
 #include "../featureMatching/featureMatching.h"
-#include "../IOmisc.h"
+#include "../featureMatching/featureMatchingCommon.h"
+#include "../../misc/IOmisc.h"
 
-#include "../config/config.h"
+#include "../../config/config.h"
 
-#include "mainCycle.h"
 #include "mainCycleInternals.h"
+#include "mainCycleStructures.h"
 
 using namespace cv;
 
 
+/**
+ * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
+ *
+ * @param [in] frame
+ * @param [in] matchIdx идентификатор нужного матча, который прошел chirality mask
+ * @param [in, out] frameData
+ * @param [out] spatialPointColors
+ */
+static void saveFrameColorOfKeyPoint(
+    const Mat &frame, int matchIdx, TemporalImageData &frameData,
+    std::vector<Vec3b> &spatialPointColors)
+{
+    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
+    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
+    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
+}
+
+
+/**
+ * Загружает данные о том, работаем мы с видео или фото, из конфига и сохраняет их в структуру
+ * медиа данных.
+ *
+ * @param [out] mediaInputStruct
+ */
 static void defineMediaSources(MediaSources &mediaInputStruct) {
     mediaInputStruct.isPhotoProcessing = configService.getValue<bool>(
         ConfigFieldEnum::USE_PHOTOS_CYCLE);
 
     if (mediaInputStruct.isPhotoProcessing) {
         glob(
-            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN_), 
+            configService.getValue<std::string>(ConfigFieldEnum::PHOTOS_PATH_PATTERN),
             mediaInputStruct.photosPaths, false);
         sortGlobs(mediaInputStruct.photosPaths);
     } else {
         mediaInputStruct.frameSequence.open(
-            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH_));
+            configService.getValue<std::string>(ConfigFieldEnum::VIDEO_SOURCE_PATH));
         if (!mediaInputStruct.frameSequence.isOpened()) {
             std::cerr << "Video wasn't opened" << std::endl;
             exit(-1);
@@ -35,17 +60,16 @@ static void defineMediaSources(MediaSources &mediaInputStruct) {
     }
 }
 
-static void defineCalibrationMatrix(Mat &calibrationMatrix) {
-    // Сreating a new matrix or changing the type and size of an existing one
-    calibrationMatrix.create(3, 3, CV_64F);
-    calibration(calibrationMatrix, CalibrationOption::load);
-}
-
+/**
+ * Загружает данные о матрице калибровки камеры из конфига.
+ *
+ * @param [out] distortionCoeffs
+ */
 static void defineDistortionCoeffs(Mat &distortionCoeffs) {
     // Сreating a new matrix or changing the type and size of an existing one
     distortionCoeffs.create(1, 5, CV_64F);
     loadMatrixFromXML(
-        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH_).c_str(),
+        configService.getValue<std::string>(ConfigFieldEnum::CALIBRATION_PATH).c_str(),
         distortionCoeffs, "DC"
     );
 }
@@ -53,22 +77,30 @@ static void defineDistortionCoeffs(Mat &distortionCoeffs) {
 
 void defineProcessingEnvironment(
     MediaSources &mediaInputStruct,
-    DataProcessingConditions &dataProcessingConditions)
-{
+    DataProcessingConditions &dataProcessingConditions
+) {
     defineMediaSources(mediaInputStruct);
-
-    defineCalibrationMatrix(dataProcessingConditions.calibrationMatrix);
     defineDistortionCoeffs(dataProcessingConditions.distortionCoeffs);
 
     dataProcessingConditions.featureExtractingThreshold =
-        configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD_);
+        configService.getValue<int>(ConfigFieldEnum::FEATURE_EXTRACTING_THRESHOLD);
+	dataProcessingConditions.threadsCount =
+		configService.getValue<int>(ConfigFieldEnum::THREADS_COUNT);
     dataProcessingConditions.frameBatchSize =
-        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE_);
+        configService.getValue<int>(ConfigFieldEnum::FRAMES_BATCH_SIZE);
+	dataProcessingConditions.skipFramesFromBatchHead =
+		configService.getValue<int>(ConfigFieldEnum::SKIP_FRAMES_FROM_BATCH_HEAD);
+	dataProcessingConditions.useFirstFitInBatch =
+		configService.getValue<bool>(ConfigFieldEnum::USE_FIRST_FIT_IN_BATCH);
     dataProcessingConditions.requiredExtractedPointsCount =
-        configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT_);
+        configService.getValue<int>(ConfigFieldEnum::REQUIRED_EXTRACTED_POINTS_COUNT);
     dataProcessingConditions.requiredMatchedPointsCount =
         configService.getValue<int>(ConfigFieldEnum::REQUIRED_MATCHED_POINTS_COUNT);
     dataProcessingConditions.matcherType = getMatcherTypeIndex();
+	dataProcessingConditions.useBundleAdjustment =
+		configService.getValue<bool>(ConfigFieldEnum::USE_BUNDLE_ADJUSTMENT);
+	dataProcessingConditions.maxProcessedFramesVectorSz =
+		configService.getValue<int>(ConfigFieldEnum::BA_MAX_FRAMES_CNT);
 }
 
 
@@ -86,12 +118,18 @@ bool getNextFrame(MediaSources &mediaInputStruct, Mat &nextFrame) {
     }
 }
 
-///////////////////////////////////////////////////////////////
-// Эта функция должна быть либо в main, либо удалить её надо //
-///////////////////////////////////////////////////////////////
-void defineInitialCameraPosition(TemporalImageData &initialFrame) {
-    initialFrame.rotation = Mat::eye(3, 3, CV_64FC1);
-    initialFrame.motion = Mat::zeros(3, 1, CV_64FC1);
+
+void defineCameraPosition(
+    const std::deque<TemporalImageData> &oldImageDataDeque, int lastFrameOfLaunchId,
+    TemporalImageData &frameData)
+{
+    if (lastFrameOfLaunchId < 0 || oldImageDataDeque.size() == 0) {
+        frameData.rotation = Mat::eye(3, 3, CV_64FC1);
+        frameData.motion = Mat::zeros(3, 1, CV_64FC1);
+    } else {
+        frameData.rotation = oldImageDataDeque.at(lastFrameOfLaunchId).rotation.clone();
+        frameData.motion = oldImageDataDeque.at(lastFrameOfLaunchId).motion.clone();
+    }
 }
 
 
@@ -103,9 +141,9 @@ bool findFirstGoodFrame(
     while (getNextFrame(mediaInputStruct, candidateFrame)) {
         /// TODO: In future we can do UNDISTORTION here
         firstGoodFrame = candidateFrame;
-        fastExtractor(firstGoodFrame, goodFrameFeatures, 
+        fastExtractor(firstGoodFrame, goodFrameFeatures,
             dataProcessingConditions.featureExtractingThreshold);
-        
+
         // Check if enough features are extracted
         if (goodFrameFeatures.size() >= dataProcessingConditions.requiredExtractedPointsCount) {
             return true;
@@ -118,16 +156,17 @@ bool findFirstGoodFrame(
 
 
 void computeTransformationAndFilterPoints(
-    const DataProcessingConditions &dataProcessingConditions, Mat &chiralityMask,
+    const DataProcessingConditions &dataProcessingConditions, Mat &calibrationMatrix,
     const TemporalImageData &firstFrameData, TemporalImageData &secondFrameData,
-    std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2)
-{
-    getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures, 
-        secondFrameData.allExtractedFeatures, secondFrameData.allMatches, 
+    std::vector<Point2f> &keyPointFrameCoords1, std::vector<Point2f> &keyPointFrameCoords2,
+	Mat &chiralityMask
+) {
+    getKeyPointCoordsFromFramePair(firstFrameData.allExtractedFeatures,
+        secondFrameData.allExtractedFeatures, secondFrameData.allMatches,
         keyPointFrameCoords1, keyPointFrameCoords2);
 
-    estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2, 
-        dataProcessingConditions.calibrationMatrix, secondFrameData.rotation,
+    estimateTransformation(keyPointFrameCoords1, keyPointFrameCoords2,
+        calibrationMatrix, secondFrameData.rotation,
         secondFrameData.motion, chiralityMask);
 
     // Apply the chirality mask to the points from the frames
@@ -167,7 +206,7 @@ void defineFeaturesCorrespondSpatialIndices(
 
 void getOldSpatialPointsAndNewFrameFeatureCoords(
     const std::vector<DMatch> &matches, const std::vector<int> &prevFrameCorrespondIndices,
-    const std::vector<Point3f> &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints, 
+    const SpatialPointsVector &allSpatialPoints, const std::vector<KeyPoint> &newFrameKeyPoints,
     std::vector<Point3f> &oldSpatialPointsForNewFrame, std::vector<Point2f> &newFrameFeatureCoords)
 {
     for (auto &match : matches) {
@@ -181,7 +220,7 @@ void getOldSpatialPointsAndNewFrameFeatureCoords(
 
 
 void pushNewSpatialPoints(
-    const Mat &newFrame, const std::vector<Point3f> &newSpatialPoints, 
+    const Mat &newFrame, const SpatialPointsVector &newSpatialPoints,
     GlobalData &globalDataStruct, std::vector<int> &prevFrameCorrespondIndices,
     TemporalImageData &newFrameData)
 {
@@ -194,12 +233,12 @@ void pushNewSpatialPoints(
             globalDataStruct.spatialPoints.push_back(newSpatialPoints[i]);
             saveFrameColorOfKeyPoint(newFrame, i, newFrameData,
                 globalDataStruct.spatialPointsColors);
-            prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx] = 
+            prevFrameCorrespondIndices[newFrameData.allMatches[i].queryIdx] =
                 globalDataStruct.spatialPoints.size() - 1;
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] =
                 globalDataStruct.spatialPoints.size() - 1;
         } else {
-            // If the point already exists in space, the space points 
+            // If the point already exists in space, the space points
             // corresponding to the pair of matching points should be the same, with the same index
             newFrameData.correspondSpatialPointIdx[newFrameData.allMatches[i].trainIdx] = structId;
         }
@@ -207,19 +246,25 @@ void pushNewSpatialPoints(
 }
 
 
-/**
- * Сохраняем цвет трехмерной точки, получая из кадра цвет фичи соответствующего матча.
- *
- * @param [in] frame
- * @param [in] matchIdx ABOBA!!!
- * @param [in, out] frameData
- * @param [out] spatialPointColors
- */
-void saveFrameColorOfKeyPoint(
-    const Mat &frame, int matchIdx, TemporalImageData &frameData, 
-    std::vector<Vec3b> &spatialPointColors)
-{
-    int frameFeatureIdOfKeyPoint = frameData.allMatches.at(matchIdx).trainIdx;
-    Point2f &keyPointFrameCoords = frameData.allExtractedFeatures.at(frameFeatureIdOfKeyPoint).pt;
-    spatialPointColors.push_back(frame.at<Vec3b>(keyPointFrameCoords.y, keyPointFrameCoords.x));
+void insertNewGlobalData(GlobalData &mainGlobalData, GlobalData &newGlobalData) {
+    for (int pointId = 0; pointId < newGlobalData.spatialPoints.size(); pointId++) {
+        mainGlobalData.spatialPoints.push_back(newGlobalData.spatialPoints.at(pointId));
+        mainGlobalData.spatialPointsColors.push_back(
+            newGlobalData.spatialPointsColors.at(pointId));
+    }
+    for (int cameraId = 0; cameraId < newGlobalData.cameraRotations.size(); cameraId++) {
+        mainGlobalData.cameraRotations.push_back(
+            newGlobalData.cameraRotations.at(cameraId).clone());
+        mainGlobalData.spatialCameraPositions.push_back(
+            newGlobalData.spatialCameraPositions.at(cameraId).clone());
+    }
+}
+
+
+void checkGlobalDataStruct(GlobalData &globalDataStruct) {
+    if (globalDataStruct.spatialPoints.empty()) {
+        logStreams.mainReportStream << "Couldn't process image sequence. Too little data.\n";
+        logStreams.mainReportStream.flush();
+        exit(-1);
+    }
 }
