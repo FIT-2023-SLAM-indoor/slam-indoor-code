@@ -74,7 +74,7 @@ viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
     cout << "Triangulation ended" << endl;
     
     
-    double max_size = 1;
+    double max_size = 100;
     
     
 
@@ -114,6 +114,7 @@ viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
     
 
     }
+    
     cv::Mat polygon3 = cv::Mat(poly).t();
     //cout << polygon3 << endl;
     

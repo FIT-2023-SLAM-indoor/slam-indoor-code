@@ -1,6 +1,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
 #include "vizualizationModule.h"
+#include "delauney-triangulation/geomAdditionalFunc.h"
 #include "delauney-triangulation/bestFittingPlane.h"
 
 using namespace cv;
@@ -66,19 +67,53 @@ void vizualizePointsAndCameras(
     viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
     window.showWidget("point_cloud", cloudWidget);
     vizualizeCameras(window,rotations,transitions,calibration);
+    std::vector<std::vector<int>> comps;
+
+
     
-    /*
-    cv::viz::WMesh trWidget = makeMesh(spatialPoints,colors);
-    window.showWidget("mesh", trWidget);
+	clusterizePoints(spatialPoints,colors,comps);
+   
+    std::vector<Point3f> compPoints;
+    std::vector<Vec3b> compColors;
+    for (int i =0;i< comps.size();i++){
+
+        if (comps[i].size() < 5)
+            continue;
+        
+        for (int j = 0;j< comps[i].size();j++){
+            int index = comps[i].at(j);
+            compPoints.push_back(spatialPoints.at(index));
+            compColors.push_back(colors.at(index));
+        }
+        try{
+            cv::viz::WMesh trWidget = makeMesh(compPoints,compColors);
+            std::string s = std::to_string(i);
+            char const *pchar = s.c_str();
+            window.showWidget(pchar,trWidget);
+
+        } catch (const std::exception& e) // reference to the base of a polymorphic object
+        {
+            std::cout << e.what(); // information from length_error printed
+        }
+        
+        
+        compPoints.clear();
+        compColors.clear();
+       
+    }
+    
+    
     Vec3d normal;
     Point3f centroid;
-    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+
+    /*getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
     cout<< "normal: " <<endl;
     cout<< normal  <<endl;
     cout<< "centroid:" << centroid << endl;
     viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(150,150)));
     //window.showWidget("plane", bestFittingPlane);
     */
+    
     startWindowSpin(window);
 }
 
