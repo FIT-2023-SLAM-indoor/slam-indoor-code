@@ -39,11 +39,9 @@ void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid
    
 }
 
-viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
+viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors,Point3f& centroid,Vec3d& normal){
     vector<pair<Point2f,Point3f>> pairs;
-    Vec3d normal;
-    Point3f centroid;
-    getBestFittingPlaneByPoints(points,centroid,normal);
+    
     cout<< "normal: " <<endl;
     cout<< normal  <<endl;
     cout<< "centroid:" << centroid << endl;
@@ -74,7 +72,7 @@ viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors){
     cout << "Triangulation ended" << endl;
     
     
-    double max_size = 100;
+    double max_size = 1000;
     
     
 
@@ -299,8 +297,8 @@ int test() {
     trWidget.setRenderingProperty(viz::SHADING, viz::SHADING_FLAT);
     trWidget.setRenderingProperty(viz::REPRESENTATION, viz::REPRESENTATION_SURFACE);
 
-    cv::viz::WMesh trWidget2 = makeMesh(points,vectorColors);
-    window.showWidget("mesh", trWidget2);
+    //cv::viz::WMesh trWidget2 = makeMesh(points,vectorColors);
+    //window.showWidget("mesh", trWidget2);
     window.showWidget("mesh2", trWidget);
 
 

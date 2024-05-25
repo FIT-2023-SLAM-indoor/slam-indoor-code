@@ -8,4 +8,4 @@ using namespace cv;
 
 void getBestFittingPlaneByPoints(std::vector<Point3f>& points, Point3f& centroid, Vec3d& normal);
 int test();
-viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors);
+viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors,Point3f& centroid, Vec3d& normal);

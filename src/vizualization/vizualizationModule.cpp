@@ -72,12 +72,17 @@ void vizualizePointsAndCameras(
 
     
 	clusterizePoints(spatialPoints,colors,comps);
-   
+
+    Vec3d normal;
+    Point3f centroid;
+    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+
+
     std::vector<Point3f> compPoints;
     std::vector<Vec3b> compColors;
     for (int i =0;i< comps.size();i++){
 
-        if (comps[i].size() < 5)
+        if (comps[i].size() < 20)
             continue;
         
         for (int j = 0;j< comps[i].size();j++){
@@ -86,7 +91,7 @@ void vizualizePointsAndCameras(
             compColors.push_back(colors.at(index));
         }
         try{
-            cv::viz::WMesh trWidget = makeMesh(compPoints,compColors);
+            cv::viz::WMesh trWidget = makeMesh(compPoints,compColors,centroid,normal);
             std::string s = std::to_string(i);
             char const *pchar = s.c_str();
             window.showWidget(pchar,trWidget);
@@ -103,10 +108,9 @@ void vizualizePointsAndCameras(
     }
     
     
-    Vec3d normal;
-    Point3f centroid;
+   
 
-    /*getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+    /*
     cout<< "normal: " <<endl;
     cout<< normal  <<endl;
     cout<< "centroid:" << centroid << endl;
