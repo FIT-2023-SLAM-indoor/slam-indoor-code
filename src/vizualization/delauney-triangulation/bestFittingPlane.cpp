@@ -72,7 +72,7 @@ viz::WMesh makeMesh(vector<Point3f>& points, vector<Vec3b>& colors,Point3f& cent
     cout << "Triangulation ended" << endl;
     
     
-    double max_size = 1000;
+    double max_size = 10000;
     
     
 

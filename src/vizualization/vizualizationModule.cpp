@@ -77,12 +77,13 @@ void vizualizePointsAndCameras(
     Point3f centroid;
     getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
 
-
-    std::vector<Point3f> compPoints;
-    std::vector<Vec3b> compColors;
+    
+   
     for (int i =0;i< comps.size();i++){
+        std::vector<Point3f> compPoints;
+        std::vector<Vec3b> compColors;
 
-        if (comps[i].size() < 20)
+        if (comps[i].size() < 5)
             continue;
         
         for (int j = 0;j< comps[i].size();j++){

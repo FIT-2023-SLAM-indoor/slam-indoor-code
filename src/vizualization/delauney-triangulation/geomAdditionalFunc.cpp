@@ -110,14 +110,10 @@ std::vector<std::vector<int>>& comps){
 	int size = points.size();
 	Mat graph = cv::Mat::zeros(size,size,CV_32F);
 
-    /*
-    double max = 0.1;
-    double colorWeight = 0.01;
-    double distanceWeight = 1;*/
-
-	double max = 0.55;
-    double colorWeight = 0.005;
+	double max = 6;
+    double colorWeight = 1.4;
     double distanceWeight = 5;
+    #pragma omp parallel for schedule(dynamic) num_threads(10)
 	for (int i = 0;i< size;i++){
 		for (int j = i;j< size;j++){
             
