@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include "bestFittingPlane.h"
 #include "geomAdditionalFunc.h"
+#include "../../config/config.h"
 using namespace cv;
 double sqr(double x){
     return x*x;
@@ -106,13 +107,14 @@ std::vector<cv::Point3f>& points,
 std::vector<cv::Vec3b>& colors,
 std::vector<std::vector<int>>& comps){
 
-    std::cout << "MAking graph" << std::endl;
+    std::cout << "Making graph" << std::endl;
 	int size = points.size();
 	Mat graph = cv::Mat::zeros(size,size,CV_32F);
 
-	double max = 6;
-    double colorWeight = 1.4;
-    double distanceWeight = 5;
+	double max = configService.getValue<float>(ConfigFieldEnum::TRIANGLE_MAX_DISTANCE);
+
+    double colorWeight = configService.getValue<float>(ConfigFieldEnum::TRIANGLE_COLOR_DISTANCE_WEIGHT);
+    double distanceWeight = configService.getValue<float>(ConfigFieldEnum::TRIANGLE_EUCLIDIAN_DISTANCE_WEIGHT);
     #pragma omp parallel for schedule(dynamic) num_threads(10)
 	for (int i = 0;i< size;i++){
 		for (int j = i;j< size;j++){
@@ -130,7 +132,7 @@ std::vector<std::vector<int>>& comps){
     
     std::cout << "finding comps" << std::endl;
     findComps(graph,size,comps);
-    std::cout << "comps found" << std::endl;
+    std::cout << "Comps found" << std::endl;
 }
 
 void findComps(cv::Mat& graph, int size,std::vector<std::vector<int>>& comps){

@@ -62,7 +62,12 @@ enum ConfigFieldEnum {
 	BA_USE_ARCTAN_LOSS,
 	BA_ARCTAN_LOSS_PARAMETER,
 	BA_USE_TUKEY_LOSS,
-	BA_TUKEY_LOSS_PARAMETER
+	BA_TUKEY_LOSS_PARAMETER,
+
+	TRIANGLE_MAX_DISTANCE,
+	TRIANGLE_EUCLIDIAN_DISTANCE_WEIGHT,
+	TRIANGLE_COLOR_DISTANCE_WEIGHT,
+	TRIANGLE_MINIMUM_TRIANGLE_POINTS
 };
 
 const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
@@ -113,5 +118,9 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{BA_USE_ARCTAN_LOSS,       {"BAUseArctanLossFunction",       BOOL}},
 		{BA_ARCTAN_LOSS_PARAMETER, {"BAArctanLossFunctionParameter", FLOATING}},
 		{BA_USE_TUKEY_LOSS,        {"BAUseTukeyLossFunction",        BOOL}},
-		{BA_TUKEY_LOSS_PARAMETER,  {"BATukeyLossFunctionParameter",  FLOATING}}
+		{BA_TUKEY_LOSS_PARAMETER,  {"BATukeyLossFunctionParameter",  FLOATING}},
+		{TRIANGLE_MAX_DISTANCE,   {"TriangleMaxDistance",                FLOATING}},
+		{TRIANGLE_EUCLIDIAN_DISTANCE_WEIGHT, {"TriangleEuclidDistanceWeight",     FLOATING}},
+		{TRIANGLE_COLOR_DISTANCE_WEIGHT, {"TriangleColorDistance",     FLOATING}},
+		{TRIANGLE_MINIMUM_TRIANGLE_POINTS, {"TriangleMinimumPoints",     INTEGER}}
 };

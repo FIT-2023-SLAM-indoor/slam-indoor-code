@@ -1,5 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
+#include "../config/config.h"
 #include "vizualizationModule.h"
 #include "delauney-triangulation/geomAdditionalFunc.h"
 #include "delauney-triangulation/bestFittingPlane.h"
@@ -75,15 +76,15 @@ void vizualizePointsAndCameras(
 
     Vec3d normal;
     Point3f centroid;
-    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+    
 
     
-   
+    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
     for (int i =0;i< comps.size();i++){
         std::vector<Point3f> compPoints;
         std::vector<Vec3b> compColors;
 
-        if (comps[i].size() < 5)
+        if (comps[i].size() < configService.getValue<int>(ConfigFieldEnum::TRIANGLE_MINIMUM_TRIANGLE_POINTS))
             continue;
         
         for (int j = 0;j< comps[i].size();j++){
@@ -92,14 +93,15 @@ void vizualizePointsAndCameras(
             compColors.push_back(colors.at(index));
         }
         try{
+            
             cv::viz::WMesh trWidget = makeMesh(compPoints,compColors,centroid,normal);
             std::string s = std::to_string(i);
             char const *pchar = s.c_str();
             window.showWidget(pchar,trWidget);
 
-        } catch (const std::exception& e) // reference to the base of a polymorphic object
+        } catch (const std::exception& e) 
         {
-            std::cout << e.what(); // information from length_error printed
+            std::cout << e.what(); 
         }
         
         
