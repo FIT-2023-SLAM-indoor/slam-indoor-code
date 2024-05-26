@@ -35,7 +35,7 @@ viz::Viz3d makeWindow()
 {
     viz::Viz3d window("Coordinate Frame");
     window.setWindowSize(Size(1000, 1000));
-    window.setBackgroundColor(viz::Color(200, 200, 200));
+    window.setBackgroundColor(viz::Color(255, 255, 255));
     return window;
 }
 
@@ -50,7 +50,7 @@ void vizualizeCameras(
         path.push_back(Affine3d(rotations[i], transitions[i]));
     cv::Matx33f K((float *)calibration.ptr());
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
-    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,K, 0.1, viz::Color::yellow()));
+//    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,K, 0.1, viz::Color::yellow()));
     window.setViewerPose(path[0]);
 
 }
