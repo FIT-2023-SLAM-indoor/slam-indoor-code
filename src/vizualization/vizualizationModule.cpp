@@ -53,7 +53,8 @@ void vizualizeCameras(
     cv::Matx33f K((float *)calibration.ptr());
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
     window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,K, 0.1, viz::Color::yellow()));
-    window.setViewerPose(path[0]);
+    Point3f centroid(-0.368855, 0.538447, 7.92543);
+    window.setViewerPose(Affine3d(rotations[0],Mat(centroid)));
 
 }
 
@@ -67,19 +68,28 @@ void vizualizePointsAndCameras(
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
     window.showWidget("point_cloud", cloudWidget);
-    vizualizeCameras(window,rotations,transitions,calibration);
+    
     std::vector<std::vector<int>> comps;
 
 
     
 	clusterizePoints(spatialPoints,colors,comps);
+    
 
     Vec3d normal;
     Point3f centroid;
+    vizualizeCameras(window,rotations,transitions,calibration);
+    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+    cout<< "normal: " <<endl;
+    cout<< normal  <<endl;
+    cout<< "centroid:" << centroid << endl;
+    
+   
+
     
 
     
-    getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
+    
     for (int i =0;i< comps.size();i++){
         std::vector<Point3f> compPoints;
         std::vector<Vec3b> compColors;
@@ -113,10 +123,9 @@ void vizualizePointsAndCameras(
     
    
 
+    
+    
     /*
-    cout<< "normal: " <<endl;
-    cout<< normal  <<endl;
-    cout<< "centroid:" << centroid << endl;
     viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(150,150)));
     //window.showWidget("plane", bestFittingPlane);
     */
