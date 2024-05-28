@@ -1,6 +1,8 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/viz.hpp>
+#include "../config/config.h"
 #include "vizualizationModule.h"
+#include "delauney-triangulation/geomAdditionalFunc.h"
 #include "delauney-triangulation/bestFittingPlane.h"
 
 using namespace cv;
@@ -51,7 +53,8 @@ void vizualizeCameras(
     cv::Matx33f K((float *)calibration.ptr());
     window.showWidget("cameras_frames_and_lines", viz::WTrajectory(path, viz::WTrajectory::BOTH, 0.1, viz::Color::green()));
 //    window.showWidget("cameras_frustums", viz::WTrajectoryFrustums(path,K, 0.1, viz::Color::yellow()));
-    window.setViewerPose(path[0]);
+    Point3f centroid(-0.368855, 0.538447, 7.92543);
+    window.setViewerPose(Affine3d(rotations[0],Mat(centroid)));
 
 }
 
@@ -65,20 +68,68 @@ void vizualizePointsAndCameras(
     viz::Viz3d window = makeWindow();
     viz::WCloud cloudWidget = getPointCloudFromPoints(spatialPoints,colors);
     window.showWidget("point_cloud", cloudWidget);
-    vizualizeCameras(window,rotations,transitions,calibration);
     
-    /*
-    cv::viz::WMesh trWidget = makeMesh(spatialPoints,colors);
-    window.showWidget("mesh", trWidget);
+    std::vector<std::vector<int>> comps;
+
+
+    
+	clusterizePoints(spatialPoints,colors,comps);
+    
+
     Vec3d normal;
     Point3f centroid;
+    vizualizeCameras(window,rotations,transitions,calibration);
     getBestFittingPlaneByPoints(spatialPoints,centroid,normal);
     cout<< "normal: " <<endl;
     cout<< normal  <<endl;
     cout<< "centroid:" << centroid << endl;
+    
+   
+
+    
+
+    
+    
+    for (int i =0;i< comps.size();i++){
+        std::vector<Point3f> compPoints;
+        std::vector<Vec3b> compColors;
+
+        if (comps[i].size() < configService.getValue<int>(ConfigFieldEnum::TRIANGLE_MINIMUM_TRIANGLE_POINTS))
+            continue;
+        
+        for (int j = 0;j< comps[i].size();j++){
+            int index = comps[i].at(j);
+            compPoints.push_back(spatialPoints.at(index));
+            compColors.push_back(colors.at(index));
+        }
+        try{
+            
+            cv::viz::WMesh trWidget = makeMesh(compPoints,compColors,centroid,normal);
+            std::string s = std::to_string(i);
+            char const *pchar = s.c_str();
+            window.showWidget(pchar,trWidget);
+
+        } catch (const std::exception& e) 
+        {
+            std::cout << e.what(); 
+        }
+        
+        
+        compPoints.clear();
+        compColors.clear();
+       
+    }
+    
+    
+   
+
+    
+    
+    /*
     viz::WPlane bestFittingPlane(centroid,normal,Vec3d(1,1,1),Size2d(Point2d(150,150)));
     //window.showWidget("plane", bestFittingPlane);
     */
+    
     startWindowSpin(window);
 }
 

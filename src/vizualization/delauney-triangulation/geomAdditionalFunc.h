@@ -30,3 +30,11 @@ double sqr(double x);
 void getCircumByTriangle(Triangle& Triangle, double& radius, Point2f& center);
 
 void getLineByTwoPoints(Point2f& point1,Point2f& point2,double& k, double& m);
+
+void clusterizePoints(std::vector<cv::Point3f>& points,
+std::vector<cv::Vec3b>& colors,
+std::vector<std::vector<int>>& comps);
+
+void findComps(cv::Mat& graph, int size,std::vector<std::vector<int>>& comps);
+
+void dfs(int index,int size,std::vector<int>& comp,std::vector<bool>& used,cv::Mat& graph);

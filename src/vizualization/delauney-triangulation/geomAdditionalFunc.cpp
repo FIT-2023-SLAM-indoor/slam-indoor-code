@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include "bestFittingPlane.h"
 #include "geomAdditionalFunc.h"
+#include "../../config/config.h"
 using namespace cv;
 double sqr(double x){
     return x*x;
@@ -13,7 +14,7 @@ double distance(Point2f& p1, Point2f& p2){
 }
 
 double distance(Point3f& p1, Point3f& p2){
-    return sqrt(sqr((p1 - p2).x) + sqr((p1 - p2).y + sqr((p1 - p2).z)));
+    return sqrt(sqr((p1 - p2).x) + sqr((p1 - p2).y) + sqr((p1 - p2).z));
 }
 
 void projectPointOnPlane(Point3f& point, Vec3d& normal, Point3f& centroid, Point3f& projectedPoint){
@@ -99,5 +100,65 @@ void getCircumByTriangle(Triangle& triangle, double& radius, Point2f& center){
 void getLineByTwoPoints(Point2f& point1,Point2f& point2,double& k, double& m){
     k = (point2.y - point1.y) / (point2.x - point1.x);
     m = (point2.x * point1.y - point2.y* point1.x) / (point2.x - point1.x);
+}
+
+void clusterizePoints(
+std::vector<cv::Point3f>& points,
+std::vector<cv::Vec3b>& colors,
+std::vector<std::vector<int>>& comps){
+
+    std::cout << "Making graph" << std::endl;
+	int size = points.size();
+	Mat graph = cv::Mat::zeros(size,size,CV_32F);
+
+	double max = configService.getValue<float>(ConfigFieldEnum::TRIANGLE_MAX_DISTANCE);
+
+    double colorWeight = configService.getValue<float>(ConfigFieldEnum::TRIANGLE_COLOR_DISTANCE_WEIGHT);
+    double distanceWeight = configService.getValue<float>(ConfigFieldEnum::TRIANGLE_EUCLIDIAN_DISTANCE_WEIGHT);
+    #pragma omp parallel for schedule(dynamic) num_threads(10)
+	for (int i = 0;i< size;i++){
+		for (int j = i;j< size;j++){
+            
+			double realDistance = distance(points.at(i),points.at(j)) * distanceWeight;
+			double colorDistance = cv::norm(colors.at(i),
+			colors.at(j))*colorWeight;
+            //double colorDistance = 0;
+			float result = (float)(realDistance+ colorDistance < max?realDistance+ colorDistance:-1); 
+			graph.at<float>(i,j) = result;
+			graph.at<float>(j,i) = result;
+		}
+	}
+    std::cout << "Graph ready" << std::endl;
+    
+    std::cout << "finding comps" << std::endl;
+    findComps(graph,size,comps);
+    std::cout << "Comps found" << std::endl;
+}
+
+void findComps(cv::Mat& graph, int size,std::vector<std::vector<int>>& comps){
+
+    vector<bool> used(size,0);
+    int compsCount = 0;
+	for (int i=0; i<size; ++i)
+		if (!used[i]) {
+            std::vector<int> comp;
+            comps.push_back(comp);
+			dfs(i,size,comps.at(compsCount),used,graph);
+            compsCount++;
+            
+		}
+}
+
+void dfs(int index,int size,std::vector<int>& comp,std::vector<bool>& used,cv::Mat& graph){
+    used[index] = 1;
+	comp.push_back(index);
+	for (size_t i=0; i<size; ++i) {
+        if (graph.at<float>(index,i) != -1){
+            int to = i;
+            if (!used[to])
+                dfs(to,size,comp,used,graph);
+        }
+		
+	}
 }
 
