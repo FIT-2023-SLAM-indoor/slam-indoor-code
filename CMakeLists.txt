@@ -4,6 +4,13 @@ project(slam-indoor-code VERSION 0.1.0 LANGUAGES C CXX)
 include(CTest)
 enable_testing()
 
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
+
 find_package( Ceres REQUIRED  )
 
 find_package( OpenCV REQUIRED )
@@ -15,43 +22,47 @@ add_executable(
     slam-indoor-code
     src/main.cpp
 
-    src/cycleProcessing/mainCycleStructures.h
-    src/cycleProcessing/mainCycle.cpp src/cycleProcessing/mainCycle.h
-    src/cycleProcessing/batch.cpp src/cycleProcessing/batch.h
-    src/cycleProcessing/mainCycleInternals.cpp src/cycleProcessing/mainCycleInternals.h
+    src/mainModule/cycleProcessing/mainCycleStructures.h
+    src/mainModule/cycleProcessing/mainCycle.cpp src/mainModule/cycleProcessing/mainCycle.h
+    src/mainModule/cycleProcessing/batch.cpp src/mainModule/cycleProcessing/batch.h
+    src/mainModule/cycleProcessing/mainCycleInternals.cpp src/mainModule/cycleProcessing/mainCycleInternals.h
 
-    src/fastExtractor.cpp src/fastExtractor.h
+    src/mainModule/featureExtraction/fastExtractor.cpp src/mainModule/featureExtraction/fastExtractor.h
 
-    src/cameraCalibration.cpp src/cameraCalibration.h
+    src/calibration/cameraCalibration.cpp src/calibration/cameraCalibration.h
 
-    src/cameraTransition.cpp src/cameraTransition.h
+    src/mainModule/translation/cameraTranslation.cpp src/mainModule/translation/cameraTranslation.h
 
-    src/featureMatching/featureMatchingCommon.cpp src/featureMatching/featureMatchingCommon.h
-    src/featureMatching/featureMatching.h
+    src/mainModule/featureMatching/featureMatchingCommon.cpp src/mainModule/featureMatching/featureMatchingCommon.h
+    src/mainModule/featureMatching/featureMatching.h
 
-    src/triangulate.cpp src/triangulate.h
+    src/mainModule/triangulation/triangulate.cpp src/mainModule/triangulation/triangulate.h
 
-    src/bundleAdjustment/bundleAdjustment.cpp src/bundleAdjustment/bundleAdjustment.h
+    src/mainModule/bundleAdjustment/bundleAdjustment.cpp src/mainModule/bundleAdjustment/bundleAdjustment.h
 
-    src/IOmisc.cpp src/IOmisc.h
+    src/vizualization/vizualizationModule.cpp src/vizualization/vizualizationModule.h
 
-    src/vizualizationModule.cpp src/vizualizationModule.h
+    src/vizualization/delauney-triangulation/bestFittingPlane.cpp src/vizualization/delauney-triangulation/bestFittingPlane.h
+    src/vizualization/delauney-triangulation/geomAdditionalFunc.cpp src/vizualization/delauney-triangulation/geomAdditionalFunc.h
+    src/vizualization/delauney-triangulation/bowyerWatson.cpp src/vizualization/delauney-triangulation/bowyerWatson.h
 
     src/config/config.cpp src/config/ConfigService.h src/config/configData.h src/config/config.h
 
+    src/misc/IOmisc.cpp src/misc/IOmisc.h
     src/misc/ChronoTimer.cpp src/misc/ChronoTimer.h
+
 )
 
 if (DEFINED USE_CUDA)
     add_definitions(-DUSE_CUDA)
     target_sources(
         slam-indoor-code
-        PRIVATE src/featureMatching/featureMatchingCUDA.cpp
+        PRIVATE src/mainModule/featureMatching/featureMatchingCUDA.cpp
     )
 else()
     target_sources(
         slam-indoor-code
-        PRIVATE src/featureMatching/featureMatchingCPU.cpp
+        PRIVATE src/mainModule/featureMatching/featureMatchingCPU.cpp
     )
 endif ()
 

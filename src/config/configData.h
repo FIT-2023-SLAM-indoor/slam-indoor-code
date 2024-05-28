@@ -14,6 +14,8 @@ typedef struct ConfigFieldPair {
 } ConfigFieldPair;
 
 enum ConfigFieldEnum {
+	ONLY_VIZ,
+
 	CALIBRATE,
 	VISUAL_CALIBRATION,
 	CALIBRATION_PATH,
@@ -37,29 +39,16 @@ enum ConfigFieldEnum {
 
 	REQUIRED_MATCHED_POINTS_COUNT,
 
-	USE_FEATURE_TRACKER,
-	USE_OWN_FT,
-	FT_THREADS_COUNT_,
-	USE_SAD_OWN_FT,
-	USE_SSD_OWN_FT,
-	FT_BARRIER_,
-	FT_MAX_ACCEPTABLE_DIFFERENCE_,
-
 	FM_SIFT_FLANN,
 	FM_SIFT_BF,
 	FM_ORB,
 
 	FM_KNN_DISTANCE,
 
-	SHOW_TRACKED_POINTS,
-
-
 	RP_USE_RANSAC,
 	RP_RANSAC_PROB,
 	RP_RANSAC_THRESHOLD,
-	RP_REQUIRED_GOOD_POINTS_PERCENT,
 	RP_DISTANCE_THRESHOLD,
-
 
 	USE_BUNDLE_ADJUSTMENT,
 	BA_MAX_FRAMES_CNT,
@@ -73,10 +62,17 @@ enum ConfigFieldEnum {
 	BA_USE_ARCTAN_LOSS,
 	BA_ARCTAN_LOSS_PARAMETER,
 	BA_USE_TUKEY_LOSS,
-	BA_TUKEY_LOSS_PARAMETER
+	BA_TUKEY_LOSS_PARAMETER,
+
+	TRIANGLE_MAX_DISTANCE,
+	TRIANGLE_EUCLIDIAN_DISTANCE_WEIGHT,
+	TRIANGLE_COLOR_DISTANCE_WEIGHT,
+	TRIANGLE_MINIMUM_TRIANGLE_POINTS
 };
 
 const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
+		{ONLY_VIZ,                        {"onlyViz",                      BOOL}},
+
 		{CALIBRATE,                       {"calibrate",                    BOOL}},
 		{VISUAL_CALIBRATION,              {"visualCalibration",            BOOL}},
 		{CALIBRATION_PATH,                {"calibrationPath",              STRING}},
@@ -99,26 +95,15 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 
 		{REQUIRED_MATCHED_POINTS_COUNT,   {"requiredMatchedPointsCount",   INTEGER}},
 
-		{USE_FEATURE_TRACKER,             {"useFeatureTracker",           BOOL}},
-		{USE_OWN_FT,                      {"useOwnFeatureTracker",        BOOL}},
-		{FT_THREADS_COUNT_,               {"FTThreadsCount",              INTEGER}},
-		{USE_SAD_OWN_FT,                  {"useSADOwnFT",                 BOOL}},
-		{USE_SSD_OWN_FT,                  {"useSSDOwnFT",                 BOOL}},
-		{FT_BARRIER_,                     {"FTBarrier",                   INTEGER}},
-		{FT_MAX_ACCEPTABLE_DIFFERENCE_,   {"FTMaxAcceptableDifference",   INTEGER}},
-
 		{FM_SIFT_FLANN,                   {"useFM-SIFT-FLANN",            BOOL}},
 		{FM_SIFT_BF,                      {"useFM-SIFT-BF",               BOOL}},
 		{FM_ORB,                          {"useFM-ORB",                   BOOL}},
 
 		{FM_KNN_DISTANCE,                 {"knnMatcherDistance",          FLOATING}},
 
-		{SHOW_TRACKED_POINTS,             {"showTrackedPoints",           BOOL}},
-
 		{RP_USE_RANSAC,                   {"RPUseRANSAC",                 BOOL}},
 		{RP_RANSAC_PROB,                  {"RPRANSACProb",                FLOATING}},
 		{RP_RANSAC_THRESHOLD,             {"RPRANSACThreshold",           FLOATING}},
-		{RP_REQUIRED_GOOD_POINTS_PERCENT, {"RPRequiredGoodPointsPercent", FLOATING}},
 		{RP_DISTANCE_THRESHOLD,           {"RPDistanceThreshold",         FLOATING}},
 
 		{USE_BUNDLE_ADJUSTMENT,    {"useBundleAdjustment",           BOOL}},
@@ -133,5 +118,9 @@ const std::map<ConfigFieldEnum, ConfigFieldPair> configFields = {
 		{BA_USE_ARCTAN_LOSS,       {"BAUseArctanLossFunction",       BOOL}},
 		{BA_ARCTAN_LOSS_PARAMETER, {"BAArctanLossFunctionParameter", FLOATING}},
 		{BA_USE_TUKEY_LOSS,        {"BAUseTukeyLossFunction",        BOOL}},
-		{BA_TUKEY_LOSS_PARAMETER,  {"BATukeyLossFunctionParameter",  FLOATING}}
+		{BA_TUKEY_LOSS_PARAMETER,  {"BATukeyLossFunctionParameter",  FLOATING}},
+		{TRIANGLE_MAX_DISTANCE,   {"TriangleMaxDistance",                FLOATING}},
+		{TRIANGLE_EUCLIDIAN_DISTANCE_WEIGHT, {"TriangleEuclidDistanceWeight",     FLOATING}},
+		{TRIANGLE_COLOR_DISTANCE_WEIGHT, {"TriangleColorDistance",     FLOATING}},
+		{TRIANGLE_MINIMUM_TRIANGLE_POINTS, {"TriangleMinimumPoints",     INTEGER}}
 };

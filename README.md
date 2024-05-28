@@ -142,38 +142,33 @@ sudo apt install nlohmann-json3-dev
 JSON config example (path to it should be specified as command line argument):
 ```json
 {
+  "onlyViz": true,
+
   "calibrate": false,
   "visualCalibration": true,
-  "calibrationPath": "./config/samsung-hp.xml",
+  "calibrationPath": "./config/samsung-hv-2.xml",
 
   "usePhotosCycle": false,
-  "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-table/*.JPG",
+  //  "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-room-new/_ (*).JPG",
+  "photosPathPattern": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/photos/samsung-4to3-tumbochka/*.JPG",
   // "videoSourcePath" has an effect when "usePhotosCycle" is false
-  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-room-1-fhd.MP4",
+  "videoSourcePath": "/mnt/c/Users/bakug/YandexDisk/NSU/private/2-1/PAK/static/samsung-new-tumbochka-fhd.MP4",
 
-  "outputDataDir": "./data/video_report/video_test",
+  // If "onlyViz" is true program searches files with data in this folder
+  "outputDataDir": "./data/video_report/table-photos-CPU",
 
-  "threadsCount": 6,
+  "threadsCount": 1,
 
   "useUndistortion": false,
 
   "requiredExtractedPointsCount": 10000,
-  "featureExtractingThreshold": 3,
+  "featureExtractingThreshold": 1,
 
-  "framesBatchSize": 60,
+  "framesBatchSize": 210,
   "skipFramesFromBatchHead": 0,
   "useFirstFitInBatch": true,
 
-  "requiredMatchedPointsCount": 1000,
-
-  "useFeatureTracker": false,
-  // This block has an effect when "useFeatureTracker" is true
-  "useOwnFeatureTracker": true,
-  "FTThreadsCount": 3,
-  "useSADOwnFT": true,
-  "useSSDOwnFT": false,
-  "FTBarrier": 20,
-  "FTMaxAcceptableDifference": 2000,
+  "requiredMatchedPointsCount": 500,
 
   // This block has an effect when "useFeatureTracker" is false
   "useFM-SIFT-FLANN": true, // NORM_L2 in CUDA
@@ -182,13 +177,10 @@ JSON config example (path to it should be specified as command line argument):
 
   "knnMatcherDistance": 0.7,
 
-  "showTrackedPoints": true,
-
   // Now this parameters are used only for the first pair of frames
   "RPUseRANSAC": true,
   "RPRANSACProb": 0.999,
   "RPRANSACThreshold": 5.0,
-  "RPRequiredGoodPointsPercent": 0.5,
   "RPDistanceThreshold": 200.0,
 
 
